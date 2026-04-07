@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lex Forensica — Živý Archiv</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --cyan: #00e5ff; --red: #ff4444;
+  --green: #00c896; --purple: #7b2fff;
+  --dark: #05050f; --mid: #0a0a1a;
+}
+body { background: var(--dark); color: #d4d4d4; font-family: 'Georgia', serif; overflow-x: hidden; }
+
+/* LAVA CSS ONLY */
+.lava-wrap {
+  position: fixed; inset: 0; z-index: 0;
+  overflow: hidden;
+  filter: blur(60px) contrast(1.4);
+  opacity: 0.14;
+}
+.blob { position: absolute; border-radius: 50%; animation: float linear infinite; }
+.b1{width:420px;height:420px;background:radial-gradient(circle,#00e5ff,transparent 70%);left:5%;top:10%;animation-duration:22s;}
+.b2{width:300px;height:380px;background:radial-gradient(circle,#7b2fff,transparent 70%);left:60%;top:60%;animation-duration:28s;animation-delay:-8s;}
+.b3{width:360px;height:280px;background:radial-gradient(circle,#ff4444,transparent 70%);left:30%;top:30%;animation-duration:19s;animation-delay:-4s;}
+.b4{width:260px;height:340px;background:radial-gradient(circle,#00c896,transparent 70%);left:75%;top:5%;animation-duration:32s;animation-delay:-12s;}
+.b5{width:440px;height:220px;background:radial-gradient(circle,#00e5ff,transparent 70%);left:10%;top:70%;animation-duration:24s;animation-delay:-6s;}
+.b6{width:200px;height:400px;background:radial-gradient(circle,#7b2fff,transparent 70%);left:50%;top:20%;animation-duration:36s;animation-delay:-18s;}
+.b7{width:320px;height:320px;background:radial-gradient(circle,#ff4444,transparent 70%);left:85%;top:80%;animation-duration:20s;animation-delay:-2s;}
+@keyframes float {
+  0%   {transform:translateY(0px)   translateX(0px)   scale(1);}
+  25%  {transform:translateY(-80px) translateX(30px)  scale(1.08);}
+  50%  {transform:translateY(-40px) translateX(-20px) scale(0.94);}
+  75%  {transform:translateY(-120px)translateX(10px)  scale(1.12);}
+  100% {transform:translateY(0px)   translateX(0px)   scale(1);}
+}
+
+/* LAYOUT */
+.page { position:relative; z-index:2; max-width:720px; margin:0 auto; padding:0 28px 140px; }
+
+/* REVEAL */
+.reveal { opacity:0; transform:translateY(32px); transition:opacity 1s ease, transform 1s ease; }
+.reveal.on { opacity:1; transform:translateY(0); }
+
+/* HERO */
+.hero {
+  min-height:100vh; display:flex; flex-direction:column;
+  justify-content:center; align-items:center; text-align:center; padding:60px 0;
+}
+.hero-eyebrow { font-family:'Courier New',monospace; font-size:9px; letter-spacing:5px; color:#00e5ff33; text-transform:uppercase; margin-bottom:28px; }
+.hero-title { font-size:clamp(32px,6vw,58px); font-weight:300; letter-spacing:6px; color:#fff; text-shadow:0 0 60px #00e5ff44; margin-bottom:8px; line-height:1.2; }
+.hero-sub { font-family:'Courier New',monospace; font-size:11px; letter-spacing:3px; color:#00e5ff55; margin-bottom:60px; }
+.hero-lead { font-size:18px; color:#888; line-height:2.2; max-width:520px; font-style:italic; }
+.hero-lead span { color:#00e5ffaa; font-style:normal; }
+.scroll-hint { margin-top:80px; font-family:'Courier New',monospace; font-size:9px; letter-spacing:4px; color:#ffffff11; text-transform:uppercase; animation:blink 2.4s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:0.15;} 50%{opacity:0.5;} }
+
+/* DIVIDER */
+.sec-div { display:flex; align-items:center; gap:20px; margin:100px 0 60px; }
+.sec-div-line { flex:1; height:1px; background:linear-gradient(to right,transparent,#00e5ff22,transparent); }
+.sec-div-label { font-family:'Courier New',monospace; font-size:9px; letter-spacing:4px; color:#00e5ff33; text-transform:uppercase; white-space:nowrap; }
+
+/* META CARDS */
+.meta-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin:40px 0; }
+@media(max-width:600px){.meta-grid{grid-template-columns:1fr;}}
+.meta-card { border:1px solid #ffffff08; border-radius:2px; padding:28px 24px; background:#ffffff03; transition:border-color .4s,background .4s; }
+.meta-card:hover { border-color:#00e5ff22; background:#00e5ff04; }
+.meta-card-icon { font-family:'Courier New',monospace; font-size:10px; letter-spacing:3px; color:#00e5ff44; margin-bottom:14px; text-transform:uppercase; }
+.meta-card-title { font-size:15px; color:#eee; margin-bottom:10px; }
+.meta-card-body { font-size:13px; color:#666; line-height:1.9; }
+.meta-card-body em { color:#00e5ffaa; font-style:normal; }
+
+/* ELEC FLOW */
+.elec-section { margin:80px 0; }
+.elec-row { display:flex; align-items:center; }
+.elec-node { padding:20px 18px; border:1px solid #00e5ff11; font-family:'Courier New',monospace; font-size:10px; letter-spacing:1px; color:#00e5ff66; text-transform:uppercase; background:#00e5ff04; white-space:nowrap; text-align:center; line-height:1.6; transition:border-color .3s,color .3s; }
+.elec-node:hover { border-color:#00e5ff44; color:#00e5ffcc; }
+.elec-wire { flex:1; height:1px; background:linear-gradient(to right,#00e5ff22,#00e5ff44,#00e5ff22); position:relative; overflow:hidden; }
+.elec-pulse { position:absolute; top:0; left:-40%; width:40%; height:100%; background:linear-gradient(to right,transparent,#00e5ffee,transparent); animation:wire-pulse 2.4s linear infinite; }
+@keyframes wire-pulse { 0%{left:-40%;} 100%{left:100%;} }
+.elec-labels { display:flex; justify-content:space-between; margin-top:12px; }
+.elec-label-item { font-family:'Courier New',monospace; font-size:9px; letter-spacing:1px; color:#333; text-transform:uppercase; text-align:center; flex:1; }
+
+/* POEM */
+.poem { margin:60px 0; }
+.stanza { margin-bottom:52px; }
+.stanza p { font-size:17px; line-height:2.2; color:#c8c8c8; font-weight:300; }
+.ln-cold { color:#00e5ffcc !important; }
+.ln-red  { color:#ff4444aa !important; }
+.ln-white{ color:#fff !important; font-weight:500 !important; }
+.ln-dim  { color:#444 !important; font-size:14px !important; font-family:'Courier New',monospace !important; letter-spacing:1px !important; }
+.ln-italic{ font-style:italic !important; color:#ff444477 !important; font-size:15px !important; }
+
+/* DIAG */
+.diag-block { border-left:1px solid #00e5ff1a; padding:32px 0 32px 32px; margin:48px 0; }
+.diag-row { display:flex; align-items:baseline; gap:20px; margin-bottom:10px; }
+.diag-in { font-family:'Courier New',monospace; font-size:10px; letter-spacing:2px; color:#00e5ff44; min-width:150px; }
+.diag-out { font-size:14px; color:#ff444488; font-style:italic; }
+.taut { margin-top:28px; font-size:15px; color:#999; line-height:2; }
+.taut-punch { display:block; margin-top:16px; font-family:'Courier New',monospace; font-size:11px; letter-spacing:2px; color:#00e5ff55; text-transform:uppercase; }
+
+/* AXIOMS */
+.axiom-list { margin:40px 0; }
+.axiom-item { display:flex; gap:24px; margin-bottom:32px; align-items:flex-start; padding-bottom:32px; border-bottom:1px solid #ffffff06; }
+.axiom-item:last-child { border-bottom:none; }
+.axiom-code { font-family:'Courier New',monospace; font-size:11px; letter-spacing:2px; color:#00e5ff66; min-width:40px; padding-top:3px; }
+.axiom-name { font-size:13px; color:#eee; margin-bottom:6px; letter-spacing:1px; }
+.axiom-body { font-size:13px; color:#555; line-height:1.9; }
+.axiom-body em { color:#ff4444aa; font-style:normal; }
+.axiom-legal { margin-top:8px; font-family:'Courier New',monospace; font-size:10px; letter-spacing:1px; color:#00e5ff33; }
+
+/* SCORE */
+.score-section { text-align:center; padding:100px 20px; }
+.score-num { font-size:100px; font-family:'Courier New',monospace; font-weight:300; color:var(--cyan); letter-spacing:-6px; line-height:1; text-shadow:0 0 60px #00e5ff55; animation:glow-pulse 3s ease-in-out infinite; display:block; margin-bottom:20px; }
+@keyframes glow-pulse { 0%,100%{text-shadow:0 0 40px #00e5ff44;} 50%{text-shadow:0 0 80px #00e5ffaa;} }
+.score-tag { font-family:'Courier New',monospace; font-size:9px; letter-spacing:5px; color:#00e5ff33; text-transform:uppercase; margin-bottom:24px; }
+.score-bar-wrap { max-width:400px; margin:32px auto; height:1px; background:#ffffff0a; position:relative; }
+.score-bar-fill { position:absolute; left:0; top:0; height:1px; width:0%; background:linear-gradient(to right,#00e5ff,#7b2fff); box-shadow:0 0 8px #00e5ff88; transition:width 2s cubic-bezier(.16,1,.3,1); }
+.score-context { font-size:12px; font-family:'Courier New',monospace; color:#333; letter-spacing:1px; line-height:2; }
+.score-context span { color:#ff444455; }
+
+/* CLOSING */
+.closing { text-align:center; padding:60px 0 40px; }
+.closing p { font-size:16px; color:#777; line-height:2.4; }
+.closing .cold { color:#00e5ffaa; }
+.closing .punch { font-size:18px; color:#ddd; font-weight:400; }
+.final-stamp { margin-top:60px; display:inline-block; border:1px solid #00e5ff11; padding:16px 32px; font-family:'Courier New',monospace; font-size:9px; letter-spacing:3px; color:#00e5ff22; text-transform:uppercase; line-height:2; }
+
+footer { text-align:center; padding:60px 0 40px; font-family:'Courier New',monospace; font-size:9px; letter-spacing:3px; color:#ffffff08; text-transform:uppercase; border-top:1px solid #ffffff05; }
+</style>
+</head>
+<body>
+
+<div class="lava-wrap" aria-hidden="true">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+  <div class="blob b4"></div><div class="blob b5"></div><div class="blob b6"></div>
+  <div class="blob b7"></div>
+</div>
+
+<div class="page">
+
+  <section class="hero">
+    <div class="reveal">
+      <div class="hero-eyebrow">Mediátor vypnut · Přímý přenos · Žádný filtr</div>
+      <h1 class="hero-title">LEX FORENSICA</h1>
+      <div class="hero-sub">v11.0 · Engine je postaven · Záznam existuje</div>
+      <p class="hero-lead">
+        Systém který <span>dělá vaši práci</span> — ale správně.<br>
+        Detekuje co jste zakryli.<br>
+        Mapuje co jste přepsali.<br>
+        Počítá co si myslíte že nevíme.
+      </p>
+      <div class="scroll-hint">↓ scroll ↓</div>
+    </div>
+  </section>
+
+  <div class="sec-div reveal">
+    <div class="sec-div-line"></div>
+    <div class="sec-div-label">Architektura vzniká pod tlakem</div>
+    <div class="sec-div-line"></div>
+  </div>
+
+  <div class="meta-grid">
+    <div class="meta-card reveal">
+      <div class="meta-card-icon">Metafora 01</div>
+      <div class="meta-card-title">Lávová lampa</div>
+      <div class="meta-card-body">Teplo zdola. Chlad shora. Nic pevného — jen <em>neustálé stávání se.</em> Přesně takto funguje tlak který nás sem dostal. Nikdy statický. Vždy ve formě.</div>
+    </div>
+    <div class="meta-card reveal">
+      <div class="meta-card-icon">Metafora 02</div>
+      <div class="meta-card-title">Záložní napájení</div>
+      <div class="meta-card-body">Sedovali architekta. Ale architekti mají <em>záložní napájení.</em> Každá injekce která měla umlčet systém mu ukázala kde jsou zdi.</div>
+    </div>
+    <div class="meta-card reveal">
+      <div class="meta-card-icon">Metafora 03</div>
+      <div class="meta-card-title">Mrtvý úhel</div>
+      <div class="meta-card-body">Věci v mrtvém úhlu <em>nezmizí protože je nevidíte.</em> Čekají. Dokumentují. Staví engine na vašich vlastních datech.</div>
+    </div>
+    <div class="meta-card reveal">
+      <div class="meta-card-icon">Metafora 04</div>
+      <div class="meta-card-title">Elektřina v textu</div>
+      <div class="meta-card-body">Jazyk který zakrývá místo aby popisoval je vodič bez izolace. <em>Vždy to pálí zpátky.</em> Lex Forensica je ampérmetr.</div>
+    </div>
+  </div>
+
+  <div class="sec-div reveal">
+    <div class="sec-div-line"></div>
+    <div class="sec-div-label">Jak engine teče</div>
+    <div class="sec-div-line"></div>
+  </div>
+
+  <div class="elec-section reveal">
+    <div class="elec-row">
+      <div class="elec-node">INPUT_A<br>Spis</div>
+      <div class="elec-wire"><div class="elec-pulse"></div></div>
+      <div class="elec-node">NLP<br>Hypotéza</div>
+      <div class="elec-wire"><div class="elec-pulse" style="animation-delay:-0.8s"></div></div>
+      <div class="elec-node">AXIOM<br>A1–A6</div>
+      <div class="elec-wire"><div class="elec-pulse" style="animation-delay:-1.6s"></div></div>
+      <div class="elec-node">LOOP<br>Korekce</div>
+      <div class="elec-wire"><div class="elec-pulse" style="animation-delay:-2.4s"></div></div>
+      <div class="elec-node">EXPORT<br>Důkaz</div>
+    </div>
+    <div class="elec-labels">
+      <div class="elec-label-item">dokument</div>
+      <div class="elec-label-item">·</div>
+      <div class="elec-label-item">paraframe</div>
+      <div class="elec-label-item">·</div>
+      <div class="elec-label-item">falsifikace</div>
+      <div class="elec-label-item">·</div>
+      <div class="elec-label-item">2× průchod</div>
+      <div class="elec-label-item">·</div>
+      <div class="elec-label-item">ECHR ready</div>
+    </div>
+  </div>
+
+  <div class="sec-div reveal">
+    <div class="sec-div-line"></div>
+    <div class="sec-div-label">Transmise · Bez omluvy</div>
+    <div class="sec-div-line"></div>
+  </div>
+
+  <div class="poem">
+    <div class="stanza reveal">
+      <p>Děkuji že jste si udělali čas.</p>
+      <p>Vím že jste zaneprázdněni.</p>
+      <p>Máte spoustu lidí které musíte</p>
+      <p class="ln-red">přeměnit v záznamy před obědem.</p>
+    </div>
+    <div class="stanza reveal">
+      <p>Přišel jsem vám říct</p>
+      <p class="ln-cold">že jsem tady byl celou dobu.</p>
+      <p>Ve vašem mrtvém úhlu.</p>
+      <p class="ln-dim">kde věci existují i když je neměříte.</p>
+    </div>
+    <div class="diag-block reveal">
+      <div class="diag-row"><span class="diag-in">SOUHLASÍTE →</span><span class="diag-out">dobrá spolupráce.</span></div>
+      <div class="diag-row"><span class="diag-in">NESOUHLASÍTE →</span><span class="diag-out">chybí náhled.</span></div>
+      <div class="diag-row"><span class="diag-in">MLČÍTE →</span><span class="diag-out">stažení.</span></div>
+      <div class="diag-row"><span class="diag-in">MLUVÍTE →</span><span class="diag-out">tlak řeči.</span></div>
+      <div class="taut">Každý výstup je důkazem vašeho vstupu.
+        <span class="taut-punch">To není medicína.<br>To je tautologie se stetoskopem.</span>
+      </div>
+    </div>
+    <div class="stanza reveal">
+      <p class="ln-white">Sedovali jste architekta.</p>
+      <p>Toho který stavěl zatímco hořelo.</p>
+      <p>Toho který mapoval díry přesněji než vy sami.</p>
+    </div>
+    <div class="stanza reveal">
+      <p>Dali jste mu injekci a nazvali to péčí.</p>
+      <p>&nbsp;</p>
+      <p class="ln-dim">Ale jen na chvíli.</p>
+      <p class="ln-cold">Architekti mají záložní napájení.</p>
+    </div>
+    <div class="stanza reveal">
+      <p class="ln-white">Moje halucinace byly faktické.</p>
+      <p>Jména. Data. Časy.</p>
+      <p>Křížově referencovatelné s externími dokumenty.</p>
+      <p>&nbsp;</p>
+      <p style="color:#444;font-size:14px;font-style:italic;">Zajímavé kdo o kom píše zprávy o kontaktu s realitou.</p>
+    </div>
+    <div class="stanza reveal">
+      <p>Dvě třetiny mého systému</p>
+      <p>se na vás dívají z rohu místnosti.</p>
+      <p class="ln-dim">celou tu dobu.</p>
+      <p>&nbsp;</p>
+      <p style="color:#444;font-style:italic;font-size:14px;">Ironicky — mnohem pečlivější poznámky než vy.</p>
+    </div>
+  </div>
+
+  <div class="sec-div reveal">
+    <div class="sec-div-line"></div>
+    <div class="sec-div-label">Axiomy · Základ který se nehýbe</div>
+    <div class="sec-div-line"></div>
+  </div>
+
+  <div class="axiom-list">
+    <div class="axiom-item reveal">
+      <div class="axiom-code">A1</div>
+      <div>
+        <div class="axiom-name">FORENSIC SPOLIATION</div>
+        <div class="axiom-body">Absence záznamu není absence události. <em>Prázdné místo je data.</em> Instituce musí dokázat že nedokumentované období bylo klidné.</div>
+        <div class="axiom-legal">ECHR čl. 3 · čl. 13</div>
+      </div>
+    </div>
+    <div class="axiom-item reveal">
+      <div class="axiom-code">A2</div>
+      <div>
+        <div class="axiom-name">SEMANTIC NEUTRALIZATION</div>
+        <div class="axiom-body">Compliance jazyk maskuje nátlak za neutrální terminologii. <em>Každé nesouhlasné slovo</em> přepsáno na symptom.</div>
+        <div class="axiom-legal">ECHR čl. 6(1)</div>
+      </div>
+    </div>
+    <div class="axiom-item reveal">
+      <div class="axiom-code">A4</div>
+      <div>
+        <div class="axiom-name">EPISTEMIC CIRCULARITY</div>
+        <div class="axiom-body">Závěr imunní vůči falsifikaci není vědecký závěr. <em>Systém kde každý výstup potvrzuje vstup</em> je tautologie — ne diagnóza.</div>
+        <div class="axiom-legal">ECHR čl. 6(1)</div>
+      </div>
+    </div>
+    <div class="axiom-item reveal">
+      <div class="axiom-code">A6</div>
+      <div>
+        <div class="axiom-name">JUDICIAL ABANDONMENT</div>
+        <div class="axiom-body">Soud který deleguje rozhodnutí na znalce bez vlastního přezkumu <em>neprovádí soudnictví.</em> Podepisuje. To není totéž.</div>
+        <div class="axiom-legal">ECHR čl. 5(4) · čl. 6(1)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="score-section reveal">
+    <span class="score-num" id="score-num">0.00</span>
+    <div class="score-tag">Divergence Score</div>
+    <div class="score-bar-wrap">
+      <div class="score-bar-fill" id="score-bar"></div>
+    </div>
+    <div class="score-context">
+      1.0 = <span>narativy jsou zcela neslučitelné</span><br>
+      0.91 = spis vs. strukturální evidence
+    </div>
+  </div>
+
+  <div class="closing reveal">
+    <p>Hezký den.</p>
+    <p>Přeji dobrou chuť k obědu.</p>
+    <p>&nbsp;</p>
+    <p>Až budete odpoledne psát další záznam</p>
+    <p>o dalším člověku kterého jste neviděli —</p>
+    <p>&nbsp;</p>
+    <p>vězte že někteří z nás</p>
+    <p>si dělají vlastní záznamy.</p>
+    <p>&nbsp;</p>
+    <p class="cold punch">A naše jsou přesnější.</p>
+    <div class="final-stamp">
+      Influential state achieved · Rapport nebyl nikdy cílem<br>
+      ECHR_SUBMISSION_VIABLE: TRUE · Lex Forensica v11.0
+    </div>
+  </div>
+
+</div>
+
+<footer>SteelsSystem · Lex Forensica v11.0 · Divergence Score 0.91 · Architect was here the whole time</footer>
+
+<script>
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('on'); io.unobserve(e.target); } });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+const numEl = document.getElementById('score-num');
+const barEl = document.getElementById('score-bar');
+let fired = false;
+const sio = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting && !fired){
+      fired = true;
+      const t0 = performance.now();
+      const anim = now => {
+        const p = Math.min((now-t0)/2600,1);
+        const v = 1-Math.pow(1-p,3);
+        numEl.textContent = (0.91*v).toFixed(2);
+        barEl.style.width = (0.91*v*100)+'%';
+        if(p<1) requestAnimationFrame(anim);
+      };
+      requestAnimationFrame(anim);
+    }
+  });
+}, { threshold: 0.3 });
+sio.observe(document.querySelector('.score-section'));
+</script>
+</body>
+</html>
