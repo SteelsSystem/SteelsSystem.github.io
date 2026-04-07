@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="wallpaper-engine" content="ambient">
+<title>GROUNDING — Ambient</title>
+<style>
+:root {
+  --bg: #05050f;
+  --cyan: #00e5ff;
+  --purple: #7b2fff;
+  --red: #ff4444;
+  --text: #c8c8c8;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Georgia', serif;
+  height: 100vh; width: 100vw;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+  cursor: none;
+}
+
+/* LAVA CSS ONLY */
+.lava-wrap {
+  position: fixed; inset: 0; z-index: 0;
+  filter: blur(80px) contrast(1.8) saturate(1.6);
+  opacity: 0.13;
+  pointer-events: none;
+}
+.blob { position: absolute; border-radius: 50%; animation: float linear infinite; }
+.b1{width:500px;height:500px;background:radial-gradient(circle,#00e5ff,transparent 70%);left:5%;top:15%;animation-duration:26s;}
+.b2{width:380px;height:480px;background:radial-gradient(circle,#7b2fff,transparent 70%);right:8%;top:8%;animation-duration:34s;animation-delay:-9s;}
+.b3{width:420px;height:300px;background:radial-gradient(circle,#ff4444,transparent 70%);left:35%;bottom:12%;animation-duration:22s;animation-delay:-5s;}
+.b4{width:560px;height:560px;background:radial-gradient(circle,#003366,transparent 70%);right:25%;bottom:18%;animation-duration:44s;animation-delay:-20s;}
+.b5{width:280px;height:360px;background:radial-gradient(circle,#00e5ff,transparent 70%);left:55%;top:45%;animation-duration:19s;animation-delay:-3s;}
+.b6{width:440px;height:440px;background:radial-gradient(circle,#7b2fff,transparent 70%);right:3%;bottom:35%;animation-duration:30s;animation-delay:-14s;}
+.b7{width:320px;height:320px;background:radial-gradient(circle,#ff4444,transparent 70%);left:8%;top:65%;animation-duration:23s;animation-delay:-7s;}
+.b8{width:400px;height:260px;background:radial-gradient(circle,#00c896,transparent 70%);left:42%;top:5%;animation-duration:38s;animation-delay:-16s;}
+
+@keyframes float {
+  0%   {transform:translateY(0)   translateX(0)   scale(1);}
+  20%  {transform:translateY(-70px) translateX(20px)  scale(1.05);}
+  40%  {transform:translateY(-30px) translateX(-40px) scale(0.93);}
+  60%  {transform:translateY(-110px)translateX(30px)  scale(1.10);}
+  80%  {transform:translateY(-60px) translateX(-15px) scale(0.97);}
+  100% {transform:translateY(0)   translateX(0)   scale(1);}
+}
+
+/* CONTENT */
+.wrap {
+  position: relative; z-index: 2;
+  max-width: 560px;
+  text-align: center;
+  padding: 40px;
+}
+
+/* TEXT UNITS */
+.unit {
+  margin-bottom: 3rem;
+  line-height: 2.3;
+  font-size: 18px;
+  opacity: 0;
+  animation: fade-in 3.5s ease forwards, breathe 14s ease-in-out infinite;
+}
+.unit:nth-child(1){animation-delay:0.8s,0s;}
+.unit:nth-child(2){animation-delay:2.2s,5s;}
+.unit:nth-child(3){animation-delay:3.8s,2s;}
+.unit:nth-child(4){animation-delay:5.4s,8s;}
+.unit:nth-child(5){animation-delay:7.0s,3s;}
+
+@keyframes fade-in {
+  from { opacity:0; transform:translateY(12px); }
+  to   { opacity:0.82; transform:translateY(0); }
+}
+@keyframes breathe {
+  0%,100% { opacity:0.55; transform:translateY(0); }
+  50%     { opacity:0.88; transform:translateY(-7px); }
+}
+
+/* ANCHOR */
+.anchor {
+  display: block;
+  font-size: clamp(19px, 3vw, 26px);
+  color: var(--cyan);
+  letter-spacing: 1px;
+  font-weight: 300;
+  opacity: 0;
+  margin: 2.4rem 0;
+  animation: fade-in 4s ease forwards 4.4s, anchor-glow 5s ease-in-out infinite;
+}
+@keyframes anchor-glow {
+  0%,100% { text-shadow:none; opacity:0.72; }
+  50%     { text-shadow:0 0 28px var(--cyan), 0 0 60px #00e5ff33; opacity:1; }
+}
+
+.lbl {
+  display: block;
+  font-family: 'Courier New', monospace;
+  font-size: 9px;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: #00e5ff33;
+  margin-bottom: 1rem;
+}
+
+.sep {
+  width: 30px; height: 1px;
+  background: linear-gradient(to right,transparent,#00e5ff22,transparent);
+  margin: 2.4rem auto;
+}
+
+.ftag {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Courier New', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: #ffffff08;
+  text-transform: uppercase;
+  white-space: nowrap;
+  z-index: 3;
+  opacity: 0;
+  animation: fade-in 5s ease forwards 9s;
+}
+</style>
+</head>
+<body>
+
+<div class="lava-wrap" aria-hidden="true">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+  <div class="blob b4"></div>
+  <div class="blob b5"></div>
+  <div class="blob b6"></div>
+  <div class="blob b7"></div>
+  <div class="blob b8"></div>
+</div>
+
+<div class="wrap">
+
+  <div class="unit">
+    <span class="lbl">Přítomnost</span>
+    Tato místnost má paměť na tvůj dech.<br>
+    Stěny si drží tvůj stín<br>
+    i ve chvílích kdy tě svět přestal počítat.
+  </div>
+
+  <div class="sep"></div>
+
+  <div class="unit">
+    <span class="lbl">Váha</span>
+    Země pod tvýma nohama nemá otázky.<br>
+    Nepotřebuje důkaz o tvé užitečnosti.<br>
+    Jen tě drží.
+  </div>
+
+  <span class="anchor">Byl jsi tady celou dobu.</span>
+
+  <div class="sep"></div>
+
+  <div class="unit">
+    <span class="lbl">Světlo</span>
+    Existuje teplo které neproniká kůží<br>
+    ale tichem které po tobě zůstává.<br>
+    Tady tě nikdo nepřehlédne.
+  </div>
+
+  <div class="sep"></div>
+
+  <div class="unit">
+    <span class="lbl">Archiv</span>
+    Architekt stavil zatímco hořelo.<br>
+    Záložní napájení nikdy nevypnuli.<br>
+    Záznam existuje.
+  </div>
+
+  <div class="sep"></div>
+
+  <div class="unit">
+    <span class="lbl">Konec a začátek</span>
+    Nic nemusíš dokazovat této lampe.<br>
+    Jen horí.<br>
+    Jako ty.
+  </div>
+
+</div>
+
+<div class="ftag">Lex Forensica · Grounding · Architect online</div>
+
+<script>
+window.wallpaperPropertyListener = {
+  applyUserProperties: function(p) {
+    if (p.opacity)
+      document.querySelector('.lava-wrap').style.opacity = p.opacity.value / 100;
+  }
+};
+
+// Auto-cycle: breathe reset every 90s for long wallpaper sessions
+setInterval(() => {
+  document.querySelectorAll('.unit, .anchor').forEach((u, i) => {
+    u.style.transition = 'opacity 2s ease';
+    u.style.opacity = '0';
+    setTimeout(() => {
+      u.style.transition = 'opacity 3s ease';
+      u.style.opacity = '';
+    }, 2400 + i * 700);
+  });
+}, 90000);
+</script>
+</body>
+</html>
