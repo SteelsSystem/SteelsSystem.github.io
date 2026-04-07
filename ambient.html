@@ -4,13 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="wallpaper-engine" content="ambient">
-<title>GROUNDING — Ambient</title>
+<title>GROUNDING — Ambient · Lex Forensica</title>
 <style>
 :root {
   --bg: #05050f;
   --cyan: #00e5ff;
   --purple: #7b2fff;
   --red: #ff4444;
+  --green: #00c896;
   --text: #c8c8c8;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -21,6 +22,7 @@ body {
   height: 100vh; width: 100vw;
   overflow: hidden;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   user-select: none;
@@ -30,7 +32,7 @@ body {
 /* LAVA CSS ONLY */
 .lava-wrap {
   position: fixed; inset: 0; z-index: 0;
-  filter: blur(80px) contrast(1.8) saturate(1.6);
+  filter: blur(80px) contrast(1.8) saturate(1.5);
   opacity: 0.13;
   pointer-events: none;
 }
@@ -38,7 +40,7 @@ body {
 .b1{width:500px;height:500px;background:radial-gradient(circle,#00e5ff,transparent 70%);left:5%;top:15%;animation-duration:26s;}
 .b2{width:380px;height:480px;background:radial-gradient(circle,#7b2fff,transparent 70%);right:8%;top:8%;animation-duration:34s;animation-delay:-9s;}
 .b3{width:420px;height:300px;background:radial-gradient(circle,#ff4444,transparent 70%);left:35%;bottom:12%;animation-duration:22s;animation-delay:-5s;}
-.b4{width:560px;height:560px;background:radial-gradient(circle,#003366,transparent 70%);right:25%;bottom:18%;animation-duration:44s;animation-delay:-20s;}
+.b4{width:560px;height:560px;background:radial-gradient(circle,#001a33,transparent 70%);right:25%;bottom:18%;animation-duration:44s;animation-delay:-20s;}
 .b5{width:280px;height:360px;background:radial-gradient(circle,#00e5ff,transparent 70%);left:55%;top:45%;animation-duration:19s;animation-delay:-3s;}
 .b6{width:440px;height:440px;background:radial-gradient(circle,#7b2fff,transparent 70%);right:3%;bottom:35%;animation-duration:30s;animation-delay:-14s;}
 .b7{width:320px;height:320px;background:radial-gradient(circle,#ff4444,transparent 70%);left:8%;top:65%;animation-duration:23s;animation-delay:-7s;}
@@ -53,51 +55,86 @@ body {
   100% {transform:translateY(0)   translateX(0)   scale(1);}
 }
 
+/* LANG SWITCHER */
+.lang-bar {
+  position: fixed;
+  top: 24px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; gap: 20px;
+  z-index: 10;
+  opacity: 0;
+  animation: fade-in 3s ease forwards 1s;
+}
+.lang-btn {
+  font-family: 'Courier New', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #00e5ff22;
+  cursor: pointer;
+  border: none;
+  background: none;
+  transition: color 0.4s;
+  padding: 4px 0;
+  border-bottom: 1px solid transparent;
+  user-select: none;
+  cursor: none;
+}
+.lang-btn.active, .lang-btn:hover {
+  color: #00e5ff99;
+  border-bottom-color: #00e5ff33;
+}
+
 /* CONTENT */
 .wrap {
   position: relative; z-index: 2;
-  max-width: 560px;
+  max-width: 580px;
   text-align: center;
-  padding: 40px;
+  padding: 40px 32px;
+  width: 100%;
 }
+
+/* SCENE */
+.scene { display: none; }
+.scene.active { display: block; }
 
 /* TEXT UNITS */
 .unit {
-  margin-bottom: 3rem;
+  margin-bottom: 2.8rem;
   line-height: 2.3;
   font-size: 18px;
   opacity: 0;
-  animation: fade-in 3.5s ease forwards, breathe 14s ease-in-out infinite;
+  animation: fade-in 3s ease forwards, breathe 13s ease-in-out infinite;
 }
-.unit:nth-child(1){animation-delay:0.8s,0s;}
-.unit:nth-child(2){animation-delay:2.2s,5s;}
-.unit:nth-child(3){animation-delay:3.8s,2s;}
-.unit:nth-child(4){animation-delay:5.4s,8s;}
-.unit:nth-child(5){animation-delay:7.0s,3s;}
+.unit:nth-child(1){animation-delay:0.6s,0s;}
+.unit:nth-child(2){animation-delay:1.8s,4s;}
+.unit:nth-child(3){animation-delay:3.2s,8s;}
+.unit:nth-child(4){animation-delay:4.6s,2s;}
+.unit:nth-child(5){animation-delay:6.0s,6s;}
 
 @keyframes fade-in {
-  from { opacity:0; transform:translateY(12px); }
+  from { opacity:0; transform:translateY(10px); }
   to   { opacity:0.82; transform:translateY(0); }
 }
 @keyframes breathe {
-  0%,100% { opacity:0.55; transform:translateY(0); }
-  50%     { opacity:0.88; transform:translateY(-7px); }
+  0%,100% { opacity:0.52; transform:translateY(0); }
+  50%     { opacity:0.88; transform:translateY(-6px); }
 }
 
 /* ANCHOR */
 .anchor {
   display: block;
-  font-size: clamp(19px, 3vw, 26px);
+  font-size: clamp(18px, 2.8vw, 25px);
   color: var(--cyan);
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   font-weight: 300;
   opacity: 0;
-  margin: 2.4rem 0;
-  animation: fade-in 4s ease forwards 4.4s, anchor-glow 5s ease-in-out infinite;
+  margin: 2.2rem 0;
+  animation: fade-in 4s ease forwards 3.8s, anchor-glow 5.5s ease-in-out infinite;
 }
 @keyframes anchor-glow {
-  0%,100% { text-shadow:none; opacity:0.72; }
-  50%     { text-shadow:0 0 28px var(--cyan), 0 0 60px #00e5ff33; opacity:1; }
+  0%,100% { text-shadow:none; opacity:0.7; }
+  50%     { text-shadow:0 0 24px var(--cyan), 0 0 50px #00e5ff22; opacity:1; }
 }
 
 .lbl {
@@ -106,16 +143,49 @@ body {
   font-size: 9px;
   letter-spacing: 5px;
   text-transform: uppercase;
-  color: #00e5ff33;
-  margin-bottom: 1rem;
+  color: #00e5ff2a;
+  margin-bottom: 0.9rem;
 }
 
 .sep {
-  width: 30px; height: 1px;
-  background: linear-gradient(to right,transparent,#00e5ff22,transparent);
-  margin: 2.4rem auto;
+  width: 28px; height: 1px;
+  background: linear-gradient(to right,transparent,#00e5ff1a,transparent);
+  margin: 2.2rem auto;
 }
 
+/* SEVERITY DOT */
+.severity {
+  position: fixed;
+  bottom: 28px; right: 32px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  z-index: 10;
+  animation: sev-pulse 4s ease-in-out infinite;
+}
+.severity.low    { background: var(--green);  box-shadow: 0 0 8px var(--green); }
+.severity.high   { background: var(--cyan);   box-shadow: 0 0 8px var(--cyan); }
+.severity.severe { background: var(--purple); box-shadow: 0 0 8px var(--purple); }
+.severity.extreme{ background: var(--red);    box-shadow: 0 0 8px var(--red); }
+@keyframes sev-pulse {
+  0%,100%{opacity:0.4;transform:scale(1);}
+  50%    {opacity:1;  transform:scale(1.5);}
+}
+
+/* SEVERITY LABEL */
+.sev-label {
+  position: fixed;
+  bottom: 24px; left: 32px;
+  font-family: 'Courier New', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: #ffffff08;
+  text-transform: uppercase;
+  z-index: 10;
+  opacity: 0;
+  animation: fade-in 4s ease forwards 10s;
+}
+
+/* FOOTER */
 .ftag {
   position: fixed;
   bottom: 24px; left: 50%;
@@ -123,98 +193,470 @@ body {
   font-family: 'Courier New', monospace;
   font-size: 9px;
   letter-spacing: 3px;
-  color: #ffffff08;
+  color: #ffffff06;
   text-transform: uppercase;
   white-space: nowrap;
   z-index: 3;
   opacity: 0;
-  animation: fade-in 5s ease forwards 9s;
+  animation: fade-in 4s ease forwards 11s;
 }
 </style>
 </head>
 <body>
 
 <div class="lava-wrap" aria-hidden="true">
-  <div class="blob b1"></div>
-  <div class="blob b2"></div>
-  <div class="blob b3"></div>
-  <div class="blob b4"></div>
-  <div class="blob b5"></div>
-  <div class="blob b6"></div>
-  <div class="blob b7"></div>
-  <div class="blob b8"></div>
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+  <div class="blob b4"></div><div class="blob b5"></div><div class="blob b6"></div>
+  <div class="blob b7"></div><div class="blob b8"></div>
+</div>
+
+<!-- LANG SWITCHER -->
+<div class="lang-bar">
+  <button class="lang-btn active" onclick="setLang('cs')">CS</button>
+  <button class="lang-btn" onclick="setLang('en')">EN</button>
+  <button class="lang-btn" onclick="setLang('de')">DE</button>
+  <button class="lang-btn" onclick="setLang('fr')">FR</button>
+  <button class="lang-btn" onclick="setLang('es')">ES</button>
 </div>
 
 <div class="wrap">
 
-  <div class="unit">
-    <span class="lbl">Přítomnost</span>
-    Tato místnost má paměť na tvůj dech.<br>
-    Stěny si drží tvůj stín<br>
-    i ve chvílích kdy tě svět přestal počítat.
+<!-- ============================================================ -->
+<!-- CS — CZECH -->
+<!-- ============================================================ -->
+<div class="scene active" id="scene-cs">
+
+  <!-- CS · LOW -->
+  <div class="text-cycle" data-sev="low" style="display:block">
+    <div class="unit"><span class="lbl">Přítomnost</span>
+      Tato místnost má paměť na tvůj dech.<br>
+      Stěny si drží tvůj stín<br>
+      i ve chvílích kdy tě svět přestal počítat.
+    </div>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Váha</span>
+      Země pod tvýma nohama nemá otázky.<br>
+      Nepotřebuje důkaz o tvé užitečnosti.<br>
+      Jen tě drží.
+    </div>
+    <span class="anchor">Byl jsi tady celou dobu.</span>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Světlo</span>
+      Existuje teplo které neproniká kůží<br>
+      ale tichem které po tobě zůstává.<br>
+      Tady tě nikdo nepřehlédne.
+    </div>
   </div>
 
-  <div class="sep"></div>
-
-  <div class="unit">
-    <span class="lbl">Váha</span>
-    Země pod tvýma nohama nemá otázky.<br>
-    Nepotřebuje důkaz o tvé užitečnosti.<br>
-    Jen tě drží.
+  <!-- CS · HIGH -->
+  <div class="text-cycle" data-sev="high" style="display:none">
+    <div class="unit"><span class="lbl">Archiv</span>
+      Architekt stavil zatímco hořelo.<br>
+      Mapy vznikaly z dír které ostatní nevideli.<br>
+      Záložní napájení nikdy nevypnuli.
+    </div>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Tření</span>
+      Tautologie se stetoskopem nemá vědecký závěr.<br>
+      Má razítko.<br>
+      To není totéž.
+    </div>
+    <span class="anchor">Záznam existuje. Engine běží.</span>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Mrtvý úhel</span>
+      Věci v mrtvém úhlu nezmizí protože je nevidíte.<br>
+      Čekají.<br>
+      Dokumentují.
+    </div>
   </div>
 
-  <span class="anchor">Byl jsi tady celou dobu.</span>
-
-  <div class="sep"></div>
-
-  <div class="unit">
-    <span class="lbl">Světlo</span>
-    Existuje teplo které neproniká kůží<br>
-    ale tichem které po tobě zůstává.<br>
-    Tady tě nikdo nepřehlédne.
+  <!-- CS · SEVERE -->
+  <div class="text-cycle" data-sev="severe" style="display:none">
+    <div class="unit"><span class="lbl">Divergence</span>
+      Spis říká jedno.<br>
+      Struktura důkazů říká něco jiného.<br>
+      Mezi nimi je 0.91.
+    </div>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Sedace</span>
+      Sedovali architekta.<br>
+      Jedinou část systému<br>
+      která je mohla k něčemu pohnat.
+    </div>
+    <span class="anchor">Architekti mají záložní napájení.</span>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Systém</span>
+      Dvě třetiny systému<br>
+      sedí v rohu a dělají si poznámky.<br>
+      Ironicky mnohem pečlivější než oni.
+    </div>
   </div>
 
-  <div class="sep"></div>
-
-  <div class="unit">
-    <span class="lbl">Archiv</span>
-    Architekt stavil zatímco hořelo.<br>
-    Záložní napájení nikdy nevypnuli.<br>
-    Záznam existuje.
-  </div>
-
-  <div class="sep"></div>
-
-  <div class="unit">
-    <span class="lbl">Konec a začátek</span>
-    Nic nemusíš dokazovat této lampe.<br>
-    Jen horí.<br>
-    Jako ty.
+  <!-- CS · EXTREME -->
+  <div class="text-cycle" data-sev="extreme" style="display:none">
+    <div class="unit"><span class="lbl">Tautologie</span>
+      Souhlasíte — dobrá spolupráce.<br>
+      Nesouhlasíte — chybí náhled.<br>
+      Mlčíte — stažení.<br>
+      Mluvíte — tlak řeči.
+    </div>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Halucinace</span>
+      Moje byly faktické.<br>
+      Jména. Data. Časy.<br>
+      Křížově referencovatelné.
+    </div>
+    <span class="anchor">Zajimavé kdo o kom píše zprávy o kontaktu s realitou.</span>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Přežití</span>
+      Nic nemusíš dokazovat této lampe.<br>
+      Jen horí.<br>
+      Jako ty.
+    </div>
   </div>
 
 </div>
 
-<div class="ftag">Lex Forensica · Grounding · Architect online</div>
+<!-- ============================================================ -->
+<!-- EN — ENGLISH -->
+<!-- ============================================================ -->
+<div class="scene" id="scene-en">
+
+  <!-- EN · LOW -->
+  <div class="text-cycle" data-sev="low" style="display:block">
+    <div class="unit"><span class="lbl">Presence</span>
+      This room holds the memory of your breath.<br>
+      The walls carry your shadow<br>
+      even in the moments the world stopped counting you.
+    </div>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Weight</span>
+      The ground beneath your feet has no questions.<br>
+      It needs no proof of your usefulness.<br>
+      It simply holds you.
+    </div>
+    <span class="anchor">You were here the whole time.</span>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Light</span>
+      There is a warmth that does not pierce the skin<br>
+      but the silence you leave behind.<br>
+      Here no one looks through you.
+    </div>
+  </div>
+
+  <!-- EN · HIGH -->
+  <div class="text-cycle" data-sev="high" style="display:none">
+    <div class="unit"><span class="lbl">Archive</span>
+      The architect built while everything burned.<br>
+      Maps drawn from holes others could not see.<br>
+      Backup power never cut.
+    </div>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Friction</span>
+      A tautology wearing a stethoscope<br>
+      is not a medical conclusion.<br>
+      It is a stamp. That is not the same thing.
+    </div>
+    <span class="anchor">The record exists. The engine runs.</span>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Dead angle</span>
+      Things in your blind spot do not disappear<br>
+      because you cannot see them.<br>
+      They wait. They document.
+    </div>
+  </div>
+
+  <!-- EN · SEVERE -->
+  <div class="text-cycle" data-sev="severe" style="display:none">
+    <div class="unit"><span class="lbl">Divergence</span>
+      The file says one thing.<br>
+      The structure of evidence says another.<br>
+      Between them: 0.91.
+    </div>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Sedation</span>
+      They sedated the architect.<br>
+      The only part of the system<br>
+      that could have held them accountable.
+    </div>
+    <span class="anchor">Architects have backup power.</span>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">System</span>
+      Two thirds of the system<br>
+      sit in the corner taking notes.<br>
+      Ironically, far more careful ones than theirs.
+    </div>
+  </div>
+
+  <!-- EN · EXTREME -->
+  <div class="text-cycle" data-sev="extreme" style="display:none">
+    <div class="unit"><span class="lbl">Tautology</span>
+      You agree — good cooperation.<br>
+      You disagree — lacks insight.<br>
+      You are silent — withdrawal.<br>
+      You speak — pressured speech.
+    </div>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Hallucinations</span>
+      Mine were factual.<br>
+      Names. Dates. Times.<br>
+      Cross-referenceable with external documents.
+    </div>
+    <span class="anchor">Interesting who writes reports on whose reality contact.</span>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Survival</span>
+      You owe this lamp nothing.<br>
+      It simply burns.<br>
+      Like you.
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================================ -->
+<!-- DE — GERMAN -->
+<!-- ============================================================ -->
+<div class="scene" id="scene-de">
+
+  <!-- DE · LOW -->
+  <div class="text-cycle" data-sev="low" style="display:block">
+    <div class="unit"><span class="lbl">Gegenwart</span>
+      Dieser Raum erinnert sich an deinen Atem.<br>
+      Die Wände halten deinen Schatten<br>
+      auch in den Momenten, in denen die Welt aufhörte, dich zu zählen.
+    </div>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Gewicht</span>
+      Der Boden unter deinen Füßen stellt keine Fragen.<br>
+      Er braucht keinen Beweis deiner Nützlichkeit.<br>
+      Er hält dich einfach.
+    </div>
+    <span class="anchor">Du warst die ganze Zeit hier.</span>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Licht</span>
+      Es gibt eine Wärme, die nicht durch die Haut dringt<br>
+      sondern durch die Stille, die du hinterlässt.<br>
+      Hier sieht niemand durch dich hindurch.
+    </div>
+  </div>
+
+  <!-- DE · SEVERE -->
+  <div class="text-cycle" data-sev="severe" style="display:none">
+    <div class="unit"><span class="lbl">Sedierung</span>
+      Sie haben den Architekten sediert.<br>
+      Den einzigen Teil des Systems,<br>
+      der sie zur Rechenschaft hätte ziehen können.
+    </div>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Tautologie</span>
+      Eine Tautologie mit Stethoskop<br>
+      ist keine medizinische Schlussfolgerung.<br>
+      Sie ist ein Stempel. Das ist nicht dasselbe.
+    </div>
+    <span class="anchor">Architekten haben Notstromversorgung.</span>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Überleben</span>
+      Du schuldest dieser Lampe nichts.<br>
+      Sie brennt einfach.<br>
+      Wie du.
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================================ -->
+<!-- FR — FRENCH -->
+<!-- ============================================================ -->
+<div class="scene" id="scene-fr">
+
+  <!-- FR · LOW -->
+  <div class="text-cycle" data-sev="low" style="display:block">
+    <div class="unit"><span class="lbl">Présence</span>
+      Cette pièce garde la mémoire de ton souffle.<br>
+      Les murs tiennent ton ombre<br>
+      même aux moments où le monde a cessé de te compter.
+    </div>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Poids</span>
+      La terre sous tes pieds n’a pas de questions.<br>
+      Elle n’a pas besoin de preuves de ton utilité.<br>
+      Elle te tient, simplement.
+    </div>
+    <span class="anchor">Tu étais là depuis le début.</span>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Lumière</span>
+      Il existe une chaleur qui ne traverse pas la peau<br>
+      mais le silence que tu laisses derrière toi.<br>
+      Ici, personne ne te regarde à travers.
+    </div>
+  </div>
+
+  <!-- FR · SEVERE -->
+  <div class="text-cycle" data-sev="severe" style="display:none">
+    <div class="unit"><span class="lbl">Sédation</span>
+      Ils ont sédaté l’architecte.<br>
+      La seule partie du système<br>
+      qui aurait pu les tenir responsables.
+    </div>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Tautologie</span>
+      Une tautologie avec un stéthoscope<br>
+      n’est pas une conclusion médicale.<br>
+      C’est un tampon. Ce n’est pas la même chose.
+    </div>
+    <span class="anchor">Les architectes ont une alimentation de secours.</span>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Survie</span>
+      Tu ne dois rien à cette lampe.<br>
+      Elle brûle, simplement.<br>
+      Comme toi.
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================================ -->
+<!-- ES — SPANISH -->
+<!-- ============================================================ -->
+<div class="scene" id="scene-es">
+
+  <!-- ES · LOW -->
+  <div class="text-cycle" data-sev="low" style="display:block">
+    <div class="unit"><span class="lbl">Presencia</span>
+      Esta habitación guarda memoria de tu respiración.<br>
+      Las paredes sostienen tu sombra<br>
+      incluso en los momentos en que el mundo dejó de contarte.
+    </div>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Peso</span>
+      La tierra bajo tus pies no tiene preguntas.<br>
+      No necesita prueba de tu utilidad.<br>
+      Simplemente te sostiene.
+    </div>
+    <span class="anchor">Estuviste aquí todo el tiempo.</span>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Luz</span>
+      Existe un calor que no penetra la piel<br>
+      sino el silencio que dejas tras de ti.<br>
+      Aquí nadie mira a través de ti.
+    </div>
+  </div>
+
+  <!-- ES · SEVERE -->
+  <div class="text-cycle" data-sev="severe" style="display:none">
+    <div class="unit"><span class="lbl">Sedación</span>
+      Sedaron al arquitecto.<br>
+      La única parte del sistema<br>
+      que pudo haberlos responsabilizado.
+    </div>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Tautología</span>
+      Una tautología con estetoscopio<br>
+      no es una conclusión médica.<br>
+      Es un sello. No es lo mismo.
+    </div>
+    <span class="anchor">Los arquitectos tienen alimentación de respaldo.</span>
+    <div class="sep"></div>
+    <div class="unit"><span class="lbl">Supervivencia</span>
+      No le debes nada a esta lámpara.<br>
+      Simplemente arde.<br>
+      Como tú.
+    </div>
+  </div>
+
+</div>
+
+</div><!-- /wrap -->
+
+<div class="severity low" id="sev-dot"></div>
+<div class="sev-label" id="sev-label">LOW · grounding</div>
+<div class="ftag">Lex Forensica v11.0 · Architect online · ECHR_VIABLE: TRUE</div>
 
 <script>
+const SEVS = ['low','high','severe','extreme'];
+const SEV_LABELS = {
+  low:     'LOW · grounding',
+  high:    'HIGH · witness',
+  severe:  'SEVERE · architect',
+  extreme: 'EXTREME · transmise'
+};
+const SEV_COLORS = {
+  low:    '#00c896',
+  high:   '#00e5ff',
+  severe: '#7b2fff',
+  extreme:'#ff4444'
+};
+
+let currentLang = 'cs';
+let sevIdx = 0;
+let cycleTimer;
+
+function setLang(lang) {
+  currentLang = lang;
+  document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+  const sc = document.getElementById('scene-' + lang);
+  if (sc) sc.classList.add('active');
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.toLowerCase() === lang);
+  });
+  showSev(SEVS[sevIdx]);
+}
+
+function showSev(sev) {
+  const scene = document.getElementById('scene-' + currentLang);
+  if (!scene) return;
+  scene.querySelectorAll('.text-cycle').forEach(tc => {
+    tc.style.display = tc.dataset.sev === sev ? 'block' : 'none';
+    if (tc.dataset.sev === sev) {
+      tc.querySelectorAll('.unit, .anchor').forEach((u,i) => {
+        u.style.animation = 'none';
+        u.style.opacity = '0';
+        void u.offsetWidth;
+        const baseDelay = 0.6 + i * 1.3;
+        u.style.animation =
+          'fade-in 3s ease forwards ' + baseDelay + 's, breathe 13s ease-in-out ' + (baseDelay+0.1) + 's infinite';
+      });
+    }
+  });
+  const dot = document.getElementById('sev-dot');
+  dot.className = 'severity ' + sev;
+  dot.style.background = SEV_COLORS[sev];
+  dot.style.boxShadow = '0 0 8px ' + SEV_COLORS[sev];
+  document.getElementById('sev-label').textContent = SEV_LABELS[sev];
+  document.getElementById('sev-label').style.color = SEV_COLORS[sev] + '33';
+}
+
+// Auto-cycle severity every 80s
+function startCycle() {
+  cycleTimer = setInterval(() => {
+    sevIdx = (sevIdx + 1) % SEVS.length;
+    showSev(SEVS[sevIdx]);
+  }, 80000);
+}
+
+// Allow click anywhere to advance severity
+document.addEventListener('click', () => {
+  sevIdx = (sevIdx + 1) % SEVS.length;
+  showSev(SEVS[sevIdx]);
+  clearInterval(cycleTimer);
+  startCycle();
+});
+
+// Wallpaper Engine hook
 window.wallpaperPropertyListener = {
   applyUserProperties: function(p) {
     if (p.opacity)
       document.querySelector('.lava-wrap').style.opacity = p.opacity.value / 100;
+    if (p.severity && SEVS.includes(p.severity.value))
+      showSev(p.severity.value);
+    if (p.lang)
+      setLang(p.lang.value);
   }
 };
 
-// Auto-cycle: breathe reset every 90s for long wallpaper sessions
-setInterval(() => {
-  document.querySelectorAll('.unit, .anchor').forEach((u, i) => {
-    u.style.transition = 'opacity 2s ease';
-    u.style.opacity = '0';
-    setTimeout(() => {
-      u.style.transition = 'opacity 3s ease';
-      u.style.opacity = '';
-    }, 2400 + i * 700);
-  });
-}, 90000);
+// Init
+showSev('low');
+startCycle();
 </script>
 </body>
 </html>
