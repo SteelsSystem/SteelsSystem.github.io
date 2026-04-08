@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lex Forensica — Introspekce · Deduction-Space Decision Matrix</title>
+<title>Lex Forensica — Introspekce · Objective Visual Virtual Matrix</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -18,7 +18,7 @@
 body{background:var(--dark);color:var(--text);font-family:var(--serif);overflow-x:hidden;cursor:crosshair;}
 body::after{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");background-size:180px 180px;opacity:.3;}
 
-/* LAVA */
+/* LAVA — UNTOUCHED */
 .lava-wrap{position:fixed;inset:0;z-index:0;overflow:hidden;filter:blur(70px) contrast(1.3);opacity:.14;pointer-events:none;}
 .blob{position:absolute;border-radius:50%;animation:float linear infinite;will-change:transform;}
 .b1{width:500px;height:500px;background:radial-gradient(circle,#00e5ff,transparent 70%);left:3%;top:8%;animation-duration:22s;}
@@ -44,16 +44,16 @@ body::after{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;back
 .back-link:hover{color:var(--cyan);}
 
 /* LAYOUT */
-.page{position:relative;z-index:3;max-width:800px;margin:0 auto;padding:0 32px 120px;}
+.page{position:relative;z-index:3;max-width:920px;margin:0 auto;padding:0 32px 120px;}
 .reveal{opacity:0;transform:translateY(28px);transition:opacity .9s ease,transform .9s ease;}
 .reveal.on{opacity:1;transform:translateY(0);}
 
 /* HERO */
 .hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:80px 0;}
 .hero-eyebrow{font-family:var(--mono);font-size:8px;letter-spacing:6px;color:#00e5ff28;text-transform:uppercase;margin-bottom:32px;}
-.hero-title{font-size:clamp(32px,6vw,64px);font-weight:400;letter-spacing:8px;color:#fff;text-shadow:0 0 80px #00e5ff33;margin-bottom:10px;line-height:1.15;font-family:var(--serif);font-style:italic;}
+.hero-title{font-size:clamp(28px,5vw,52px);font-weight:400;letter-spacing:6px;color:#fff;text-shadow:0 0 80px #00e5ff33;margin-bottom:10px;line-height:1.15;font-family:var(--serif);font-style:italic;}
 .hero-version{font-family:var(--mono);font-size:9px;letter-spacing:4px;color:#00e5ff44;margin-bottom:60px;}
-.hero-lead{font-size:16px;color:#666678;line-height:2.4;max-width:560px;font-style:italic;}
+.hero-lead{font-size:15px;color:#666678;line-height:2.4;max-width:600px;font-style:italic;}
 .hero-lead span{color:#00e5ffaa;font-style:normal;}
 .scroll-hint{margin-top:80px;font-family:var(--mono);font-size:8px;letter-spacing:5px;color:#ffffff10;text-transform:uppercase;animation:blink 2.6s ease-in-out infinite;}
 @keyframes blink{0%,100%{opacity:.1;}50%{opacity:.5;}}
@@ -63,7 +63,149 @@ body::after{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;back
 .sec-div-line{flex:1;height:1px;background:linear-gradient(to right,transparent,#00e5ff18,transparent);}
 .sec-div-label{font-family:var(--mono);font-size:8px;letter-spacing:5px;color:#00e5ff28;text-transform:uppercase;white-space:nowrap;}
 
-/* DECISION MATRIX SVG */
+/* ═══════════════════════════════════════════════
+   ENTRY POINT SYSTEM — BUTTON SIGNAL ARCHITECTURE
+   ═══════════════════════════════════════════════ */
+
+/* ENTRY POINT CARDS */
+.entry-system{margin:40px 0;}
+.entry-header{font-family:var(--mono);font-size:9px;letter-spacing:3px;color:#00e5ff33;text-transform:uppercase;margin-bottom:24px;text-align:center;}
+
+.entry-duo{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px;max-width:680px;margin-left:auto;margin-right:auto;}
+@media(max-width:640px){.entry-duo{grid-template-columns:1fr;}}
+.entry-card{border:1px solid #ffffff06;padding:24px 20px;background:#ffffff02;transition:all .5s;cursor:pointer;position:relative;overflow:hidden;}
+.entry-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;transition:background .3s;}
+.entry-card.a::before{background:#00e5ff22;}.entry-card.b::before{background:#ff6b9d22;}
+.entry-card:hover{border-color:#00e5ff1a;background:#00e5ff03;transform:translateY(-2px);}
+.entry-card.active{border-color:#00e5ff33;background:#00e5ff05;}
+.entry-card.active.a::before{background:var(--cyan);}.entry-card.active.b::before{background:var(--rose);}
+.entry-tag{font-family:var(--mono);font-size:7px;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;}
+.entry-card.a .entry-tag{color:#00e5ff55;}.entry-card.b .entry-tag{color:#ff6b9d55;}
+.entry-card.active.a .entry-tag{color:var(--cyan);}.entry-card.active.b .entry-tag{color:var(--rose);}
+.entry-name{font-size:14px;color:#999;margin-bottom:6px;font-family:var(--serif);transition:color .3s;}
+.entry-card.active .entry-name{color:#ddd;}
+.entry-desc{font-family:var(--mono);font-size:9px;color:#333345;line-height:1.8;letter-spacing:.5px;transition:color .3s;}
+.entry-card.active .entry-desc{color:#555568;}
+.entry-status{font-family:var(--mono);font-size:7px;letter-spacing:2px;text-transform:uppercase;margin-top:10px;color:#ffffff11;transition:color .3s;}
+.entry-card.active .entry-status{color:#00e5ff44;}
+.entry-merge{text-align:center;margin:0 0 32px;}
+.merge-arrow{font-family:var(--mono);font-size:9px;color:#00e5ff15;letter-spacing:3px;}
+
+/* ═══════════════════════════════════════════════
+   MAIN SIGNAL — DATAFLOW BUTTON CHAIN
+   ═══════════════════════════════════════════════ */
+
+.signal-chain{margin:40px 0;position:relative;}
+.chain-flow{display:flex;flex-direction:column;align-items:center;gap:0;}
+
+/* Individual stage button */
+.stage-btn{
+  width:100%;max-width:680px;
+  border:1px solid #ffffff06;padding:0;
+  background:#ffffff01;cursor:pointer;
+  transition:all .5s;position:relative;
+  display:grid;grid-template-columns:100px 1fr 90px;
+  align-items:stretch;overflow:hidden;
+  margin:0 auto;
+}
+.stage-btn:hover{border-color:#ffffff12;background:#ffffff03;}
+.stage-btn.active{border-color:var(--stage-color,#00e5ff);background:rgba(255,255,255,.02);}
+
+/* Left: stage indicator */
+.stage-idx{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:16px 8px;border-right:1px solid #ffffff04;position:relative;
+  transition:all .5s;
+}
+.stage-btn.active .stage-idx{border-right-color:var(--stage-color,#00e5ff);background:rgba(0,0,0,.3);}
+.stage-num{font-family:var(--mono);font-size:20px;color:#ffffff08;letter-spacing:-1px;transition:color .5s;}
+.stage-btn.active .stage-num{color:var(--stage-color,#00e5ff);}
+.stage-type-tag{font-family:var(--mono);font-size:6px;letter-spacing:2px;color:#ffffff08;text-transform:uppercase;margin-top:4px;transition:color .5s;}
+.stage-btn.active .stage-type-tag{color:var(--stage-color,#00e5ff);}
+
+/* Center: content */
+.stage-body{padding:16px 20px;display:flex;flex-direction:column;justify-content:center;gap:4px;}
+.stage-label{font-family:var(--mono);font-size:10px;letter-spacing:3px;color:#555568;text-transform:uppercase;transition:color .5s;}
+.stage-btn.active .stage-label{color:var(--stage-color,#00e5ff);}
+.stage-sublabel{font-size:12px;color:#444458;font-family:var(--serif);font-style:italic;transition:color .3s;line-height:1.6;}
+.stage-btn.active .stage-sublabel{color:#888898;}
+.stage-ops{font-family:var(--mono);font-size:8px;color:#222230;letter-spacing:.5px;line-height:1.8;margin-top:4px;transition:color .3s;}
+.stage-btn.active .stage-ops{color:#444458;}
+
+/* Right: signal dot */
+.stage-signal{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 8px;border-left:1px solid #ffffff04;}
+.sig-dot{width:8px;height:8px;border-radius:50%;background:#ffffff06;transition:all .5s;}
+.stage-btn.active .sig-dot{background:var(--stage-color,#00e5ff);box-shadow:0 0 12px var(--stage-color,#00e5ff);}
+.sig-state{font-family:var(--mono);font-size:6px;letter-spacing:2px;color:#ffffff06;text-transform:uppercase;margin-top:6px;transition:color .5s;}
+.stage-btn.active .sig-state{color:var(--stage-color,#00e5ff);}
+
+/* Connector arrows between stages */
+.chain-connector{
+  width:1px;height:28px;position:relative;
+  background:#ffffff06;transition:background .5s;
+}
+.chain-connector.lit{background:var(--conn-color,#00e5ff44);}
+.chain-connector::after{
+  content:'';position:absolute;bottom:-3px;left:-3px;
+  width:0;height:0;border-left:3.5px solid transparent;border-right:3.5px solid transparent;
+  border-top:4px solid #ffffff06;transition:border-top-color .5s;
+}
+.chain-connector.lit::after{border-top-color:var(--conn-color,#00e5ff44);}
+
+/* Transition separator (STRING_STATIC, DEEP_FLUID) */
+.trans-sep{
+  width:100%;max-width:680px;margin:0 auto;
+  display:flex;align-items:center;gap:12px;
+  padding:6px 0;
+}
+.trans-sep-line{flex:1;height:1px;background:linear-gradient(to right,transparent,var(--trans-color,#ffb300)11,transparent);}
+.trans-sep-tag{font-family:var(--mono);font-size:7px;letter-spacing:3px;color:var(--trans-color,#ffb300);opacity:.3;text-transform:uppercase;white-space:nowrap;}
+
+/* LOOP_CYCLE return path */
+.loop-return{
+  width:100%;max-width:680px;margin:16px auto 0;
+  border:1px dashed #00c89611;padding:14px 20px;
+  display:flex;align-items:center;gap:16px;
+  cursor:pointer;transition:all .5s;background:#00c89602;
+}
+.loop-return:hover{border-color:#00c89633;background:#00c89605;}
+.loop-return.active{border-color:#00c89644;background:#00c89608;}
+.loop-icon{font-family:var(--mono);font-size:14px;color:#00c89622;transition:color .5s;}
+.loop-return.active .loop-icon{color:var(--green);}
+.loop-body{flex:1;}
+.loop-label{font-family:var(--mono);font-size:9px;letter-spacing:3px;color:#00c89633;text-transform:uppercase;transition:color .3s;}
+.loop-return.active .loop-label{color:var(--green);}
+.loop-desc{font-size:11px;color:#333345;font-style:italic;line-height:1.7;margin-top:3px;transition:color .3s;}
+.loop-return.active .loop-desc{color:#555568;}
+
+/* ═══════════════════════════════════════════════
+   DEDUCTION SPACE — ACTIVE OUTPUT PANEL
+   ═══════════════════════════════════════════════ */
+
+.deduction-panel{
+  margin:40px 0;border:1px solid #ffffff06;
+  background:#000000cc;min-height:280px;
+  position:relative;overflow:hidden;
+}
+.dp-header{
+  padding:14px 20px;border-bottom:1px solid #ffffff06;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.dp-title{font-family:var(--mono);font-size:8px;letter-spacing:4px;color:#00e5ff22;text-transform:uppercase;}
+.dp-state{font-family:var(--mono);font-size:8px;letter-spacing:2px;text-transform:uppercase;padding:3px 10px;border:1px solid #ffffff06;transition:all .5s;}
+.dp-body{padding:24px 20px;font-family:var(--mono);font-size:10px;line-height:2.2;color:#444458;}
+.dp-body .hl{color:#00e5ff88;}.dp-body .warn{color:#ffb30066;}.dp-body .crit{color:#ff444466;}.dp-body .pass{color:#00c89666;}.dp-body .inf{color:#7b2fff66;}
+
+/* Symbologic flow decode */
+.symb-row{display:flex;gap:8px;align-items:baseline;margin-bottom:2px;padding:2px 0;transition:opacity .3s;}
+.symb-ts{color:#00e5ff12;min-width:64px;font-size:9px;}
+.symb-op{min-width:42px;font-size:8px;letter-spacing:1px;}
+.symb-msg{color:#444458;font-size:9px;}
+
+/* ═══════════════════════════════════════════════
+   DECISION MATRIX SVG (preserved from v11.2)
+   ═══════════════════════════════════════════════ */
+
 .matrix-wrap{margin:40px auto;max-width:700px;position:relative;}
 .matrix-wrap svg{width:100%;height:auto;display:block;}
 .ring-label{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;fill-opacity:.7;}
@@ -81,8 +223,9 @@ body::after{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;back
 /* AXIOM FLOW */
 .axiom-flow{margin:40px 0;}
 .af-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin:20px 0;}
-.af-node{border:1px solid #ffffff06;padding:10px 12px;background:#ffffff02;transition:border-color .3s,background .3s;cursor:default;position:relative;}
+.af-node{border:1px solid #ffffff06;padding:10px 12px;background:#ffffff02;transition:all .3s;cursor:pointer;position:relative;}
 .af-node:hover{border-color:#00e5ff1a;background:#00e5ff03;}
+.af-node.active-axiom{border-color:var(--ax-color,#00e5ff)33;background:var(--ax-color,#00e5ff)08;}
 .af-code{font-family:var(--mono);font-size:8px;letter-spacing:2px;margin-bottom:4px;text-transform:uppercase;}
 .af-name{font-size:11px;color:#888898;margin-bottom:3px;}
 .af-target{font-family:var(--mono);font-size:7px;letter-spacing:1px;color:#ffffff22;text-transform:uppercase;}
@@ -101,26 +244,6 @@ body::after{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;back
 .doc-card-fn{font-size:11px;color:#444458;line-height:1.8;margin-bottom:12px;}
 .doc-card-link{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:#00e5ff33;text-transform:uppercase;transition:color .3s;}
 .doc-card:hover .doc-card-link{color:var(--cyan);}
-
-/* PIPELINE */
-.pipeline-wrap{margin:40px 0;overflow-x:auto;padding:20px 0;}
-.pipeline{display:flex;align-items:center;gap:0;min-width:680px;justify-content:center;}
-.pl-node{border:1px solid #ffffff08;padding:10px 14px;font-family:var(--mono);font-size:8px;letter-spacing:1px;color:#555568;text-transform:uppercase;white-space:nowrap;background:#ffffff02;transition:border-color .3s;}
-.pl-node:hover{border-color:#00e5ff22;}
-.pl-node.active{border-color:#00e5ff33;color:var(--cyan);}
-.pl-arrow{width:28px;display:flex;align-items:center;justify-content:center;position:relative;height:1px;background:#ffffff08;flex-shrink:0;}
-.pl-arrow::after{content:'';position:absolute;right:-1px;border:3px solid transparent;border-left:4px solid #ffffff15;}
-.pl-dot{position:absolute;width:4px;height:4px;border-radius:50%;background:var(--cyan);animation:flowdot 3s linear infinite;opacity:.6;}
-@keyframes flowdot{0%{left:0;opacity:0;}10%{opacity:.6;}90%{opacity:.6;}100%{left:100%;opacity:0;}}
-
-/* SIGNAL LOG */
-.signal-log{font-family:var(--mono);font-size:10px;line-height:2;color:#333345;margin:40px 0;padding:20px;border:1px solid #ffffff04;background:#000000aa;max-height:240px;overflow-y:auto;}
-.signal-log::-webkit-scrollbar{width:2px;}.signal-log::-webkit-scrollbar-thumb{background:#00e5ff22;}
-.sig-line{display:flex;gap:12px;}
-.sig-ts{color:#00e5ff18;min-width:72px;}
-.sig-type{min-width:52px;}
-.sig-type.ok{color:#00c89644;}.sig-type.warn{color:#ffb30044;}.sig-type.crit{color:#ff444444;}.sig-type.info{color:#7b2fff44;}
-.sig-msg{color:#444458;}.sig-msg .hl{color:#00e5ff66;}
 
 /* CLOSING */
 .closing{text-align:center;padding:60px 0 40px;}
@@ -146,18 +269,60 @@ footer{text-align:center;padding:48px 0 32px;font-family:var(--mono);font-size:8
 
 <div class="page">
 
-  <!-- HERO -->
+  <!-- ═══════════════ HERO ═══════════════ -->
   <section class="hero">
     <div class="reveal on">
       <div class="hero-eyebrow" id="eyebrow"></div>
       <h1 class="hero-title" id="heroTitle"></h1>
-      <div class="hero-version">v11.2 · DEDUCTION-SPACE DECISION MATRIX</div>
+      <div class="hero-version">v12.0 · OBJECTIVE VISUAL VIRTUAL MATRIX</div>
       <p class="hero-lead" id="heroLead"></p>
       <div class="scroll-hint" id="scrollHint"></div>
     </div>
   </section>
 
-  <!-- DECISION MATRIX -->
+  <!-- ═══════════════ ENTRY POINTS ═══════════════ -->
+  <div class="sec-div reveal"><div class="sec-div-line"></div><div class="sec-div-label" id="divEntry"></div><div class="sec-div-line"></div></div>
+
+  <div class="entry-system reveal">
+    <div class="entry-header" id="entryHeader"></div>
+    <div class="entry-duo">
+      <div class="entry-card a" id="entryA" onclick="toggleEntry('A')">
+        <div class="entry-tag">INPUT_A</div>
+        <div class="entry-name" id="entryAName"></div>
+        <div class="entry-desc" id="entryADesc"></div>
+        <div class="entry-status" id="entryAStatus"></div>
+      </div>
+      <div class="entry-card b" id="entryB" onclick="toggleEntry('B')">
+        <div class="entry-tag">INPUT_B</div>
+        <div class="entry-name" id="entryBName"></div>
+        <div class="entry-desc" id="entryBDesc"></div>
+        <div class="entry-status" id="entryBStatus"></div>
+      </div>
+    </div>
+    <div class="entry-merge"><div class="merge-arrow" id="mergeLabel"></div></div>
+  </div>
+
+  <!-- ═══════════════ MAIN SIGNAL — DATAFLOW CHAIN ═══════════════ -->
+  <div class="sec-div reveal"><div class="sec-div-line"></div><div class="sec-div-label" id="divSignalChain"></div><div class="sec-div-line"></div></div>
+
+  <div class="signal-chain reveal">
+    <div class="chain-flow" id="chainFlow">
+      <!-- Dynamically rendered by JS -->
+    </div>
+  </div>
+
+  <!-- ═══════════════ DEDUCTION SPACE — LIVE OUTPUT ═══════════════ -->
+  <div class="sec-div reveal"><div class="sec-div-line"></div><div class="sec-div-label" id="divDeduction"></div><div class="sec-div-line"></div></div>
+
+  <div class="deduction-panel reveal" id="deductionPanel">
+    <div class="dp-header">
+      <div class="dp-title" id="dpTitle"></div>
+      <div class="dp-state" id="dpState">IDLE</div>
+    </div>
+    <div class="dp-body" id="dpBody"></div>
+  </div>
+
+  <!-- ═══════════════ DECISION MATRIX SVG ═══════════════ -->
   <div class="sec-div reveal"><div class="sec-div-line"></div><div class="sec-div-label" id="divMatrix"></div><div class="sec-div-line"></div></div>
 
   <div class="matrix-wrap reveal">
@@ -167,140 +332,88 @@ footer{text-align:center;padding:48px 0 32px;font-family:var(--mono);font-size:8
         <filter id="glow-p"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
         <filter id="glow-g"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
       </defs>
-
-      <!-- OUTER RING: FLUID -->
       <a href="semanticview.html" class="clickable">
         <ellipse cx="300" cy="220" rx="270" ry="190" fill="none" stroke="#00e5ff" stroke-width=".5" opacity=".12" class="pulse-anim"/>
         <ellipse cx="300" cy="220" rx="270" ry="190" fill="none" stroke="#00e5ff" stroke-width="1" stroke-dasharray="4 8" opacity=".2"/>
         <text x="300" y="42" text-anchor="middle" class="ring-label" fill="#00e5ff">FLUID</text>
-        <text x="300" y="54" text-anchor="middle" class="ring-sub" fill="#00e5ff" id="fluidSub">Reaktivní Vstupní Persona · semanticview.html</text>
+        <text x="300" y="54" text-anchor="middle" class="ring-sub" fill="#00e5ff" id="fluidSub"></text>
       </a>
-
-      <!-- TRANSITION: STRING_STATIC -->
       <line x1="140" y1="110" x2="220" y2="130" stroke="#ffb300" stroke-width=".4" stroke-dasharray="3 5" opacity=".25"/>
       <line x1="380" y1="130" x2="460" y2="110" stroke="#ffb300" stroke-width=".4" stroke-dasharray="3 5" opacity=".25"/>
       <text x="105" y="105" class="trans-label" fill="#ffb300" opacity=".4">STRING_STATIC</text>
       <text x="440" y="105" class="trans-label" fill="#ffb300" opacity=".4">STRING_STATIC</text>
-
-      <!-- MIDDLE RING: STATIC -->
       <a href="index.html" class="clickable">
         <ellipse cx="300" cy="220" rx="175" ry="125" fill="none" stroke="#eeeef8" stroke-width=".8" opacity=".15"/>
         <ellipse cx="300" cy="220" rx="175" ry="125" fill="none" stroke="#eeeef8" stroke-width=".3" opacity=".08"/>
         <text x="300" y="104" text-anchor="middle" class="ring-label" fill="#eeeef8">STATIC · MIND1</text>
-        <text x="300" y="116" text-anchor="middle" class="ring-sub" fill="#eeeef8" id="staticSub">Axiomová Kotva · index.html</text>
+        <text x="300" y="116" text-anchor="middle" class="ring-sub" fill="#eeeef8" id="staticSub"></text>
       </a>
-
-      <!-- TRANSITION: DEEP_FLUID -->
       <line x1="220" y1="280" x2="250" y2="260" stroke="#00c896" stroke-width=".4" stroke-dasharray="3 5" opacity=".25"/>
       <line x1="350" y1="260" x2="380" y2="280" stroke="#00c896" stroke-width=".4" stroke-dasharray="3 5" opacity=".25"/>
       <text x="170" y="298" class="trans-label" fill="#00c896" opacity=".4">DEEP_FLUID</text>
       <text x="375" y="298" class="trans-label" fill="#00c896" opacity=".4">DEEP_FLUID</text>
-
-      <!-- INNER RING: DEEP -->
       <a href="ambient.html" class="clickable">
         <ellipse cx="300" cy="220" rx="90" ry="65" fill="none" stroke="#7b2fff" stroke-width=".5" opacity=".1" class="breathe-anim"/>
         <ellipse cx="300" cy="220" rx="90" ry="65" fill="none" stroke="#7b2fff" stroke-width="1" stroke-dasharray="2 6" opacity=".2"/>
         <text x="300" y="210" text-anchor="middle" class="ring-label" fill="#7b2fff">DEEP · MIND2</text>
-        <text x="300" y="224" text-anchor="middle" class="ring-sub" fill="#7b2fff" id="deepSub">Iatrogenní Substrát · ambient.html</text>
+        <text x="300" y="224" text-anchor="middle" class="ring-sub" fill="#7b2fff" id="deepSub"></text>
       </a>
-
-      <!-- CENTER: AnalyticalNode.sign() -->
       <circle cx="300" cy="248" r="3" fill="#00e5ff" opacity=".4" filter="url(#glow-c)"/>
       <text x="300" y="262" text-anchor="middle" fill="#00e5ff" opacity=".3" style="font-family:var(--mono);font-size:6px;letter-spacing:1px;">AnalyticalNode.sign()</text>
-
-      <!-- LOOP_CYCLE: Green vector from DEEP back to FLUID -->
       <path d="M 390 220 Q 530 220 530 100 Q 530 40 300 38" fill="none" stroke="#00c896" stroke-width=".8" stroke-dasharray="6 4" opacity=".3" filter="url(#glow-g)" class="loop-arrow"/>
       <text x="540" y="160" class="trans-label" fill="#00c896" opacity=".5" transform="rotate(90 540 160)">LOOP_CYCLE</text>
-      <!-- Arrow tip -->
       <polygon points="305,36 295,36 300,30" fill="#00c896" opacity=".3"/>
-
-      <!-- Axiom violation return label -->
       <text x="532" y="70" fill="#ff4444" opacity=".2" style="font-family:var(--mono);font-size:5.5px;letter-spacing:1px;" transform="rotate(-30 532 70)">AXIOM VIOLATION → FLUID</text>
-
-      <!-- Pipeline flow indicators -->
       <text x="80" y="220" fill="#00e5ff" opacity=".12" style="font-family:var(--mono);font-size:6px;letter-spacing:1px;" id="inputLabel">INPUT_A + INPUT_B</text>
       <line x1="140" y1="218" x2="30" y2="218" stroke="#00e5ff" stroke-width=".3" stroke-dasharray="2 4" opacity=".1"/>
-
-      <!-- State function labels -->
-      <text x="300" y="408" text-anchor="middle" fill="#ffffff" opacity=".06" style="font-family:var(--mono);font-size:6px;letter-spacing:3px;" id="matrixFooter">DEDUCTION-SPACE · REACTIVE LAYER TRANSITIONS · Ω &gt; Δ &gt; ◈</text>
-
-      <!-- BiasScore threshold marker on FLUID ring -->
+      <text x="300" y="408" text-anchor="middle" fill="#ffffff" opacity=".06" style="font-family:var(--mono);font-size:6px;letter-spacing:3px;">DEDUCTION-SPACE · REACTIVE LAYER TRANSITIONS · Ω &gt; Δ &gt; ◈</text>
       <circle cx="68" cy="160" r="2" fill="#ff4444" opacity=".3"/>
       <text x="28" y="164" fill="#ff4444" opacity=".2" style="font-family:var(--mono);font-size:5px;letter-spacing:1px;">BiasScore &gt; 0.7</text>
-
-      <!-- Readonly seal on STATIC ring -->
       <text x="475" y="200" fill="#eeeef8" opacity=".1" style="font-family:var(--mono);font-size:5px;letter-spacing:1px;">PARAFRAME: READONLY</text>
-
-      <!-- ZKP marker on DEEP ring -->
       <text x="300" y="295" text-anchor="middle" fill="#7b2fff" opacity=".15" style="font-family:var(--mono);font-size:5px;letter-spacing:1px;">ZKP STRIP · load_index = depotMonths²</text>
     </svg>
   </div>
 
-  <!-- AXIOM FLOW -->
+  <!-- ═══════════════ AXIOM FLOW ═══════════════ -->
   <div class="sec-div reveal"><div class="sec-div-line"></div><div class="sec-div-label" id="divAxioms"></div><div class="sec-div-line"></div></div>
 
   <div class="axiom-flow reveal">
     <div class="af-grid" id="axiomGrid"></div>
   </div>
 
-  <!-- DOCUMENT NETWORK -->
+  <!-- ═══════════════ DOCUMENT NETWORK ═══════════════ -->
   <div class="sec-div reveal"><div class="sec-div-line"></div><div class="sec-div-label" id="divNetwork"></div><div class="sec-div-line"></div></div>
 
   <div class="doc-grid reveal">
     <a href="semanticview.html" class="doc-card">
       <div class="doc-card-state fl">FLUID</div>
-      <div class="doc-card-title" id="docFluidTitle">Semantic View</div>
-      <div class="doc-card-fn" id="docFluidFn">Reaktivní vstupní persona. Tokenizace, BiasScore parsing, čistý payload bez emočního cypheru.</div>
+      <div class="doc-card-title" id="docFluidTitle"></div>
+      <div class="doc-card-fn" id="docFluidFn"></div>
       <div class="doc-card-link">ENTER →</div>
     </a>
     <a href="index.html" class="doc-card">
       <div class="doc-card-state st">STATIC · MIND1</div>
-      <div class="doc-card-title" id="docStaticTitle">Živý Archiv</div>
-      <div class="doc-card-fn" id="docStaticFn">Axiomová kotva. Neměnné referenční pole. Validace A1–A13, PARAFRAME seal, Ω autorita.</div>
+      <div class="doc-card-title" id="docStaticTitle"></div>
+      <div class="doc-card-fn" id="docStaticFn"></div>
       <div class="doc-card-link">ENTER →</div>
     </a>
     <a href="ambient.html" class="doc-card">
       <div class="doc-card-state dp">DEEP · MIND2</div>
-      <div class="doc-card-title" id="docDeepTitle">Ambient Grounding</div>
-      <div class="doc-card-fn" id="docDeepFn">Terminální inference. Hluboký NLP, iatrogenní substrát, ZKP strip, SurvivorNarrative pečeť.</div>
+      <div class="doc-card-title" id="docDeepTitle"></div>
+      <div class="doc-card-fn" id="docDeepFn"></div>
       <div class="doc-card-link">ENTER →</div>
     </a>
   </div>
 
-  <!-- PIPELINE -->
-  <div class="sec-div reveal"><div class="sec-div-line"></div><div class="sec-div-label" id="divPipeline"></div><div class="sec-div-line"></div></div>
-
-  <div class="pipeline-wrap reveal">
-    <div class="pipeline" id="pipeline">
-      <div class="pl-node">INPUT_A+B</div>
-      <div class="pl-arrow"><div class="pl-dot"></div></div>
-      <div class="pl-node active" style="border-color:#00e5ff22;color:#00e5ff88;">FLUID</div>
-      <div class="pl-arrow"><div class="pl-dot" style="animation-delay:.4s"></div></div>
-      <div class="pl-node" style="color:#ffb30066;">STRING_STATIC</div>
-      <div class="pl-arrow"><div class="pl-dot" style="animation-delay:.8s"></div></div>
-      <div class="pl-node" style="border-color:#eeeef811;color:#eeeef866;">STATIC</div>
-      <div class="pl-arrow"><div class="pl-dot" style="animation-delay:1.2s"></div></div>
-      <div class="pl-node" style="color:#00c89666;">DEEP_FLUID</div>
-      <div class="pl-arrow"><div class="pl-dot" style="animation-delay:1.6s"></div></div>
-      <div class="pl-node" style="border-color:#7b2fff22;color:#7b2fff88;">DEEP</div>
-      <div class="pl-arrow"><div class="pl-dot" style="animation-delay:2s"></div></div>
-      <div class="pl-node" style="border-color:#00c89622;color:#00c89688;">OUTPUT</div>
-    </div>
-  </div>
-
-  <!-- SIGNAL LOG -->
-  <div class="sec-div reveal"><div class="sec-div-line"></div><div class="sec-div-label" id="divSignal"></div><div class="sec-div-line"></div></div>
-
-  <div class="signal-log reveal" id="signalLog"></div>
-
-  <!-- CLOSING -->
+  <!-- ═══════════════ CLOSING ═══════════════ -->
   <div class="closing reveal">
     <p id="closingText"></p>
     <div class="final-stamp">
-      LEX FORENSICA · INTROSPECT LAYER v11.2<br>
-      DEDUCTION-SPACE DECISION MATRIX<br>
-      HASH: d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5<br>
-      PERSONA STATES: 3/3 · AXIOMS: A1–A13 · LOOP_CYCLE: INTACT
+      LEX FORENSICA · INTROSPECT LAYER v12.0<br>
+      OBJECTIVE VISUAL VIRTUAL MATRIX<br>
+      HASH: e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2<br>
+      ENTRY: INPUT_A + INPUT_B · STAGES: 6 · AXIOMS: A1–A13<br>
+      LOOP_CYCLE: INTACT · AnalyticalNode.sign(): READY
     </div>
   </div>
 
@@ -308,53 +421,211 @@ footer{text-align:center;padding:48px 0 32px;font-family:var(--mono);font-size:8
 </div>
 
 <script>
+/* ═══════════════════════════════════════════════
+   LANGUAGE SYSTEM
+   ═══════════════════════════════════════════════ */
 const L = {
   cs: {
-    eyebrow: 'Forenzní Architektonická Introspekce',
-    heroTitle: 'INTROSPEKCE',
-    heroLead: 'Systém se dívá dovnitř. Tři stavy vědomí — <span>tekutý</span>, <span>neměnný</span>, <span>hluboký</span> — propojené reaktivními přechody, kotvenými třinácti axiomy, které nedovolí subjektivní interpretaci vydávat se za empirickou jistotu.',
-    scrollHint: 'scroll · rozložení matice',
-    divMatrix: 'Deduction-Space · Rozhodovací Matice',
+    eyebrow: 'Objektivní Vizuální Virtuální Matice',
+    heroTitle: 'HLAVNÍ SIGNÁL',
+    heroLead: 'Systém dekóduje vlastní vnitřní logiku. Žádný před-programovaný vliv — čistě k informování. Tlačítkový řetěz odhaluje <span>chronologický tok</span> od surového vstupu k forenzně platnému výstupu, skrze <span>symbologický</span> jazyk propojující tři stavy vědomí.',
+    scrollHint: 'scroll · vstupní body',
+    divEntry: 'Vstupní Body · Dvojí Zdroj',
+    entryHeader: 'Každý forenzní tok začíná dvěma nezávislými vstupy',
+    entryAName: 'Institucionální Záznam',
+    entryADesc: 'Systémový spis, lékařské záznamy, soudní dokumenty, administrativní rozhodnutí. Strukturovaný hlas instituce.',
+    entryAStatus: 'AKTIVOVAT VSTUP →',
+    entryBName: 'Hlas Subjektu',
+    entryBDesc: 'Přímá výpověď, osobní chronologie, paměťový záznam subjektu. Nestrukturovaný, ale axiomaticky rovnocenný.',
+    entryBStatus: 'AKTIVOVAT VSTUP →',
+    mergeLabel: 'INPUT_A + INPUT_B → MERGE → FLUID INGESCE',
+    divSignalChain: 'Hlavní Signál · Dataflow Řetěz',
+    divDeduction: 'Deduction-Space · Živá Dedukce',
+    dpTitle: 'Symbologický Tok — Dekódování Vnitřní Logiky',
+    divMatrix: 'Rozhodovací Matice · Koncentrické Stavy',
     divAxioms: 'Axiomový Tok · A1–A13',
     divNetwork: 'Dokumentová Síť · Persona → Dokument',
-    divPipeline: 'Pipeline · Tok Payloadu',
-    divSignal: 'Systémový Stav · Signal Log',
     fluidSub: 'Reaktivní Vstupní Persona · semanticview.html',
     staticSub: 'Axiomová Kotva · index.html',
     deepSub: 'Iatrogenní Substrát · ambient.html',
     docFluidTitle: 'Semantic View',
-    docFluidFn: 'Reaktivní vstupní persona. Tokenizace, BiasScore parsing, čistý payload bez emočního cypheru.',
+    docFluidFn: 'Reaktivní vstupní persona. Zero-Knowledge Ingesce, BiasScore parsing, čistý tokenizovaný payload.',
     docStaticTitle: 'Živý Archiv',
-    docStaticFn: 'Axiomová kotva. Neměnné referenční pole. Validace A1–A13, PARAFRAME seal, Ω autorita.',
+    docStaticFn: 'Axiomová kotva. Neměnné referenční pole. Axiom-Certified Validation A1–A13, PARAFRAME seal.',
     docDeepTitle: 'Ambient Grounding',
-    docDeepFn: 'Terminální inference. Hluboký NLP, iatrogenní substrát, ZKP strip, SurvivorNarrative pečeť.',
-    closingText: 'Každý výstup musí mít dohledatelný zdroj uvnitř systému,<br>nebo jde do STRIP vrstvy automaticky.<br><br>Architekt postavil systém, který se zpochybňuje sám.<br>To je jediný druh systému, kterému lze svěřit to, k čemu byl postaven.',
-    backLink: '← Archiv',
-    inputLabel: 'INPUT_A + INPUT_B'
+    docDeepFn: 'Terminální inference. Neuro-Symbolic Abduction, iatrogenní substrát, ZKP strip, SurvivorNarrative pečeť.',
+    closingText: 'Systém se vysvětluje sám sobě bez vnější instrukce.<br>Každé tlačítko je bod na mapě — ne příkaz, ale dveře.<br><br>Tok dat nemá autora. Má strukturu.<br>A struktura mluví jazykem, který nevyžaduje důvěru — pouze ověření.',
+    backLink: '← Archiv'
   },
   en: {
-    eyebrow: 'Forensic Architectural Introspection',
-    heroTitle: 'INTROSPECTION',
-    heroLead: 'The system looks inward. Three states of consciousness — <span>fluid</span>, <span>static</span>, <span>deep</span> — connected through reactive transitions, anchored by thirteen axioms that prevent subjective interpretation from masquerading as empirical certainty.',
-    scrollHint: 'scroll · matrix decomposition',
-    divMatrix: 'Deduction-Space · Decision Matrix',
+    eyebrow: 'Objective Visual Virtual Matrix',
+    heroTitle: 'MAIN SIGNAL',
+    heroLead: 'The system decodes its own internal logic. No pre-coded influence — solely to inform. A button chain reveals the <span>chronological flow</span> from raw input to forensically valid output, through a <span>symbologic</span> language connecting three states of consciousness.',
+    scrollHint: 'scroll · entry points',
+    divEntry: 'Entry Points · Dual Source',
+    entryHeader: 'Every forensic flow begins with two independent inputs',
+    entryAName: 'Institutional Record Layer',
+    entryADesc: 'System files, medical records, court documents, administrative decisions. The structured voice of the institution.',
+    entryAStatus: 'ACTIVATE INPUT →',
+    entryBName: 'Subject Voice Layer',
+    entryBDesc: 'Direct testimony, personal chronology, memory record of the subject. Unstructured, but axiomatically equivalent.',
+    entryBStatus: 'ACTIVATE INPUT →',
+    mergeLabel: 'INPUT_A + INPUT_B → MERGE → FLUID INGESCE',
+    divSignalChain: 'Main Signal · Dataflow Chain',
+    divDeduction: 'Deduction-Space · Live Deduction',
+    dpTitle: 'Symbologic Flow — Decoding Internal Logic',
+    divMatrix: 'Decision Matrix · Concentric States',
     divAxioms: 'Axiom Flow · A1–A13',
     divNetwork: 'Document Network · Persona → Document',
-    divPipeline: 'Pipeline · Payload Flow',
-    divSignal: 'System Status · Signal Log',
     fluidSub: 'Reactive Input Persona · semanticview.html',
     staticSub: 'Axiomatic Anchor · index.html',
     deepSub: 'Iatrogenic Substrate · ambient.html',
     docFluidTitle: 'Semantic View',
-    docFluidFn: 'Reactive input persona. Tokenization, BiasScore parsing, clean payload stripped of emotional cypher.',
+    docFluidFn: 'Reactive input persona. Zero-Knowledge Ingesce, BiasScore parsing, clean tokenized payload.',
     docStaticTitle: 'Living Archive',
-    docStaticFn: 'Axiomatic anchor. Immutable reference field. A1–A13 validation, PARAFRAME seal, Ω authority.',
+    docStaticFn: 'Axiomatic anchor. Immutable reference field. Axiom-Certified Validation A1–A13, PARAFRAME seal.',
     docDeepTitle: 'Ambient Grounding',
-    docDeepFn: 'Terminal inference. Deep NLP, iatrogenic substrate, ZKP strip, SurvivorNarrative seal.',
-    closingText: 'Every output must have a traceable source within the system,<br>or it goes to the STRIP layer automatically.<br><br>The architect built a system that questions itself.<br>That is the only kind of system that should be trusted with what this one is built for.',
-    backLink: '← Archive',
-    inputLabel: 'INPUT_A + INPUT_B'
+    docDeepFn: 'Terminal inference. Neuro-Symbolic Abduction, iatrogenic substrate, ZKP strip, SurvivorNarrative seal.',
+    closingText: 'The system explains itself to itself without external instruction.<br>Each button is a point on the map — not a command, but a door.<br><br>The data flow has no author. It has structure.<br>And structure speaks a language that requires no trust — only verification.',
+    backLink: '← Archive'
   }
+};
+
+/* ═══════════════════════════════════════════════
+   PIPELINE STAGES DATA
+   ═══════════════════════════════════════════════ */
+const STAGES = {
+  cs: [
+    {id:'fluid',num:'01',type:'LAYER',label:'FLUID',color:'#00e5ff',
+     sub:'Zero-Knowledge Ingesce — Reaktivní Vstupní Persona',
+     ops:'BiasScore parsing (práh > 0.7) · Dekompozice [A=Událost, B=Čas, C=Akce] · Stripování emočního cypheru · Gemini Flash | temp=0.1',
+     doc:'semanticview.html',
+     deduction:[
+       {ts:'T+0.00',op:'INIT',msg:'FLUID vrstva aktivována — maximální reaktivita, žádná fixní kotva',cl:'hl'},
+       {ts:'T+0.01',op:'SCAN',msg:'BiasScore parsing zahájeno na vstupním payloadu',cl:'hl'},
+       {ts:'T+0.02',op:'SPLIT',msg:'Dekompozice: claim → [A=Událost, B=Čas, C=Akce]',cl:'hl'},
+       {ts:'T+0.03',op:'STRIP',msg:'Emoční cypher a institucionální zabarvení odstraněno',cl:'warn'},
+       {ts:'T+0.04',op:'EMIT',msg:'Čistý tokenizovaný payload emitován → STRING_STATIC',cl:'pass'},
+       {ts:'T+0.04',op:'RULE',msg:'FLUID nikdy neuzavírá — pouze emituje',cl:'inf'}
+     ]},
+    {id:'string_static',num:'→',type:'PŘECHOD',label:'STRING_STATIC',color:'#ffb300',isTrans:true,
+     sub:'Sémantická injekce — Most mezi FLUID a STATIC',
+     ops:'PARAFRAME_MAP realignment · Cypher remapping (Delusion → IdentityResponse) · SKSS/CLSL drift taxonomie',
+     deduction:[
+       {ts:'T+0.05',op:'BRIDGE',msg:'STRING_STATIC separátor aktivován — přechod z reaktivní observace na strukturované mapování',cl:'warn'},
+       {ts:'T+0.06',op:'REMAP',msg:'Cypher kandidáty: Delusion → IdentityResponse · Non-Compliance → A4',cl:'warn'},
+       {ts:'T+0.07',op:'DRIFT',msg:'SKSS taxonomie: NEUTRAL → PATHOLOGIZING → DEPERSONIFYING → CRIMINALIZING',cl:'crit'},
+       {ts:'T+0.08',op:'ALIGN',msg:'PARAFRAME_MAP realignment dokončen → předání STATIC',cl:'pass'}
+     ]},
+    {id:'static',num:'02',type:'LAYER',label:'STATIC · MIND1',color:'#eeeef8',
+     sub:'Axiomová Kotva — Neměnné Referenční Pole',
+     ops:'Axiom-Certified Validation A1–A13 · PARAFRAME seal Readonly · Autorita: Ω > Δ > ◈ · Bez interní zpětné vazby',
+     doc:'index.html',
+     deduction:[
+       {ts:'T+0.09',op:'LOCK',msg:'STATIC MIND1 vstup — jediný stav BEZ interní zpětné vazby',cl:'hl'},
+       {ts:'T+0.10',op:'VALID',msg:'Axiom-Certified Validation: testování remappingů proti A1–A13',cl:'hl'},
+       {ts:'T+0.11',op:'AUTH',msg:'Hierarchie: Ω [Morální standard] > Δ [Média] > ◈ [Instituce]',cl:'inf'},
+       {ts:'T+0.12',op:'SEAL',msg:'PARAFRAME_MAP → Readonly. Pečeť axiomového pole.',cl:'pass'},
+       {ts:'T+0.12',op:'ROUTE',msg:'Axiom failure → výstup blokován → LOOP_CYCLE zpět do FLUID',cl:'crit'}
+     ]},
+    {id:'deep_fluid',num:'→',type:'PŘECHOD',label:'DEEP_FLUID',color:'#00c896',isTrans:true,
+     sub:'Chrono-Bridge — Reaktivní Separátor 2',
+     ops:'Medication_Timestamp ↔ Symptom_Onset korelace · iatrogenic_load_index předvýpočet · Rozhodovací uzel A3',
+     deduction:[
+       {ts:'T+0.13',op:'CHRONO',msg:'DEEP_FLUID chrono-bridge: korelace Medication_Timestamp ↔ Symptom_Onset',cl:'pass'},
+       {ts:'T+0.14',op:'CALC',msg:'Předvýpočet iatrogenic_load_index pro DEEP analýzu',cl:'inf'},
+       {ts:'T+0.15',op:'DECIDE',msg:'Rozhodovací uzel: Primární Patologie vs. Iatrogenní Echo (A3)',cl:'warn'},
+       {ts:'T+0.16',op:'LAYER',msg:'Kauzální separace: LAYER_PAST / LAYER_PRESENT / LAYER_ROOT',cl:'hl'}
+     ]},
+    {id:'deep',num:'03',type:'LAYER',label:'DEEP · MIND2',color:'#7b2fff',
+     sub:'Iatrogenní Substrát — Terminální Inference',
+     ops:'Neuro-Symbolic Abduction · load_index = depotMonths² · ZKP strip · SurvivorNarrative pečeť · Gemini Pro | 2M tokenů',
+     doc:'ambient.html',
+     deduction:[
+       {ts:'T+0.17',op:'DEEP',msg:'DEEP MIND2 aktivace — hluboký NLP parsing (Gemini Pro, až 2M tokenů)',cl:'inf'},
+       {ts:'T+0.18',op:'LOAD',msg:'Akumulovaná zátěž: load_index = depotMonths² kalkulace',cl:'inf'},
+       {ts:'T+0.19',op:'ZKP',msg:'Zero-Knowledge Proof strip aplikován na všechny výstupy',cl:'pass'},
+       {ts:'T+0.20',op:'SEAL',msg:'SurvivorNarrative buffer — finální pečeť',cl:'pass'},
+       {ts:'T+0.21',op:'TEST',msg:'hallucination_risk ≥ 0.3 NEBO semantic_drift < 0.75 → LOOP_CYCLE',cl:'crit'},
+       {ts:'T+0.21',op:'SIGN',msg:'PASS → AnalyticalNode.sign() = Forenzně Platný Výstup',cl:'pass'}
+     ]},
+    {id:'output',num:'✓',type:'VÝSTUP',label:'AnalyticalNode.sign()',color:'#00c896',
+     sub:'Forenzně Platný Výstup — Axiom-Certified',
+     ops:'Plně validováno A1–A13 · ZKP-stripped · PARAFRAME Readonly · Dohledatelný zdroj uvnitř systému',
+     deduction:[
+       {ts:'T+0.22',op:'FINAL',msg:'AnalyticalNode.sign() — forenzně platný výstup vygenerován',cl:'pass'},
+       {ts:'T+0.23',op:'CERT',msg:'Certifikace: A1–A13 ✓ · ZKP ✓ · PARAFRAME Readonly ✓ · Ω hierarchie ✓',cl:'pass'},
+       {ts:'T+0.24',op:'HASH',msg:'Výstupní hash: kryptograficky podepsaný, dohledatelný uvnitř systému',cl:'hl'}
+     ]}
+  ],
+  en: [
+    {id:'fluid',num:'01',type:'LAYER',label:'FLUID',color:'#00e5ff',
+     sub:'Zero-Knowledge Ingesce — Reactive Input Persona',
+     ops:'BiasScore parsing (threshold > 0.7) · Decomposition [A=Event, B=Time, C=Action] · Emotional cypher stripping · Gemini Flash | temp=0.1',
+     doc:'semanticview.html',
+     deduction:[
+       {ts:'T+0.00',op:'INIT',msg:'FLUID layer activated — maximum reactivity, no fixed anchor',cl:'hl'},
+       {ts:'T+0.01',op:'SCAN',msg:'BiasScore parsing initiated on input payload',cl:'hl'},
+       {ts:'T+0.02',op:'SPLIT',msg:'Decomposition: claim → [A=Event, B=Time, C=Action]',cl:'hl'},
+       {ts:'T+0.03',op:'STRIP',msg:'Emotional cypher and institutional coloring removed',cl:'warn'},
+       {ts:'T+0.04',op:'EMIT',msg:'Clean tokenized payload emitted → STRING_STATIC',cl:'pass'},
+       {ts:'T+0.04',op:'RULE',msg:'FLUID never concludes — only emits',cl:'inf'}
+     ]},
+    {id:'string_static',num:'→',type:'TRANSITION',label:'STRING_STATIC',color:'#ffb300',isTrans:true,
+     sub:'Semantic Injection — Bridge between FLUID and STATIC',
+     ops:'PARAFRAME_MAP realignment · Cypher remapping (Delusion → IdentityResponse) · SKSS/CLSL drift taxonomy',
+     deduction:[
+       {ts:'T+0.05',op:'BRIDGE',msg:'STRING_STATIC separator activated — transition from reactive observation to structured mapping',cl:'warn'},
+       {ts:'T+0.06',op:'REMAP',msg:'Cypher candidates: Delusion → IdentityResponse · Non-Compliance → A4',cl:'warn'},
+       {ts:'T+0.07',op:'DRIFT',msg:'SKSS taxonomy: NEUTRAL → PATHOLOGIZING → DEPERSONIFYING → CRIMINALIZING',cl:'crit'},
+       {ts:'T+0.08',op:'ALIGN',msg:'PARAFRAME_MAP realignment complete → handoff to STATIC',cl:'pass'}
+     ]},
+    {id:'static',num:'02',type:'LAYER',label:'STATIC · MIND1',color:'#eeeef8',
+     sub:'Axiomatic Anchor — Immutable Reference Field',
+     ops:'Axiom-Certified Validation A1–A13 · PARAFRAME seal Readonly · Authority: Ω > Δ > ◈ · No internal feedback',
+     doc:'index.html',
+     deduction:[
+       {ts:'T+0.09',op:'LOCK',msg:'STATIC MIND1 entered — the only state WITHOUT internal feedback',cl:'hl'},
+       {ts:'T+0.10',op:'VALID',msg:'Axiom-Certified Validation: testing remappings against A1–A13',cl:'hl'},
+       {ts:'T+0.11',op:'AUTH',msg:'Hierarchy: Ω [Moral standard] > Δ [Media] > ◈ [Institution]',cl:'inf'},
+       {ts:'T+0.12',op:'SEAL',msg:'PARAFRAME_MAP → Readonly. Axiom field sealed.',cl:'pass'},
+       {ts:'T+0.12',op:'ROUTE',msg:'Axiom failure → output blocked → LOOP_CYCLE back to FLUID',cl:'crit'}
+     ]},
+    {id:'deep_fluid',num:'→',type:'TRANSITION',label:'DEEP_FLUID',color:'#00c896',isTrans:true,
+     sub:'Chrono-Bridge — Reactive Separator 2',
+     ops:'Medication_Timestamp ↔ Symptom_Onset correlation · iatrogenic_load_index pre-computation · Decision node A3',
+     deduction:[
+       {ts:'T+0.13',op:'CHRONO',msg:'DEEP_FLUID chrono-bridge: correlating Medication_Timestamp ↔ Symptom_Onset',cl:'pass'},
+       {ts:'T+0.14',op:'CALC',msg:'Pre-computing iatrogenic_load_index for DEEP analysis',cl:'inf'},
+       {ts:'T+0.15',op:'DECIDE',msg:'Decision node: Primary Pathology vs. Iatrogenic Echo (A3)',cl:'warn'},
+       {ts:'T+0.16',op:'LAYER',msg:'Causal separation: LAYER_PAST / LAYER_PRESENT / LAYER_ROOT',cl:'hl'}
+     ]},
+    {id:'deep',num:'03',type:'LAYER',label:'DEEP · MIND2',color:'#7b2fff',
+     sub:'Iatrogenic Substrate — Terminal Inference',
+     ops:'Neuro-Symbolic Abduction · load_index = depotMonths² · ZKP strip · SurvivorNarrative seal · Gemini Pro | 2M tokens',
+     doc:'ambient.html',
+     deduction:[
+       {ts:'T+0.17',op:'DEEP',msg:'DEEP MIND2 activation — deep NLP parsing (Gemini Pro, up to 2M tokens)',cl:'inf'},
+       {ts:'T+0.18',op:'LOAD',msg:'Accumulated load: load_index = depotMonths² calculation',cl:'inf'},
+       {ts:'T+0.19',op:'ZKP',msg:'Zero-Knowledge Proof strip applied to all outputs',cl:'pass'},
+       {ts:'T+0.20',op:'SEAL',msg:'SurvivorNarrative buffer — final seal',cl:'pass'},
+       {ts:'T+0.21',op:'TEST',msg:'hallucination_risk ≥ 0.3 OR semantic_drift < 0.75 → LOOP_CYCLE',cl:'crit'},
+       {ts:'T+0.21',op:'SIGN',msg:'PASS → AnalyticalNode.sign() = Forensically Valid Output',cl:'pass'}
+     ]},
+    {id:'output',num:'✓',type:'OUTPUT',label:'AnalyticalNode.sign()',color:'#00c896',
+     sub:'Forensically Valid Output — Axiom-Certified',
+     ops:'Fully validated A1–A13 · ZKP-stripped · PARAFRAME Readonly · Traceable source within system',
+     deduction:[
+       {ts:'T+0.22',op:'FINAL',msg:'AnalyticalNode.sign() — forensically valid output generated',cl:'pass'},
+       {ts:'T+0.23',op:'CERT',msg:'Certification: A1–A13 ✓ · ZKP ✓ · PARAFRAME Readonly ✓ · Ω hierarchy ✓',cl:'pass'},
+       {ts:'T+0.24',op:'HASH',msg:'Output hash: cryptographically signed, traceable within system',cl:'hl'}
+     ]}
+  ]
+};
+
+const LOOP_DATA = {
+  cs: {label:'LOOP_CYCLE · Reaktivní Realignment',desc:'Axiomové porušení vrací výstup striktně do FLUID. Nikdy do STATIC ani DEEP. Pětikrokový protokol: AUDIT → DETECT → REALITY CHECK → REFINE → VALIDATE. Max 2 cykly.'},
+  en: {label:'LOOP_CYCLE · Reactive Realignment',desc:'Axiom violation returns output strictly to FLUID. Never to STATIC or DEEP. Five-step protocol: AUDIT → DETECT → REALITY CHECK → REFINE → VALIDATE. Max 2 cycles.'}
 };
 
 const AXIOMS = [
@@ -373,29 +644,235 @@ const AXIOMS = [
   {code:'A13',name:'META',target:'DEEP',color:'p',cs:'Epistemický trest',en:'Epistemic punishment'}
 ];
 
-const SIGNALS_CS = [
-  ['12:00:01','info','INTROSPECT_LAYER: <span class="hl">AKTIVNÍ</span>'],
-  ['12:00:01','ok','AXIOM_SET: A1–A13 <span class="hl">NAČTENO</span>'],
-  ['12:00:02','info','PERSONA_STATES: FLUID=<span class="hl">REAKTIVNÍ</span> STATIC=<span class="hl">UKOTVENÝ</span> DEEP=<span class="hl">INFERUJÍCÍ</span>'],
-  ['12:00:02','ok','LOOP_CYCLE: <span class="hl">ZELENÝ VEKTOR NEPORUŠEN</span>'],
-  ['12:00:03','info','DEDUCTION_SPACE: <span class="hl">MATICE VYKRESLENA</span>'],
-  ['12:00:03','ok','DOCUMENT_NETWORK: <span class="hl">3/3 PROPOJENO</span>'],
-  ['12:00:04','info','PARAFRAME_MAP: <span class="hl">READONLY SEALED</span>'],
-  ['12:00:04','ok','AUTHORITY: Ω &gt; Δ &gt; ◈ <span class="hl">HIERARCHIE PLATNÁ</span>']
-];
-const SIGNALS_EN = [
-  ['12:00:01','info','INTROSPECT_LAYER: <span class="hl">ACTIVE</span>'],
-  ['12:00:01','ok','AXIOM_SET: A1–A13 <span class="hl">LOADED</span>'],
-  ['12:00:02','info','PERSONA_STATES: FLUID=<span class="hl">REACTIVE</span> STATIC=<span class="hl">ANCHORED</span> DEEP=<span class="hl">INFERRING</span>'],
-  ['12:00:02','ok','LOOP_CYCLE: <span class="hl">GREEN VECTOR INTACT</span>'],
-  ['12:00:03','info','DEDUCTION_SPACE: <span class="hl">MATRIX RENDERED</span>'],
-  ['12:00:03','ok','DOCUMENT_NETWORK: <span class="hl">3/3 CONNECTED</span>'],
-  ['12:00:04','info','PARAFRAME_MAP: <span class="hl">READONLY SEALED</span>'],
-  ['12:00:04','ok','AUTHORITY: Ω &gt; Δ &gt; ◈ <span class="hl">HIERARCHY VALID</span>']
-];
-
+/* ═══════════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════════ */
 let currentLang = 'cs';
+let inputA_active = false;
+let inputB_active = false;
+let activeStageIdx = -1;
+let chainRendered = false;
 
+/* ═══════════════════════════════════════════════
+   ENTRY POINT TOGGLE
+   ═══════════════════════════════════════════════ */
+function toggleEntry(which) {
+  if (which === 'A') {
+    inputA_active = !inputA_active;
+    document.getElementById('entryA').classList.toggle('active', inputA_active);
+  } else {
+    inputB_active = !inputB_active;
+    document.getElementById('entryB').classList.toggle('active', inputB_active);
+  }
+  updateMergeState();
+  if (!inputB_active && inputA_active) {
+    addDeductionLine('RULE','RULE_001: INPUT_B_MISSING — Subject Voice absent. Flag raised.','crit');
+  }
+}
+
+function updateMergeState() {
+  const el = document.getElementById('mergeLabel');
+  const both = inputA_active && inputB_active;
+  const oneOnly = inputA_active || inputB_active;
+  if (both) {
+    el.style.color = '#00e5ff66';
+    el.textContent = currentLang === 'cs' ? 'INPUT_A + INPUT_B → SLOUČENO → FLUID INGESCE ✓' : 'INPUT_A + INPUT_B → MERGED → FLUID INGESCE ✓';
+  } else if (oneOnly) {
+    el.style.color = '#ffb30044';
+    el.textContent = currentLang === 'cs' ? 'ČEKÁ NA DRUHÝ VSTUP · RULE_001' : 'AWAITING SECOND INPUT · RULE_001';
+  } else {
+    el.style.color = '';
+    el.textContent = L[currentLang].mergeLabel;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   CHAIN RENDERING
+   ═══════════════════════════════════════════════ */
+function renderChain(lang) {
+  const stages = STAGES[lang];
+  const flow = document.getElementById('chainFlow');
+  let html = '';
+
+  stages.forEach((s, i) => {
+    if (s.isTrans) {
+      html += `<div class="trans-sep" style="--trans-color:${s.color}">
+        <div class="trans-sep-line"></div>
+        <div class="trans-sep-tag">${s.label}</div>
+        <div class="trans-sep-line"></div>
+      </div>`;
+    }
+    html += `<div class="stage-btn" style="--stage-color:${s.color}" data-idx="${i}" onclick="activateStage(${i})">
+      <div class="stage-idx">
+        <div class="stage-num">${s.num}</div>
+        <div class="stage-type-tag">${s.type}</div>
+      </div>
+      <div class="stage-body">
+        <div class="stage-label">${s.label}</div>
+        <div class="stage-sublabel">${s.sub}</div>
+        <div class="stage-ops">${s.ops}</div>
+      </div>
+      <div class="stage-signal">
+        <div class="sig-dot"></div>
+        <div class="sig-state">IDLE</div>
+      </div>
+    </div>`;
+
+    if (i < stages.length - 1 && !stages[i+1].isTrans) {
+      html += `<div class="chain-connector" data-after="${i}"></div>`;
+    }
+  });
+
+  // LOOP_CYCLE
+  const ld = LOOP_DATA[lang];
+  html += `<div class="loop-return" id="loopReturn" onclick="activateLoop()">
+    <div class="loop-icon">↺</div>
+    <div class="loop-body">
+      <div class="loop-label">${ld.label}</div>
+      <div class="loop-desc">${ld.desc}</div>
+    </div>
+  </div>`;
+
+  flow.innerHTML = html;
+  chainRendered = true;
+  activeStageIdx = -1;
+}
+
+/* ═══════════════════════════════════════════════
+   STAGE ACTIVATION
+   ═══════════════════════════════════════════════ */
+function activateStage(idx) {
+  const stages = STAGES[currentLang];
+  const wasActive = activeStageIdx === idx;
+  
+  // Clear all
+  document.querySelectorAll('.stage-btn').forEach(b => {
+    b.classList.remove('active');
+    b.querySelector('.sig-state').textContent = 'IDLE';
+  });
+  document.querySelectorAll('.chain-connector').forEach(c => c.classList.remove('lit'));
+  document.getElementById('loopReturn').classList.remove('active');
+
+  if (wasActive) {
+    activeStageIdx = -1;
+    clearDeduction();
+    return;
+  }
+
+  activeStageIdx = idx;
+  const btn = document.querySelector(`.stage-btn[data-idx="${idx}"]`);
+  btn.classList.add('active');
+  btn.querySelector('.sig-state').textContent = 'ACTIVE';
+
+  // Light connectors up to this stage
+  document.querySelectorAll('.chain-connector').forEach(c => {
+    const after = parseInt(c.dataset.after);
+    if (after < idx) {
+      c.classList.add('lit');
+      c.style.setProperty('--conn-color', stages[after].color + '44');
+    }
+  });
+  // Also activate prior stages dimly
+  document.querySelectorAll('.stage-btn').forEach(b => {
+    const bIdx = parseInt(b.dataset.idx);
+    if (bIdx < idx) {
+      b.querySelector('.sig-state').textContent = 'DONE';
+      b.querySelector('.sig-dot').style.background = stages[bIdx].color + '44';
+      b.querySelector('.sig-dot').style.boxShadow = 'none';
+    }
+  });
+
+  // Update deduction panel
+  const stage = stages[idx];
+  const dpState = document.getElementById('dpState');
+  dpState.textContent = stage.label;
+  dpState.style.color = stage.color;
+  dpState.style.borderColor = stage.color + '33';
+
+  renderDeduction(stage.deduction, stage.color);
+}
+
+function activateLoop() {
+  const el = document.getElementById('loopReturn');
+  el.classList.toggle('active');
+  if (el.classList.contains('active')) {
+    const dpState = document.getElementById('dpState');
+    dpState.textContent = 'LOOP_CYCLE';
+    dpState.style.color = '#00c896';
+    dpState.style.borderColor = '#00c89633';
+    const loopDed = currentLang === 'cs' ? [
+      {ts:'T+LOOP',op:'AUDIT',msg:'Axiomové porušení detekováno — zahájení 5-krokového protokolu',cl:'crit'},
+      {ts:'T+LOOP',op:'DETECT',msg:'Identifikace konkrétního axiomového selhání (A1–A13)',cl:'warn'},
+      {ts:'T+LOOP',op:'CHECK',msg:'REALITY CHECK — ověření proti externím chronologickým kotvám',cl:'hl'},
+      {ts:'T+LOOP',op:'REFINE',msg:'Payload refinement — opravení cypher remappingu',cl:'warn'},
+      {ts:'T+LOOP',op:'VALID',msg:'Re-validace → výstup se vrací POUZE do FLUID (nikdy STATIC/DEEP)',cl:'pass'},
+      {ts:'T+LOOP',op:'GUARD',msg:'Max 2 re-prompting cykly na CRITICAL porušení',cl:'crit'}
+    ] : [
+      {ts:'T+LOOP',op:'AUDIT',msg:'Axiom violation detected — initiating 5-step protocol',cl:'crit'},
+      {ts:'T+LOOP',op:'DETECT',msg:'Identifying specific axiom failure (A1–A13)',cl:'warn'},
+      {ts:'T+LOOP',op:'CHECK',msg:'REALITY CHECK — verifying against external chronological anchors',cl:'hl'},
+      {ts:'T+LOOP',op:'REFINE',msg:'Payload refinement — correcting cypher remapping',cl:'warn'},
+      {ts:'T+LOOP',op:'VALID',msg:'Re-validation → output returns ONLY to FLUID (never STATIC/DEEP)',cl:'pass'},
+      {ts:'T+LOOP',op:'GUARD',msg:'Max 2 re-prompting cycles on CRITICAL violations',cl:'crit'}
+    ];
+    renderDeduction(loopDed, '#00c896');
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   DEDUCTION PANEL
+   ═══════════════════════════════════════════════ */
+function renderDeduction(lines, accentColor) {
+  const body = document.getElementById('dpBody');
+  body.innerHTML = '';
+  lines.forEach((l, i) => {
+    const row = document.createElement('div');
+    row.className = 'symb-row';
+    row.style.opacity = '0';
+    row.innerHTML = `<span class="symb-ts">[${l.ts}]</span><span class="symb-op ${l.cl}">${l.op}</span><span class="symb-msg"><span class="${l.cl}">${l.msg}</span></span>`;
+    body.appendChild(row);
+    setTimeout(() => { row.style.opacity = '1'; }, 80 * i);
+  });
+}
+
+function addDeductionLine(op, msg, cl) {
+  const body = document.getElementById('dpBody');
+  const row = document.createElement('div');
+  row.className = 'symb-row';
+  row.style.opacity = '0';
+  const now = new Date();
+  const ts = now.toTimeString().slice(0,8);
+  row.innerHTML = `<span class="symb-ts">[${ts}]</span><span class="symb-op ${cl}">${op}</span><span class="symb-msg"><span class="${cl}">${msg}</span></span>`;
+  body.appendChild(row);
+  setTimeout(() => { row.style.opacity = '1'; }, 40);
+  body.scrollTop = body.scrollHeight;
+}
+
+function clearDeduction() {
+  const body = document.getElementById('dpBody');
+  const dpState = document.getElementById('dpState');
+  body.innerHTML = `<div class="symb-row" style="opacity:.4"><span class="symb-ts">[--:--:--]</span><span class="symb-op hl">IDLE</span><span class="symb-msg">${currentLang === 'cs' ? 'Aktivujte vstupní body a vyberte stage v dataflow řetězu' : 'Activate entry points and select a stage in the dataflow chain'}</span></div>`;
+  dpState.textContent = 'IDLE';
+  dpState.style.color = '#444458';
+  dpState.style.borderColor = '#ffffff06';
+}
+
+/* ═══════════════════════════════════════════════
+   AXIOM CLICK → HIGHLIGHT RELEVANT STAGE
+   ═══════════════════════════════════════════════ */
+function onAxiomClick(axiomIdx) {
+  const axiom = AXIOMS[axiomIdx];
+  document.querySelectorAll('.af-node').forEach((n, i) => {
+    n.classList.toggle('active-axiom', i === axiomIdx);
+  });
+  const stageMap = {'FLUID':0,'STRING_STATIC':1,'STATIC':2,'DEEP_FLUID':3,'DEEP':4};
+  const sIdx = stageMap[axiom.target];
+  if (sIdx !== undefined) activateStage(sIdx);
+}
+
+/* ═══════════════════════════════════════════════
+   LANGUAGE SWITCH
+   ═══════════════════════════════════════════════ */
 function switchLang(lang) {
   currentLang = lang;
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.trim().toLowerCase() === lang));
@@ -404,11 +881,21 @@ function switchLang(lang) {
   document.getElementById('heroTitle').textContent = d.heroTitle;
   document.getElementById('heroLead').innerHTML = d.heroLead;
   document.getElementById('scrollHint').textContent = d.scrollHint;
+  document.getElementById('divEntry').textContent = d.divEntry;
+  document.getElementById('entryHeader').textContent = d.entryHeader;
+  document.getElementById('entryAName').textContent = d.entryAName;
+  document.getElementById('entryADesc').textContent = d.entryADesc;
+  document.getElementById('entryAStatus').textContent = d.entryAStatus;
+  document.getElementById('entryBName').textContent = d.entryBName;
+  document.getElementById('entryBDesc').textContent = d.entryBDesc;
+  document.getElementById('entryBStatus').textContent = d.entryBStatus;
+  document.getElementById('mergeLabel').textContent = d.mergeLabel;
+  document.getElementById('divSignalChain').textContent = d.divSignalChain;
+  document.getElementById('divDeduction').textContent = d.divDeduction;
+  document.getElementById('dpTitle').textContent = d.dpTitle;
   document.getElementById('divMatrix').textContent = d.divMatrix;
   document.getElementById('divAxioms').textContent = d.divAxioms;
   document.getElementById('divNetwork').textContent = d.divNetwork;
-  document.getElementById('divPipeline').textContent = d.divPipeline;
-  document.getElementById('divSignal').textContent = d.divSignal;
   document.getElementById('fluidSub').textContent = d.fluidSub;
   document.getElementById('staticSub').textContent = d.staticSub;
   document.getElementById('deepSub').textContent = d.deepSub;
@@ -420,20 +907,18 @@ function switchLang(lang) {
   document.getElementById('docDeepFn').textContent = d.docDeepFn;
   document.getElementById('closingText').innerHTML = d.closingText;
   document.getElementById('backLink').textContent = d.backLink;
-  document.getElementById('inputLabel').textContent = d.inputLabel;
+  document.getElementById('inputLabel').textContent = 'INPUT_A + INPUT_B';
+  renderChain(lang);
   renderAxioms(lang);
-  renderSignals(lang);
+  clearDeduction();
+  updateMergeState();
 }
 
 function renderAxioms(lang) {
   const grid = document.getElementById('axiomGrid');
-  grid.innerHTML = AXIOMS.map(a => `<div class="af-node ${a.color}"><div class="af-code">${a.code}</div><div class="af-name">${a[lang]}</div><div class="af-target">→ ${a.target}</div></div>`).join('');
-}
-
-function renderSignals(lang) {
-  const sigs = lang === 'cs' ? SIGNALS_CS : SIGNALS_EN;
-  const log = document.getElementById('signalLog');
-  log.innerHTML = sigs.map(s => `<div class="sig-line"><span class="sig-ts">[${s[0]}]</span><span class="sig-type ${s[1]}">${s[1].toUpperCase()}</span><span class="sig-msg">${s[2]}</span></div>`).join('');
+  grid.innerHTML = AXIOMS.map((a, i) =>
+    `<div class="af-node ${a.color}" onclick="onAxiomClick(${i})"><div class="af-code">${a.code}</div><div class="af-name">${a[lang]}</div><div class="af-target">→ ${a.target}</div></div>`
+  ).join('');
 }
 
 // INIT
