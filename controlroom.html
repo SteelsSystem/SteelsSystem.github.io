@@ -360,6 +360,23 @@ body::after{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;back
 .schema-val.fail{color:var(--red);}
 .schema-val.warn{color:var(--amber);}
 
+/* DEV TARGET STATUS */
+.dev-target{margin:24px 0 0;border:1px solid #ffb30018;background:#ffb30003;padding:0;overflow:hidden;}
+.dt-header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid #ffb30012;background:#ffb30005;}
+.dt-title{font-family:var(--mono);font-size:9px;letter-spacing:4px;color:#ffb30044;text-transform:uppercase;}
+.dt-state{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:#ffb30066;text-transform:uppercase;display:flex;align-items:center;gap:8px;}
+.dt-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
+.dt-dot.amber{background:var(--amber);box-shadow:0 0 8px var(--amber);animation:blink 2.6s ease-in-out infinite;}
+.dt-dot.green{background:var(--green);box-shadow:0 0 8px var(--green);}
+.dt-dot.red{background:var(--red);box-shadow:0 0 8px var(--red);}
+.dt-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+@media(max-width:700px){.dt-grid{grid-template-columns:1fr;}}
+.dt-cell{padding:14px 20px;border-bottom:1px solid #ffffff04;border-right:1px solid #ffffff04;}
+.dt-cell:nth-child(2n){border-right:none;}
+.dt-label{font-family:var(--mono);font-size:7px;letter-spacing:3px;color:#ffb30033;text-transform:uppercase;margin-bottom:6px;}
+.dt-value{font-size:10px;color:#666678;line-height:1.8;}
+.step-highlight{color:#00e5ffaa;}
+
 /* COVERAGE BARS */
 .coverage-bar-wrap{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
 .cov-row{display:flex;align-items:center;gap:12px;}
@@ -428,12 +445,38 @@ body::after{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;back
     <a href="introspect.html" style="color:#00e5ff22;">INTROSPECT</a>
   </nav>
   <div class="header-status">
-    <div class="status-dot"></div>
-    SYSTEM OPERATIONAL
+    <div class="status-dot" style="background:var(--amber);box-shadow:0 0 8px var(--amber);"></div>
+    CORE: WAITING · ENTER TARGET
   </div>
 </header>
 
 <div class="page">
+
+  <!-- ═══════════════ DEV TARGET STATUS ═══════════════ -->
+  <div class="dev-target reveal" id="devTarget">
+    <div class="dt-header">
+      <div class="dt-title">DEV TARGET STATUS</div>
+      <div class="dt-state"><span class="dt-dot amber"></span>CORE: WAITING · ENTER TARGET</div>
+    </div>
+    <div class="dt-grid">
+      <div class="dt-cell">
+        <div class="dt-label">Current State</div>
+        <div class="dt-value">Pipeline integrity verified · Placeholder sync 90% · Pipeline hash active · Control Room deployed · Visual network connected (5 pages)</div>
+      </div>
+      <div class="dt-cell">
+        <div class="dt-label">Research</div>
+        <div class="dt-value">Financial forensic policy framework generating · Axiom-to-policy translation complete · ECHR/CRPD/GDPR/MiCA/PSD2 mapped · 4 visual mindset scenarios defined</div>
+      </div>
+      <div class="dt-cell">
+        <div class="dt-label">Recommended Next Step</div>
+        <div class="dt-value step-highlight">Axiom A7–A13 implementation → constants.ts + prompts.ts + nlp-core.ts + types.ts · Single source of truth refactor · Estimated: 3–5 days · Unblocks: LOOP_CYCLE 100% coverage</div>
+      </div>
+      <div class="dt-cell">
+        <div class="dt-label">Step Analogy</div>
+        <div class="dt-value" style="font-family:var(--serif);font-style:italic;color:#888898;">Pipeline má koži, ale chybí mu polovina nervů. MIND1 vidí, DEEP_1 myslí, LOOP_CYCLE reaguje — ale jen na 6 z 13 signálů. Zbytek prochází bez validace. A7–A13 jsou chybějící synapse.</div>
+      </div>
+    </div>
+  </div>
 
   <!-- ═══════════════ PANEL 1: TOPOLOGICAL PIPELINE MAP ═══════════════ -->
   <div class="sec-div reveal" id="pipeline"><div class="sec-div-line"></div><div class="sec-div-label">Panel 01 · Topologická Mapa Pipeline</div><div class="sec-div-line"></div></div>
