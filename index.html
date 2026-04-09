@@ -738,7 +738,7 @@ function render() {
   ];
   document.getElementById('arc-nav').innerHTML = navSections.map(s=>`
     <button class="arc-nav-item" onclick="document.getElementById('${s.id}').scrollIntoView({behavior:'smooth'})">${T[lang][s.key].split('·')[0].trim()}</button>
-  `).join('');
+  `).join('') + `<a href="introspect.html" class="arc-nav-item" style="margin-top:12px;border-top:1px solid #ffffff06;padding-top:8px;">INTROSPECT</a><a href="controlroom.html" class="arc-nav-item">CONTROL ROOM</a>`;
 
   // Archive index
   const allTags = t.arcTags;

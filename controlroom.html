@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LEX FORENSICA — CONTROL ROOM v8.0</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --cyan:#00e5ff;--red:#ff4444;--amber:#ffb300;
+  --green:#00c896;--purple:#7b2fff;--rose:#ff6b9d;
+  --dark:#05050f;--mid:#0a0a1a;--surface:#0d0d1e;
+  --text:#c8c8d8;--dim:#444458;--bright:#eeeef8;
+  --mono:'Space Mono',monospace;
+  --serif:'IM Fell English',Georgia,serif;
+}
+body{background:var(--dark);color:var(--text);font-family:var(--mono);overflow-x:hidden;cursor:crosshair;font-size:12px;line-height:1.6;}
+body::after{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");background-size:180px 180px;opacity:.3;}
+
+/* ═══════════════════════════════════════════════
+   LAVA — UNTOUCHED (from introspect.html)
+   ═══════════════════════════════════════════════ */
+.lava-wrap{position:fixed;inset:0;z-index:0;overflow:hidden;filter:blur(70px) contrast(1.3);opacity:.14;pointer-events:none;}
+.blob{position:absolute;border-radius:50%;animation:float linear infinite;will-change:transform;}
+.b1{width:500px;height:500px;background:radial-gradient(circle,#00e5ff,transparent 70%);left:3%;top:8%;animation-duration:22s;}
+.b2{width:340px;height:420px;background:radial-gradient(circle,#7b2fff,transparent 70%);left:62%;top:55%;animation-duration:30s;animation-delay:-8s;}
+.b3{width:380px;height:300px;background:radial-gradient(circle,#ff4444,transparent 70%);left:28%;top:28%;animation-duration:19s;animation-delay:-4s;}
+.b4{width:280px;height:360px;background:radial-gradient(circle,#00c896,transparent 70%);left:77%;top:3%;animation-duration:34s;animation-delay:-14s;}
+.b5{width:460px;height:240px;background:radial-gradient(circle,#00e5ff,transparent 70%);left:8%;top:72%;animation-duration:26s;animation-delay:-6s;}
+.b6{width:220px;height:440px;background:radial-gradient(circle,#ffb300,transparent 70%);left:48%;top:18%;animation-duration:38s;animation-delay:-20s;}
+.b7{width:360px;height:360px;background:radial-gradient(circle,#ff6b9d,transparent 70%);left:85%;top:82%;animation-duration:21s;animation-delay:-2s;}
+@keyframes float{
+  0%{transform:translateY(0) translateX(0) scale(1);}
+  25%{transform:translateY(-90px) translateX(40px) scale(1.1);}
+  50%{transform:translateY(-50px) translateX(-30px) scale(.92);}
+  75%{transform:translateY(-130px) translateX(15px) scale(1.15);}
+  100%{transform:translateY(0) translateX(0) scale(1);}
+}
+
+/* SCANLINE */
+.scanline{position:fixed;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:.15;z-index:2;animation:scanDown 10s linear infinite;pointer-events:none;}
+@keyframes scanDown{0%{top:-1px;}100%{top:100vh;}}
+
+/* ═══════════════════════════════════════════════
+   LAYOUT
+   ═══════════════════════════════════════════════ */
+.page{position:relative;z-index:3;max-width:1500px;margin:0 auto;padding:0 32px 120px;}
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .9s ease,transform .9s ease;}
+.reveal.on{opacity:1;transform:translateY(0);}
+
+/* ═══════════════════════════════════════════════
+   HEADER
+   ═══════════════════════════════════════════════ */
+.site-header{position:sticky;top:0;z-index:100;background:rgba(5,5,15,.88);backdrop-filter:blur(16px);border-bottom:1px solid #ffffff06;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
+.header-left{display:flex;align-items:center;gap:14px;}
+.header-logo svg{flex-shrink:0;}
+.header-title{font-family:var(--serif);font-size:16px;color:var(--cyan);letter-spacing:3px;font-style:italic;}
+.header-version{font-family:var(--mono);font-size:7px;letter-spacing:3px;color:#00e5ff28;text-transform:uppercase;margin-top:2px;}
+.header-nav{display:flex;gap:4px;}
+.header-nav a{font-family:var(--mono);font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#ffffff14;padding:6px 12px;border:1px solid transparent;text-decoration:none;transition:all .3s;cursor:pointer;}
+.header-nav a:hover{color:#ffffff44;border-color:#ffffff0a;}
+.header-nav a.active{color:var(--cyan);border-color:#00e5ff18;background:#00e5ff04;}
+.header-status{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:7px;letter-spacing:2px;color:#00c89644;text-transform:uppercase;}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 2.6s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:.3;}50%{opacity:1;}}
+
+/* ═══════════════════════════════════════════════
+   SECTION DIVIDERS (from introspect.html)
+   ═══════════════════════════════════════════════ */
+.sec-div{display:flex;align-items:center;gap:20px;margin:60px 0 32px;}
+.sec-div-line{flex:1;height:1px;background:linear-gradient(to right,transparent,#00e5ff18,transparent);}
+.sec-div-label{font-family:var(--mono);font-size:8px;letter-spacing:5px;color:#00e5ff28;text-transform:uppercase;white-space:nowrap;}
+
+/* ═══════════════════════════════════════════════
+   PANEL 1: TOPOLOGICAL PIPELINE MAP
+   Using concentric ring SVG + entry cards + stage buttons
+   ═══════════════════════════════════════════════ */
+
+/* Decision Matrix SVG */
+.matrix-wrap{margin:0 auto;max-width:800px;position:relative;}
+.matrix-wrap svg{width:100%;height:auto;display:block;}
+.ring-label{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;fill-opacity:.7;}
+.ring-sub{font-family:var(--serif);font-size:7px;fill-opacity:.4;}
+.clickable{cursor:pointer;transition:opacity .3s;}
+.clickable:hover{opacity:1 !important;}
+.trans-label{font-family:var(--mono);font-size:6.5px;letter-spacing:1.5px;text-transform:uppercase;}
+@keyframes pulse-outer{0%,100%{opacity:.12;}50%{opacity:.25;}}
+@keyframes breathe-inner{0%,100%{opacity:.08;}50%{opacity:.18;}}
+@keyframes loop-dash{to{stroke-dashoffset:-20;}}
+.pulse-anim{animation:pulse-outer 4s ease-in-out infinite;}
+.breathe-anim{animation:breathe-inner 6s ease-in-out infinite;}
+.loop-arrow{animation:loop-dash 1.5s linear infinite;}
+
+/* Entry Point Cards */
+.entry-duo{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;max-width:800px;margin-left:auto;margin-right:auto;}
+@media(max-width:640px){.entry-duo{grid-template-columns:1fr;}}
+.entry-card{border:1px solid #ffffff06;padding:24px 20px;background:#ffffff02;transition:all .5s;cursor:pointer;position:relative;overflow:hidden;}
+.entry-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;transition:background .3s;}
+.entry-card.a::before{background:#00e5ff22;}.entry-card.b::before{background:#ff6b9d22;}
+.entry-card:hover{border-color:#00e5ff1a;background:#00e5ff03;transform:translateY(-2px);}
+.entry-card.active{border-color:#00e5ff33;background:#00e5ff05;}
+.entry-card.active.a::before{background:var(--cyan);}.entry-card.active.b::before{background:var(--rose);}
+.entry-tag{font-family:var(--mono);font-size:7px;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;}
+.entry-card.a .entry-tag{color:#00e5ff55;}.entry-card.b .entry-tag{color:#ff6b9d55;}
+.entry-card.active.a .entry-tag{color:var(--cyan);}.entry-card.active.b .entry-tag{color:var(--rose);}
+.entry-name{font-size:14px;color:#999;margin-bottom:6px;font-family:var(--serif);transition:color .3s;}
+.entry-card.active .entry-name{color:#ddd;}
+.entry-desc{font-family:var(--mono);font-size:9px;color:#333345;line-height:1.8;letter-spacing:.5px;transition:color .3s;}
+.entry-card.active .entry-desc{color:#555568;}
+.entry-status{font-family:var(--mono);font-size:7px;letter-spacing:2px;text-transform:uppercase;margin-top:10px;color:#ffffff11;transition:color .3s;}
+.entry-card.active .entry-status{color:#00e5ff44;}
+
+.entry-merge{text-align:center;margin:0 0 24px;font-family:var(--mono);font-size:9px;color:#00e5ff15;letter-spacing:3px;}
+
+/* Signal Chain — Stage Buttons */
+.chain-flow{display:flex;flex-direction:column;align-items:center;gap:0;max-width:800px;margin:0 auto;}
+.stage-btn{
+  width:100%;max-width:800px;
+  border:1px solid #ffffff06;padding:0;
+  background:#ffffff01;cursor:pointer;
+  transition:all .5s;position:relative;
+  display:grid;grid-template-columns:100px 1fr 90px;
+  align-items:stretch;overflow:hidden;
+  margin:0 auto;font-family:var(--mono);
+}
+.stage-btn:hover{border-color:#ffffff12;background:#ffffff03;}
+.stage-btn.active{border-color:var(--stage-color,#00e5ff);background:rgba(255,255,255,.02);}
+.stage-idx{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 8px;border-right:1px solid #ffffff04;position:relative;transition:all .5s;}
+.stage-btn.active .stage-idx{border-right-color:var(--stage-color,#00e5ff);background:rgba(0,0,0,.3);}
+.stage-num{font-size:18px;color:#ffffff08;letter-spacing:-1px;transition:color .5s;}
+.stage-btn.active .stage-num{color:var(--stage-color,#00e5ff);}
+.stage-type-tag{font-size:6px;letter-spacing:2px;color:#ffffff08;text-transform:uppercase;margin-top:4px;transition:color .5s;}
+.stage-btn.active .stage-type-tag{color:var(--stage-color,#00e5ff);}
+.stage-body{padding:14px 18px;display:flex;flex-direction:column;justify-content:center;gap:3px;}
+.stage-label{font-size:10px;letter-spacing:3px;color:#555568;text-transform:uppercase;transition:color .5s;}
+.stage-btn.active .stage-label{color:var(--stage-color,#00e5ff);}
+.stage-sublabel{font-size:11px;color:#444458;font-family:var(--serif);font-style:italic;transition:color .3s;line-height:1.6;}
+.stage-btn.active .stage-sublabel{color:#888898;}
+.stage-ops{font-size:8px;color:#222230;letter-spacing:.5px;line-height:1.8;margin-top:3px;transition:color .3s;}
+.stage-btn.active .stage-ops{color:#444458;}
+.stage-signal{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 8px;border-left:1px solid #ffffff04;}
+.sig-dot{width:8px;height:8px;border-radius:50%;background:#ffffff06;transition:all .5s;}
+.stage-btn.active .sig-dot{background:var(--stage-color,#00e5ff);box-shadow:0 0 12px var(--stage-color,#00e5ff);}
+.sig-state{font-size:6px;letter-spacing:2px;color:#ffffff06;text-transform:uppercase;margin-top:6px;transition:color .5s;}
+.stage-btn.active .sig-state{color:var(--stage-color,#00e5ff);}
+
+/* Chain Connectors */
+.chain-connector{width:1px;height:28px;position:relative;background:#ffffff06;transition:background .5s;}
+.chain-connector.lit{background:var(--conn-color,#00e5ff44);}
+.chain-connector::after{content:'';position:absolute;bottom:-3px;left:-3px;width:0;height:0;border-left:3.5px solid transparent;border-right:3.5px solid transparent;border-top:4px solid #ffffff06;transition:border-top-color .5s;}
+.chain-connector.lit::after{border-top-color:var(--conn-color,#00e5ff44);}
+
+/* Transition Separators */
+.trans-sep{width:100%;max-width:800px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:6px 0;}
+.trans-sep-line{flex:1;height:1px;background:linear-gradient(to right,transparent,var(--trans-color,#ffb300)11,transparent);}
+.trans-sep-tag{font-family:var(--mono);font-size:7px;letter-spacing:3px;color:var(--trans-color,#ffb300);opacity:.3;text-transform:uppercase;white-space:nowrap;}
+
+/* LOOP_CYCLE Return Path */
+.loop-return{width:100%;max-width:800px;margin:16px auto 0;border:1px dashed #00c89611;padding:14px 20px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:all .5s;background:#00c89602;}
+.loop-return:hover{border-color:#00c89633;background:#00c89605;}
+.loop-return.active{border-color:#00c89644;background:#00c89608;}
+.loop-icon{font-family:var(--mono);font-size:14px;color:#00c89622;transition:color .5s;}
+.loop-return.active .loop-icon{color:var(--green);}
+.loop-body{flex:1;}
+.loop-label{font-family:var(--mono);font-size:9px;letter-spacing:3px;color:#00c89633;text-transform:uppercase;transition:color .3s;}
+.loop-return.active .loop-label{color:var(--green);}
+.loop-desc{font-size:11px;color:#333345;font-style:italic;line-height:1.7;margin-top:3px;transition:color .3s;font-family:var(--serif);}
+.loop-return.active .loop-desc{color:#555568;}
+
+/* Provider Registry */
+.provider-reg{border:1px solid #ffffff06;background:#000000cc;padding:16px 20px;max-width:800px;margin:24px auto 0;}
+.provider-reg-title{font-family:var(--mono);font-size:8px;letter-spacing:4px;color:#ffb30022;text-transform:uppercase;margin-bottom:12px;}
+.provider-row{display:grid;grid-template-columns:100px 1fr;gap:8px;padding:4px 0;border-bottom:1px solid #ffffff04;}
+.provider-row:last-child{border-bottom:none;}
+.provider-key{font-family:var(--mono);font-size:9px;color:#00e5ff44;letter-spacing:1px;}
+.provider-val{font-family:var(--mono);font-size:9px;color:#444458;}
+
+/* ═══════════════════════════════════════════════
+   DEDUCTION PANEL (from introspect.html)
+   ═══════════════════════════════════════════════ */
+.deduction-panel{margin:24px auto;border:1px solid #ffffff06;background:#000000cc;min-height:200px;position:relative;overflow:hidden;max-width:800px;}
+.dp-header{padding:14px 20px;border-bottom:1px solid #ffffff06;display:flex;align-items:center;justify-content:space-between;}
+.dp-title{font-family:var(--mono);font-size:8px;letter-spacing:4px;color:#00e5ff22;text-transform:uppercase;}
+.dp-state{font-family:var(--mono);font-size:8px;letter-spacing:2px;text-transform:uppercase;padding:3px 10px;border:1px solid #ffffff06;transition:all .5s;color:var(--dim);}
+.dp-body{padding:20px;font-family:var(--mono);font-size:10px;line-height:2.2;color:#444458;max-height:300px;overflow-y:auto;}
+.dp-body::-webkit-scrollbar{width:3px;}.dp-body::-webkit-scrollbar-track{background:transparent;}.dp-body::-webkit-scrollbar-thumb{background:#00e5ff18;}
+.dp-body .hl{color:#00e5ff88;}.dp-body .warn{color:#ffb30066;}.dp-body .crit{color:#ff444466;}.dp-body .pass{color:#00c89666;}.dp-body .inf{color:#7b2fff66;}
+.symb-row{display:flex;gap:8px;align-items:baseline;margin-bottom:2px;padding:2px 0;transition:opacity .3s;}
+.symb-ts{color:#00e5ff12;min-width:64px;font-size:9px;}
+.symb-op{min-width:42px;font-size:8px;letter-spacing:1px;}
+.symb-msg{color:#444458;font-size:9px;}
+
+/* ═══════════════════════════════════════════════
+   PANELS 2 & 3: TWO-COLUMN LAYOUT
+   ═══════════════════════════════════════════════ */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+@media(max-width:1100px){.two-col{grid-template-columns:1fr;}}
+
+/* ═══════════════════════════════════════════════
+   PANEL 2: FILE TOPOLOGY (entry-card style)
+   ═══════════════════════════════════════════════ */
+.file-panel{border:1px solid #ffffff06;background:#ffffff02;overflow:hidden;}
+.file-panel-header{padding:14px 20px;border-bottom:1px solid #ffffff06;display:flex;align-items:center;justify-content:space-between;}
+.file-panel-title{font-family:var(--mono);font-size:8px;letter-spacing:4px;color:#00e5ff22;text-transform:uppercase;}
+.file-panel-body{padding:8px 0;max-height:700px;overflow-y:auto;}
+.file-panel-body::-webkit-scrollbar{width:3px;}.file-panel-body::-webkit-scrollbar-track{background:transparent;}.file-panel-body::-webkit-scrollbar-thumb{background:#00e5ff18;}
+
+.file-section-title{font-family:var(--mono);font-size:7px;letter-spacing:3px;text-transform:uppercase;padding:10px 20px 6px;margin-top:4px;}
+.file-section-title.svc{color:#00e5ff33;}.file-section-title.lib{color:#ffb30033;}.file-section-title.cmp{color:#00c89633;}.file-section-title.hk{color:#7b2fff33;}.file-section-title.tp{color:#ffffff11;}
+
+.file-row{display:grid;grid-template-columns:180px 50px 1fr 44px;gap:6px;padding:5px 20px;align-items:center;border-bottom:1px solid #ffffff03;transition:all .3s;cursor:default;}
+.file-row:hover{background:#ffffff03;}
+.file-name{font-family:var(--mono);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .3s;}
+.file-name .indent{color:#ffffff08;}
+.file-lines{font-family:var(--mono);font-size:9px;color:#ffffff11;text-align:right;}
+.file-desc{font-family:var(--mono);font-size:8px;color:#333345;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.3px;}
+.file-bar-wrap{height:3px;background:#ffffff04;overflow:hidden;}
+.file-bar{height:100%;transition:width 1s ease;}
+
+.svc-c .file-name{color:#00e5ff44;}.svc-c .file-bar{background:#00e5ff44;}.svc-c:hover .file-name{color:#00e5ff88;}
+.lib-c .file-name{color:#ffb30044;}.lib-c .file-bar{background:#ffb30044;}.lib-c:hover .file-name{color:#ffb30088;}
+.cmp-c .file-name{color:#00c89644;}.cmp-c .file-bar{background:#00c89644;}.cmp-c:hover .file-name{color:#00c89688;}
+.hk-c .file-name{color:#7b2fff44;}.hk-c .file-bar{background:#7b2fff44;}.hk-c:hover .file-name{color:#7b2fff88;}
+.tp-c .file-name{color:#ffffff14;}.tp-c .file-bar{background:#ffffff14;}.tp-c:hover .file-name{color:#ffffff33;}
+
+/* ═══════════════════════════════════════════════
+   PANEL 3: AXIOM MATRIX (af-node style from introspect)
+   ═══════════════════════════════════════════════ */
+.axiom-panel{border:1px solid #ffffff06;background:#ffffff02;overflow:hidden;}
+.axiom-panel-header{padding:14px 20px;border-bottom:1px solid #ffffff06;display:flex;align-items:center;justify-content:space-between;}
+.axiom-panel-title{font-family:var(--mono);font-size:8px;letter-spacing:4px;color:#00e5ff22;text-transform:uppercase;}
+.axiom-panel-body{padding:12px;max-height:700px;overflow-y:auto;}
+.axiom-panel-body::-webkit-scrollbar{width:3px;}.axiom-panel-body::-webkit-scrollbar-track{background:transparent;}.axiom-panel-body::-webkit-scrollbar-thumb{background:#00e5ff18;}
+
+.af-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:16px;}
+.af-node{border:1px solid #ffffff06;padding:12px 14px;background:#ffffff02;transition:all .3s;cursor:pointer;position:relative;}
+.af-node:hover{border-color:#00e5ff1a;background:#00e5ff03;}
+.af-node.expanded{border-color:var(--ax-color,#00e5ff)33;background:var(--ax-color,#00e5ff)05;}
+.af-code{font-family:var(--mono);font-size:8px;letter-spacing:2px;margin-bottom:4px;text-transform:uppercase;}
+.af-name{font-size:11px;color:#888898;margin-bottom:3px;font-family:var(--serif);}
+.af-severity{font-family:var(--mono);font-size:7px;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;}
+.af-legal{font-family:var(--mono);font-size:7px;color:#ffffff11;letter-spacing:.5px;margin-bottom:3px;}
+.af-loop{font-family:var(--mono);font-size:7px;color:#00c89622;letter-spacing:.5px;margin-bottom:3px;}
+.af-clsl{font-family:var(--mono);font-size:7px;letter-spacing:.5px;}
+.af-paraframe{display:inline-block;font-family:var(--mono);font-size:7px;padding:1px 5px;border:1px solid #7b2fff22;color:#7b2fff44;letter-spacing:1px;margin-top:4px;}
+.af-expand{display:none;margin-top:8px;padding-top:8px;border-top:1px solid #ffffff06;font-size:10px;color:#555568;line-height:1.8;font-family:var(--serif);font-style:italic;}
+.af-node.expanded .af-expand{display:block;}
+
+/* Severity colors in grid */
+.af-node.s-high .af-code{color:#ff444455;}.af-node.s-high .af-severity{color:#ff444444;}
+.af-node.s-medium .af-code{color:#ffb30055;}.af-node.s-medium .af-severity{color:#ffb30044;}
+.af-node.s-critical .af-code{color:#7b2fff55;}.af-node.s-critical .af-severity{color:#7b2fff44;}
+
+.af-node.s-high.expanded .af-code{color:#ff4444aa;}.af-node.s-medium.expanded .af-code{color:#ffb300aa;}.af-node.s-critical.expanded .af-code{color:#7b2fffaa;}
+
+/* Special Rules */
+.special-rules{border-top:1px solid #ffffff06;padding:12px 0 0;}
+.special-rule{border:1px solid #ffffff06;padding:10px 14px;background:#ffffff02;margin-bottom:6px;display:flex;align-items:center;gap:12px;transition:all .3s;}
+.special-rule:hover{border-color:#7b2fff1a;background:#7b2fff03;}
+.rule-tag{font-family:var(--mono);font-size:7px;letter-spacing:2px;color:#7b2fff44;text-transform:uppercase;padding:2px 8px;border:1px solid #7b2fff22;white-space:nowrap;}
+.rule-name{font-size:11px;color:#888898;font-family:var(--serif);}
+.rule-note{font-family:var(--mono);font-size:8px;color:#333345;letter-spacing:.5px;}
+
+/* ═══════════════════════════════════════════════
+   PANEL 4: INSTRUCTIONAL PHRASES
+   ═══════════════════════════════════════════════ */
+.phrases-panel{border:1px solid #ffffff06;background:#000000cc;overflow:hidden;}
+.phrases-header{padding:14px 20px;border-bottom:1px solid #ffffff06;display:flex;align-items:center;justify-content:space-between;}
+.phrases-title{font-family:var(--mono);font-size:8px;letter-spacing:4px;color:#00e5ff22;text-transform:uppercase;}
+.phrases-body{padding:20px;max-height:600px;overflow-y:auto;}
+.phrases-body::-webkit-scrollbar{width:3px;}.phrases-body::-webkit-scrollbar-track{background:transparent;}.phrases-body::-webkit-scrollbar-thumb{background:#00e5ff18;}
+
+.phase-group{margin-bottom:24px;}
+.phase-title{font-family:var(--mono);font-size:8px;letter-spacing:3px;text-transform:uppercase;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #ffffff06;display:flex;align-items:center;gap:10px;}
+.phase-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+
+.phrase-item{padding:8px 14px;margin-bottom:3px;border-left:2px solid #ffffff06;transition:all .3s;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;}
+.phrase-item:hover{border-left-color:var(--phase-color,#00e5ff);background:#ffffff03;}
+.phrase-text{font-family:var(--serif);font-size:12px;color:#666678;font-style:italic;line-height:1.7;flex:1;}
+.phrase-item:hover .phrase-text{color:#888898;}
+.phrase-source{font-family:var(--mono);font-size:7px;color:#ffffff11;letter-spacing:1px;white-space:nowrap;flex-shrink:0;padding:2px 8px;border:1px solid #ffffff06;text-transform:uppercase;}
+
+/* ═══════════════════════════════════════════════
+   PANEL 5: OPERATIONAL INSTRUCTION SIDEBAR
+   ═══════════════════════════════════════════════ */
+.ops-sidebar{position:fixed;right:-440px;top:0;width:420px;height:100vh;background:rgba(5,5,15,.96);border-left:1px solid #ffffff06;z-index:200;transition:right .5s cubic-bezier(.16,1,.3,1);overflow-y:auto;padding:24px;backdrop-filter:blur(16px);}
+.ops-sidebar.open{right:0;}
+.ops-sidebar::-webkit-scrollbar{width:3px;}.ops-sidebar::-webkit-scrollbar-track{background:transparent;}.ops-sidebar::-webkit-scrollbar-thumb{background:#00e5ff18;}
+
+.ops-close{position:absolute;top:16px;right:16px;font-family:var(--mono);font-size:10px;color:#ffffff14;cursor:pointer;border:1px solid #ffffff06;background:transparent;padding:4px 10px;transition:all .3s;}
+.ops-close:hover{color:var(--cyan);border-color:#00e5ff22;}
+
+.ops-title{font-family:var(--serif);font-size:14px;color:var(--cyan);letter-spacing:3px;font-style:italic;margin-bottom:6px;}
+.ops-version{font-family:var(--mono);font-size:7px;letter-spacing:3px;color:#00e5ff22;text-transform:uppercase;margin-bottom:24px;padding-bottom:12px;border-bottom:1px solid #ffffff06;}
+
+.ops-section{margin-bottom:20px;}
+.ops-section-title{font-family:var(--mono);font-size:8px;letter-spacing:3px;color:#ffb30033;text-transform:uppercase;margin-bottom:10px;}
+.ops-item{font-size:10px;color:#444458;padding:4px 0 4px 14px;border-left:1px solid #ffffff06;line-height:1.7;font-family:var(--mono);}
+.ops-item strong{color:#888898;font-weight:400;}
+
+.ops-tier{padding:5px 0;font-family:var(--mono);font-size:10px;}
+.ops-tier .tier-label{font-weight:700;}
+.ops-conflict{margin-top:10px;padding:10px 14px;border:1px solid #ff444422;background:#ff444405;font-family:var(--mono);font-size:9px;color:#ff444466;}
+
+/* OPS TOGGLE */
+.ops-toggle{position:fixed;right:20px;bottom:24px;z-index:201;width:44px;height:44px;background:rgba(5,5,15,.9);border:1px solid #00e5ff18;color:#00e5ff44;font-family:var(--mono);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .3s;}
+.ops-toggle:hover{color:var(--cyan);border-color:var(--cyan);background:#00e5ff08;box-shadow:0 0 16px #00e5ff22;}
+
+/* ═══════════════════════════════════════════════
+   FOOTER (from introspect.html style)
+   ═══════════════════════════════════════════════ */
+.site-footer{text-align:center;padding:48px 0 32px;font-family:var(--mono);font-size:8px;letter-spacing:3px;color:#ffffff06;text-transform:uppercase;border-top:1px solid #ffffff04;}
+.site-footer a{color:#00e5ff18;text-decoration:none;transition:color .3s;}
+.site-footer a:hover{color:var(--cyan);}
+
+/* FINAL STAMP */
+.final-stamp{margin:32px auto 0;display:inline-block;border:1px solid #00e5ff0a;padding:16px 32px;font-family:var(--mono);font-size:7px;letter-spacing:3px;color:#00e5ff18;text-transform:uppercase;line-height:2.2;text-align:center;}
+
+/* ═══════════════════════════════════════════════
+   PANEL 6: NETWORK STATE + SCHEMA VALIDATION
+   ═══════════════════════════════════════════════ */
+.network-state{margin:0 0 40px;}
+.net-header{font-family:var(--mono);font-size:9px;letter-spacing:3px;color:#00e5ff33;text-transform:uppercase;margin-bottom:20px;}
+.net-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px;}
+@media(max-width:900px){.net-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:560px){.net-grid{grid-template-columns:1fr;}}
+.net-card{border:1px solid #ffffff06;padding:18px 16px;background:#ffffff02;text-decoration:none;display:block;transition:all .4s;position:relative;overflow:hidden;}
+.net-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--net-color,#00e5ff);opacity:.15;transition:opacity .3s;}
+.net-card:hover{border-color:#00e5ff1a;background:#00e5ff03;transform:translateY(-2px);}
+.net-card:hover::before{opacity:.6;}
+.net-tag{font-family:var(--mono);font-size:7px;letter-spacing:2px;color:#eeeef855;text-transform:uppercase;margin-bottom:8px;}
+.net-name{font-family:var(--serif);font-size:13px;color:#aaaabc;margin-bottom:6px;}
+.net-desc{font-family:var(--mono);font-size:8px;color:#333345;line-height:1.8;letter-spacing:.3px;margin-bottom:10px;}
+.net-link{font-family:var(--mono);font-size:7px;letter-spacing:2px;color:#00e5ff22;text-transform:uppercase;transition:color .3s;}
+.net-card:hover .net-link{color:var(--cyan);}
+
+/* DEV STATE GRID */
+.dev-state-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+@media(max-width:700px){.dev-state-grid{grid-template-columns:1fr;}}
+.dev-panel{border:1px solid #ffffff06;background:#000000aa;overflow:hidden;}
+.dev-panel-header{padding:10px 16px;border-bottom:1px solid #ffffff06;font-family:var(--mono);font-size:8px;letter-spacing:3px;color:#00e5ff22;text-transform:uppercase;}
+.dev-panel-body{padding:12px 16px;}
+
+/* BLOCKER ITEMS */
+.blocker-item{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #ffffff04;}
+.blocker-sev{font-family:var(--mono);font-size:7px;letter-spacing:1px;padding:2px 6px;border:1px solid;text-transform:uppercase;min-width:62px;text-align:center;}
+.blocker-sev.crit{color:var(--red);border-color:#ff444422;}
+.blocker-sev.high{color:var(--amber);border-color:#ffb30022;}
+.blocker-sev.med{color:var(--cyan);border-color:#00e5ff22;}
+.blocker-name{font-size:10px;color:#888898;flex:1;}
+.blocker-effort{font-family:var(--mono);font-size:8px;color:#ffffff18;}
+
+/* SCHEMA ITEMS */
+.schema-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #ffffff04;}
+.schema-key{font-family:var(--mono);font-size:9px;color:#00e5ff44;min-width:140px;}
+.schema-arrow{color:#ffffff08;font-size:8px;}
+.schema-val{font-family:var(--mono);font-size:9px;}
+.schema-val.ok{color:var(--green);}
+.schema-val.fail{color:var(--red);}
+.schema-val.warn{color:var(--amber);}
+
+/* COVERAGE BARS */
+.coverage-bar-wrap{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
+.cov-row{display:flex;align-items:center;gap:12px;}
+.cov-label{font-family:var(--mono);font-size:8px;color:#555568;min-width:220px;letter-spacing:.5px;}
+.cov-bar{flex:1;height:4px;background:#ffffff06;border-radius:2px;overflow:hidden;}
+.cov-fill{height:100%;border-radius:2px;transition:width .8s ease;}
+.cov-val{font-family:var(--mono);font-size:8px;min-width:80px;text-align:right;letter-spacing:.5px;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:#00e5ff18;}
+
+/* SELECTION */
+::selection{background:rgba(0,229,255,.15);color:var(--bright);}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════ */
+@media(max-width:900px){
+  .site-header{flex-wrap:wrap;gap:8px;padding:10px 16px;}
+  .header-nav{flex-wrap:wrap;}
+  .page{padding:0 16px 80px;}
+  .ops-sidebar{width:92vw;right:-92vw;}
+  .ops-sidebar.open{right:0;}
+  .file-row{grid-template-columns:140px 40px 1fr 34px;font-size:10px;}
+  .stage-btn{grid-template-columns:70px 1fr 60px;}
+}
+</style>
+</head>
+<body>
+
+<!-- LAVA — UNTOUCHED -->
+<div class="lava-wrap" aria-hidden="true">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+  <div class="blob b4"></div><div class="blob b5"></div><div class="blob b6"></div>
+  <div class="blob b7"></div>
+</div>
+
+<!-- SCANLINE -->
+<div class="scanline"></div>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header class="site-header">
+  <div class="header-left">
+    <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="LEX FORENSICA">
+      <rect x="1" y="1" width="30" height="30" stroke="#00e5ff" stroke-width=".5" fill="none" opacity=".3"/>
+      <path d="M8 8 L16 4 L24 8 L24 24 L16 28 L8 24Z" stroke="#00e5ff" stroke-width=".4" fill="none" opacity=".5"/>
+      <circle cx="16" cy="16" r="4" stroke="#00e5ff" stroke-width=".4" fill="none" opacity=".6"/>
+      <line x1="16" y1="4" x2="16" y2="12" stroke="#00e5ff" stroke-width=".3" opacity=".3"/>
+      <line x1="16" y1="20" x2="16" y2="28" stroke="#00e5ff" stroke-width=".3" opacity=".3"/>
+      <line x1="8" y1="8" x2="12" y2="16" stroke="#00e5ff" stroke-width=".3" opacity=".3"/>
+      <line x1="24" y1="8" x2="20" y2="16" stroke="#00e5ff" stroke-width=".3" opacity=".3"/>
+    </svg>
+    <div>
+      <div class="header-title">LEX FORENSICA — CONTROL ROOM</div>
+      <div class="header-version">v8.0 · AI-Forensica · Celoprůmyslová Vizualizace</div>
+    </div>
+  </div>
+  <nav class="header-nav">
+    <a href="#pipeline" class="active">PIPELINE</a>
+    <a href="#topology">SOUBORY</a>
+    <a href="#axioms">AXIOMY</a>
+    <a href="#phrases">INSTRUKCE</a>
+    <a href="#secValidation">SÍŤ</a>
+    <a href="javascript:void(0)" onclick="toggleOps()">OPERACE</a>
+    <a href="index.html" style="color:#00e5ff44;border:1px solid #00e5ff18;">← ARCHIV</a>
+    <a href="introspect.html" style="color:#00e5ff22;">INTROSPECT</a>
+  </nav>
+  <div class="header-status">
+    <div class="status-dot"></div>
+    SYSTEM OPERATIONAL
+  </div>
+</header>
+
+<div class="page">
+
+  <!-- ═══════════════ PANEL 1: TOPOLOGICAL PIPELINE MAP ═══════════════ -->
+  <div class="sec-div reveal" id="pipeline"><div class="sec-div-line"></div><div class="sec-div-label">Panel 01 · Topologická Mapa Pipeline</div><div class="sec-div-line"></div></div>
+
+  <!-- Decision Matrix SVG (concentric rings) -->
+  <div class="matrix-wrap reveal">
+    <svg viewBox="0 0 700 480" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="glow-c"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="glow-p"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="glow-g"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+
+      <!-- GRID PATTERN -->
+      <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+        <path d="M40 0L0 0 0 40" fill="none" stroke="#ffffff" stroke-width=".15" opacity=".06"/>
+      </pattern>
+      <rect width="700" height="480" fill="url(#grid)"/>
+
+      <!-- OUTER: FLUID -->
+      <ellipse cx="350" cy="230" rx="310" ry="200" fill="none" stroke="#00e5ff" stroke-width=".5" opacity=".12" class="pulse-anim"/>
+      <ellipse cx="350" cy="230" rx="310" ry="200" fill="none" stroke="#00e5ff" stroke-width="1" stroke-dasharray="4 8" opacity=".2"/>
+      <text x="350" y="42" text-anchor="middle" class="ring-label" fill="#00e5ff">FLUID</text>
+      <text x="350" y="54" text-anchor="middle" class="ring-sub" fill="#00e5ff">Zero-Knowledge Ingesce · Reaktivní Vstupní Persona</text>
+
+      <!-- STRING_STATIC transitions -->
+      <line x1="160" y1="110" x2="240" y2="135" stroke="#ffb300" stroke-width=".4" stroke-dasharray="3 5" opacity=".25"/>
+      <line x1="460" y1="135" x2="540" y2="110" stroke="#ffb300" stroke-width=".4" stroke-dasharray="3 5" opacity=".25"/>
+      <text x="115" y="105" class="trans-label" fill="#ffb300" opacity=".4">STRING_STATIC</text>
+      <text x="510" y="105" class="trans-label" fill="#ffb300" opacity=".4">STRING_STATIC</text>
+
+      <!-- MIDDLE: STATIC / MIND1 -->
+      <ellipse cx="350" cy="230" rx="200" ry="135" fill="none" stroke="#eeeef8" stroke-width=".8" opacity=".15"/>
+      <ellipse cx="350" cy="230" rx="200" ry="135" fill="none" stroke="#eeeef8" stroke-width=".3" opacity=".08"/>
+      <text x="350" y="108" text-anchor="middle" class="ring-label" fill="#eeeef8">STATIC · MIND1</text>
+      <text x="350" y="120" text-anchor="middle" class="ring-sub" fill="#eeeef8">Axiomová Kotva · gemini-2.5-flash · temp=0.1</text>
+
+      <!-- DEEP_FLUID transitions -->
+      <line x1="240" y1="300" x2="275" y2="275" stroke="#00c896" stroke-width=".4" stroke-dasharray="3 5" opacity=".25"/>
+      <line x1="425" y1="275" x2="460" y2="300" stroke="#00c896" stroke-width=".4" stroke-dasharray="3 5" opacity=".25"/>
+      <text x="185" y="318" class="trans-label" fill="#00c896" opacity=".4">DEEP_FLUID</text>
+      <text x="445" y="318" class="trans-label" fill="#00c896" opacity=".4">DEEP_FLUID</text>
+
+      <!-- INNER: DEEP / MIND2 -->
+      <ellipse cx="350" cy="230" rx="105" ry="72" fill="none" stroke="#7b2fff" stroke-width=".5" opacity=".1" class="breathe-anim"/>
+      <ellipse cx="350" cy="230" rx="105" ry="72" fill="none" stroke="#7b2fff" stroke-width="1" stroke-dasharray="2 6" opacity=".2"/>
+      <text x="350" y="222" text-anchor="middle" class="ring-label" fill="#7b2fff">DEEP · MIND2</text>
+      <text x="350" y="236" text-anchor="middle" class="ring-sub" fill="#7b2fff">gemini-3.1-pro-preview · thinkingLevel=HIGH</text>
+
+      <!-- AnalyticalNode.sign() -->
+      <circle cx="350" cy="260" r="3" fill="#00e5ff" opacity=".4" filter="url(#glow-c)"/>
+      <text x="350" y="276" text-anchor="middle" fill="#00e5ff" opacity=".3" style="font-family:var(--mono);font-size:6px;letter-spacing:1px;">AnalyticalNode.sign()</text>
+
+      <!-- LOOP_CYCLE return arrow -->
+      <path d="M 460 230 Q 610 230 610 110 Q 610 42 350 40" fill="none" stroke="#00c896" stroke-width=".8" stroke-dasharray="6 4" opacity=".3" filter="url(#glow-g)" class="loop-arrow"/>
+      <text x="618" y="170" class="trans-label" fill="#00c896" opacity=".5" transform="rotate(90 618 170)">LOOP_CYCLE</text>
+      <polygon points="355,38 345,38 350,32" fill="#00c896" opacity=".3"/>
+      <text x="608" y="72" fill="#ff4444" opacity=".2" style="font-family:var(--mono);font-size:5.5px;letter-spacing:1px;" transform="rotate(-30 608 72)">AXIOM VIOLATION → FLUID</text>
+
+      <!-- INPUT annotation -->
+      <text x="90" y="230" fill="#00e5ff" opacity=".12" style="font-family:var(--mono);font-size:6px;letter-spacing:1px;">INPUT_A + INPUT_B</text>
+      <line x1="160" y1="228" x2="40" y2="228" stroke="#00e5ff" stroke-width=".3" stroke-dasharray="2 4" opacity=".1"/>
+
+      <!-- DEFENSE annotation -->
+      <text x="350" y="340" text-anchor="middle" fill="#ff4444" opacity=".15" style="font-family:var(--mono);font-size:5.5px;letter-spacing:1px;">DEFENSE SYNTHESIS · LEGAL COUNTER-POWER</text>
+
+      <!-- DEDUCTION-SPACE label -->
+      <text x="350" y="430" text-anchor="middle" fill="#ffffff" opacity=".06" style="font-family:var(--mono);font-size:6px;letter-spacing:3px;">DEDUCTION-SPACE · REACTIVE LAYER TRANSITIONS · Ω &gt; Δ &gt; ◈</text>
+
+      <!-- Metadata annotations -->
+      <circle cx="78" cy="170" r="2" fill="#ff4444" opacity=".3"/>
+      <text x="38" y="174" fill="#ff4444" opacity=".2" style="font-family:var(--mono);font-size:5px;letter-spacing:1px;">BiasScore &gt; 0.7</text>
+      <text x="530" y="210" fill="#eeeef8" opacity=".1" style="font-family:var(--mono);font-size:5px;letter-spacing:1px;">PARAFRAME: READONLY</text>
+      <text x="350" y="310" text-anchor="middle" fill="#7b2fff" opacity=".15" style="font-family:var(--mono);font-size:5px;letter-spacing:1px;">ZKP STRIP · load_index = depotMonths²</text>
+
+      <!-- OUTPUT annotations -->
+      <text x="350" y="370" text-anchor="middle" fill="#00c896" opacity=".15" style="font-family:var(--mono);font-size:5px;letter-spacing:1.5px;">OUTPUT → DefenseSynthesis + AuditResponse</text>
+      <text x="350" y="390" text-anchor="middle" fill="#00e5ff" opacity=".08" style="font-family:var(--mono);font-size:4.5px;letter-spacing:1px;">webSearch=ON · ECHR Art. 3, 5, 6, 13 · CRPD Art. 12, 25</text>
+    </svg>
+  </div>
+
+  <!-- Entry Point Cards -->
+  <div class="entry-duo reveal">
+    <div class="entry-card a" id="entryA" onclick="toggleEntry('A')">
+      <div class="entry-tag">INPUT_A</div>
+      <div class="entry-name">Institucionální Záznam</div>
+      <div class="entry-desc">Systémový spis, lékařské záznamy, soudní dokumenty. Strukturovaný hlas instituce.</div>
+      <div class="entry-status">AKTIVOVAT VSTUP →</div>
+    </div>
+    <div class="entry-card b" id="entryB" onclick="toggleEntry('B')">
+      <div class="entry-tag">INPUT_B</div>
+      <div class="entry-name">Hlas Subjektu</div>
+      <div class="entry-desc">Přímá výpověď, osobní chronologie. Nestrukturovaný, ale axiomaticky rovnocenný. Min 50 chars (RULE_001).</div>
+      <div class="entry-status">AKTIVOVAT VSTUP →</div>
+    </div>
+  </div>
+
+  <div class="entry-merge reveal" id="mergeLabel">INPUT_A + INPUT_B → MERGE → FLUID INGESCE</div>
+
+  <!-- Signal Chain — Stage Buttons -->
+  <div class="reveal">
+    <div class="chain-flow" id="chainFlow">
+      <!-- Rendered by JS -->
+    </div>
+  </div>
+
+  <!-- Deduction Panel -->
+  <div class="deduction-panel reveal" id="deductionPanel">
+    <div class="dp-header">
+      <div class="dp-title">Symbologický Tok — Dekódování Pipeline Logiky</div>
+      <div class="dp-state" id="dpState">IDLE</div>
+    </div>
+    <div class="dp-body" id="dpBody"></div>
+  </div>
+
+  <!-- Provider Registry -->
+  <div class="provider-reg reveal">
+    <div class="provider-reg-title">Pipeline Config — Provider Registry</div>
+    <div class="provider-row"><span class="provider-key">mind1:</span><span class="provider-val">gemini | gemini-2.5-flash | temp=0.1</span></div>
+    <div class="provider-row"><span class="provider-key">deep1:</span><span class="provider-val">gemini | gemini-3.1-pro-preview | thinkingLevel=HIGH, webSearch=ON</span></div>
+    <div class="provider-row"><span class="provider-key">defense:</span><span class="provider-val">gemini | gemini-3.1-pro-preview | thinkingLevel=HIGH, webSearch=ON</span></div>
+    <div class="provider-row"><span class="provider-key">assistant:</span><span class="provider-val">gemini | gemini-3.1-pro-preview | temp=0.7</span></div>
+  </div>
+
+  <!-- ═══════════════ PANELS 2 & 3 ═══════════════ -->
+  <div class="sec-div reveal" id="topology"><div class="sec-div-line"></div><div class="sec-div-label">Panel 02 · Topologie Souborů & Panel 03 · Axiomová Matice</div><div class="sec-div-line"></div></div>
+
+  <div class="two-col reveal">
+    <!-- PANEL 2: FILE TOPOLOGY -->
+    <div class="file-panel">
+      <div class="file-panel-header">
+        <div class="file-panel-title">Topologie Souborů · Codebase v8</div>
+        <div style="font-family:var(--mono);font-size:7px;color:#ffffff08;letter-spacing:2px;">lex-forensica-v8/src/</div>
+      </div>
+      <div class="file-panel-body" id="fileBody">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- PANEL 3: AXIOM MATRIX -->
+    <div class="axiom-panel" id="axioms">
+      <div class="axiom-panel-header">
+        <div class="axiom-panel-title">Axiomová Matice · Immutable Constraints</div>
+        <div style="font-family:var(--mono);font-size:7px;color:#ffffff08;letter-spacing:2px;">A1–A6 + RULES</div>
+      </div>
+      <div class="axiom-panel-body">
+        <div class="af-grid" id="axiomGrid">
+          <!-- Rendered by JS -->
+        </div>
+        <div class="special-rules">
+          <div class="special-rule">
+            <span class="rule-tag">TRIPARTITE</span>
+            <span class="rule-name">Dignity > Process</span>
+            <span class="rule-note">CRITICAL · Immutable moral constraint · Ω Override</span>
+          </div>
+          <div class="special-rule">
+            <span class="rule-tag">RULE_001</span>
+            <span class="rule-name">INPUT_B ≥ 50 chars</span>
+            <span class="rule-note">CRITICAL · Minimum input threshold · Subject Voice required</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ PANEL 4: INSTRUCTIONAL PHRASES ═══════════════ -->
+  <div class="sec-div reveal" id="phrases"><div class="sec-div-line"></div><div class="sec-div-label">Panel 04 · Instruktážní Fráze · Prompt Architecture</div><div class="sec-div-line"></div></div>
+
+  <div class="phrases-panel reveal">
+    <div class="phrases-header">
+      <div class="phrases-title">Instruktážní Fráze — Klíčové Direktivy z Prompt Architektury</div>
+    </div>
+    <div class="phrases-body" id="phrasesBody">
+      <!-- Rendered by JS -->
+    </div>
+  </div>
+
+  <!-- ═══════════════ PANEL 6: NETWORK STATE + SCHEMA VALIDATION ═══════════════ -->
+  <div class="sec-div reveal" id="secValidation"><div class="sec-div-line"></div><div class="sec-div-label">Panel 06 · Development State · Schema Validace</div><div class="sec-div-line"></div></div>
+
+  <div class="network-state reveal">
+    <!-- VISUAL NETWORK ENTRY POINTS -->
+    <div class="net-header">Vizuální Síť — Entry Points → steelssystem.github.io</div>
+    <div class="net-grid" id="netGrid">
+      <a href="index.html" class="net-card" style="--net-color:var(--bright)">
+        <div class="net-tag">STATIC · MIND1</div>
+        <div class="net-name">Živý Archiv (index.html)</div>
+        <div class="net-desc">Axiomová Kotva · Neměnné referenční pole · A1–A13 validation</div>
+        <div class="net-link">ENTER →</div>
+      </a>
+      <a href="introspect.html" class="net-card" style="--net-color:var(--cyan)">
+        <div class="net-tag" style="color:var(--cyan)">INTROSPECT · SIGNAL CHAIN</div>
+        <div class="net-name">Introspekce (introspect.html)</div>
+        <div class="net-desc">Dataflow řetěz · Stage buttons · Deduction-Space · Decision Matrix SVG</div>
+        <div class="net-link">ENTER →</div>
+      </a>
+      <a href="semanticview.html" class="net-card" style="--net-color:var(--cyan)">
+        <div class="net-tag" style="color:var(--cyan)">FLUID · REACTIVE</div>
+        <div class="net-name">Semantic View (semanticview.html)</div>
+        <div class="net-desc">Zero-Knowledge Ingesce · BiasScore parsing · Tokenized Payload Emission</div>
+        <div class="net-link">ENTER →</div>
+      </a>
+      <a href="ambient.html" class="net-card" style="--net-color:var(--purple)">
+        <div class="net-tag" style="color:var(--purple)">DEEP · MIND2</div>
+        <div class="net-name">Ambient Grounding (ambient.html)</div>
+        <div class="net-desc">Iatrogenní Substrát · ZKP strip · SurvivorNarrative pečeť</div>
+        <div class="net-link">ENTER →</div>
+      </a>
+    </div>
+
+    <!-- DEVELOPMENT STATE -->
+    <div class="dev-state-grid">
+      <!-- BLOCKER TRACKER -->
+      <div class="dev-panel">
+        <div class="dev-panel-header">Blocker Tracker · Kritická Cesta</div>
+        <div class="dev-panel-body" id="blockerBody"></div>
+      </div>
+
+      <!-- SCHEMA VALIDATION -->
+      <div class="dev-panel">
+        <div class="dev-panel-header">Schema Validace · Placeholder Audit</div>
+        <div class="dev-panel-body" id="schemaBody"></div>
+      </div>
+    </div>
+
+    <!-- COVERAGE METRICS -->
+    <div class="coverage-bar-wrap">
+      <div class="cov-row"><span class="cov-label">Placeholder Match Rate</span><div class="cov-bar"><div class="cov-fill" style="width:40%;background:var(--red)"></div></div><span class="cov-val" style="color:var(--red)">4/10 (40%)</span></div>
+      <div class="cov-row"><span class="cov-label">Axiom Coverage (LOOP_CYCLE)</span><div class="cov-bar"><div class="cov-fill" style="width:46%;background:var(--amber)"></div></div><span class="cov-val" style="color:var(--amber)">6/13 (46%)</span></div>
+      <div class="cov-row"><span class="cov-label">LLM Output Schema Validation</span><div class="cov-bar"><div class="cov-fill" style="width:0%;background:var(--red)"></div></div><span class="cov-val" style="color:var(--red)">0%</span></div>
+      <div class="cov-row"><span class="cov-label">Test Coverage</span><div class="cov-bar"><div class="cov-fill" style="width:0%;background:var(--red)"></div></div><span class="cov-val" style="color:var(--red)">0%</span></div>
+      <div class="cov-row"><span class="cov-label">Orphan Files (root legacy)</span><div class="cov-bar"><div class="cov-fill" style="width:100%;background:var(--amber)"></div></div><span class="cov-val" style="color:var(--amber)">6 files</span></div>
+      <div class="cov-row"><span class="cov-label">Singleton Init Safety</span><div class="cov-bar"><div class="cov-fill" style="width:0%;background:var(--red)"></div></div><span class="cov-val" style="color:var(--red)">0 guards</span></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ CLOSING STAMP ═══════════════ -->
+  <div style="text-align:center;" class="reveal">
+    <div class="final-stamp">
+      LEX FORENSICA · CONTROL ROOM v8.0<br>
+      CELOPRŮMYSLOVÁ VIZUALIZACE · AI-FORENSICA<br>
+      PIPELINE: FLUID → STRING_STATIC → STATIC/MIND1 → DEEP_FLUID → DEEP/MIND2<br>
+      AXIOMS: A1–A6 + TRIPARTITE + RULE_001 · LOOP_CYCLE: INTACT<br>
+      NETWORK: steelssystem.github.io · 4 PERSONA STATES · LIVE<br>
+      SCHEMA VALIDATION: ACTIVE · BLOCKERS: 6 · COVERAGE: 40/46/0/0<br>
+      HASH: c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    SteelsSystem · Lex Forensica · 2026<br>
+    <a href="https://github.com/SteelsSystem/AI-Forensica" target="_blank" rel="noopener noreferrer">GitHub</a> · <a href="index.html">Živý Archiv</a> · <a href="introspect.html">Introspekce</a> · <a href="semanticview.html">Semantic View</a> · <a href="ambient.html">Ambient</a>
+  </footer>
+</div>
+
+<!-- ═══════════════ PANEL 5: OPS SIDEBAR ═══════════════ -->
+<aside class="ops-sidebar" id="opsSidebar">
+  <button class="ops-close" onclick="toggleOps()">×</button>
+  <div class="ops-title">Operační Instrukce</div>
+  <div class="ops-version">LEX FORENSICA v8.0 · AI-FORENSICA · IMMUTABLE DIRECTIVES</div>
+
+  <div class="ops-section">
+    <div class="ops-section-title">1. Pipeline Integrity</div>
+    <div class="ops-item"><strong>ForensicEngine.analyzeDeep()</strong> is the single entry point</div>
+    <div class="ops-item">MIND1 output feeds DEEP_1 via <strong>NormalizedEventFrame[]</strong></div>
+    <div class="ops-item">FactCheckpoints are <strong>SHA-256 locked</strong> before DEEP_1</div>
+    <div class="ops-item">LOOP_CYCLE runs <strong>max 2x</strong> on CRITICAL violations</div>
+    <div class="ops-item">LOOP_CYCLE routes to <strong>FLUID only</strong> — never to STATIC or DEEP</div>
+  </div>
+
+  <div class="ops-section">
+    <div class="ops-section-title">2. Security Mandate</div>
+    <div class="ops-item">All Firestore writes: <strong>isLikelyEncrypted()</strong> guard</div>
+    <div class="ops-item"><strong>AES-256-GCM</strong> via Web Crypto API (not Node.js Buffer)</div>
+    <div class="ops-item">PII redaction before RLHF data reaches training pool</div>
+    <div class="ops-item"><strong>Zero-Knowledge:</strong> data never leaves browser unencrypted</div>
+  </div>
+
+  <div class="ops-section">
+    <div class="ops-section-title">3. Axiom Enforcement</div>
+    <div class="ops-item">A1-A6 are <strong>immutable constraints</strong>, not guidelines</div>
+    <div class="ops-item"><strong>verifyIntegrity()</strong> checks all 6 + TRIPARTITE + RULE_001</div>
+    <div class="ops-item">Each axiom maps to specific <strong>ECHR/CRPD articles</strong></div>
+    <div class="ops-item"><strong>PARAFRAME_MAP</strong> contains 60+ cypher remappings</div>
+  </div>
+
+  <div class="ops-section">
+    <div class="ops-section-title">4. LLM Provider Abstraction</div>
+    <div class="ops-item"><strong>ProviderRegistry</strong> singleton manages all providers</div>
+    <div class="ops-item">Pipeline phases resolved via <strong>resolvePhase()</strong></div>
+    <div class="ops-item">Provider hot-swap supported (<strong>register/unregister</strong>)</div>
+    <div class="ops-item">Events emitted for <strong>monitoring/cost tracking</strong></div>
+  </div>
+
+  <div class="ops-section">
+    <div class="ops-section-title">5. Linguistic Architecture</div>
+    <div class="ops-item">ForensicNLP detects <strong>CS/EN/DE</strong> via character frequency</div>
+    <div class="ops-item"><strong>SLANG_MAP:</strong> 30+ CS, 40+ EN, 30+ DE terms</div>
+    <div class="ops-item"><strong>INSTITUTION_PATTERNS:</strong> 9 institution types × 3 term categories</div>
+    <div class="ops-item">Word planting detection compares source vs LLM output</div>
+  </div>
+
+  <div class="ops-section">
+    <div class="ops-section-title">6. Authority Hierarchy (Ω Override)</div>
+    <div class="ops-tier"><span class="tier-label" style="color:#00e5ff88">TIER 1 [Ω]</span> <span style="color:#555568">Moral Standard — dignity, consent, truth</span></div>
+    <div class="ops-tier"><span class="tier-label" style="color:#ffb30066">TIER 2 [Δ]</span> <span style="color:#555568">Press/Media — semantic integrity, anti-stigma</span></div>
+    <div class="ops-tier"><span class="tier-label" style="color:#7b2fff66">TIER 3 [◈]</span> <span style="color:#555568">Government — audit, chain-of-custody</span></div>
+    <div class="ops-conflict">CONFLICT: Any Tier 3 > Tier 1 output is INVALID before generation</div>
+  </div>
+</aside>
+
+<button class="ops-toggle" onclick="toggleOps()" aria-label="Operační instrukce">Ω</button>
+
+<script>
+/* ═══════════════════════════════════════════════
+   PIPELINE STAGES DATA (adapted for v8 Control Room)
+   ═══════════════════════════════════════════════ */
+const STAGES = [
+  {id:'fluid',num:'01',type:'LAYER',label:'FLUID',color:'#00e5ff',
+   sub:'Zero-Knowledge Ingesce — Reaktivní Vstupní Persona',
+   ops:'BiasScore parsing (práh > 0.7) · Dekompozice [A=Událost, B=Čas, C=Akce] · Stripování emočního cypheru · Gemini Flash | temp=0.1',
+   deduction:[
+     {ts:'T+0.00',op:'INIT',msg:'FLUID vrstva aktivována — maximální reaktivita, žádná fixní kotva',cl:'hl'},
+     {ts:'T+0.01',op:'SCAN',msg:'BiasScore parsing zahájeno na vstupním payloadu',cl:'hl'},
+     {ts:'T+0.02',op:'SPLIT',msg:'Dekompozice: claim → [A=Událost, B=Čas, C=Akce]',cl:'hl'},
+     {ts:'T+0.03',op:'STRIP',msg:'Emoční cypher a institucionální zabarvení odstraněno',cl:'warn'},
+     {ts:'T+0.04',op:'EMIT',msg:'Čistý tokenizovaný payload emitován → STRING_STATIC',cl:'pass'},
+     {ts:'T+0.04',op:'RULE',msg:'FLUID nikdy neuzavírá — pouze emituje',cl:'inf'}
+   ]},
+  {id:'string_static',num:'→',type:'PŘECHOD',label:'STRING_STATIC',color:'#ffb300',isTrans:true,
+   sub:'Sémantická injekce — Most mezi FLUID a STATIC',
+   ops:'PARAFRAME_MAP realignment · Cypher remapping (Delusion → IdentityResponse) · SKSS/CLSL drift taxonomie',
+   deduction:[
+     {ts:'T+0.05',op:'BRIDGE',msg:'STRING_STATIC separátor — přechod z reaktivní observace na strukturované mapování',cl:'warn'},
+     {ts:'T+0.06',op:'REMAP',msg:'Cypher kandidáty: Delusion → IdentityResponse · Non-Compliance → A4',cl:'warn'},
+     {ts:'T+0.07',op:'DRIFT',msg:'SKSS taxonomie: NEUTRAL → PATHOLOGIZING → DEPERSONIFYING → CRIMINALIZING',cl:'crit'},
+     {ts:'T+0.08',op:'ALIGN',msg:'PARAFRAME_MAP realignment dokončen → předání STATIC/MIND1',cl:'pass'}
+   ]},
+  {id:'static',num:'02',type:'LAYER',label:'STATIC · MIND1',color:'#eeeef8',
+   sub:'Tokenized Payload Emission — Axiomová Kotva',
+   ops:'Axiom-Certified Validation A1–A6 · PARAFRAME seal Readonly · Autorita: Ω > Δ > ◈ · gemini-2.5-flash | temp=0.1',
+   deduction:[
+     {ts:'T+0.09',op:'LOCK',msg:'STATIC MIND1 vstup — jediný stav BEZ interní zpětné vazby',cl:'hl'},
+     {ts:'T+0.10',op:'VALID',msg:'Axiom-Certified Validation: testování remappingů proti A1–A6',cl:'hl'},
+     {ts:'T+0.11',op:'AUTH',msg:'Hierarchie: Ω [Morální standard] > Δ [Média] > ◈ [Instituce]',cl:'inf'},
+     {ts:'T+0.12',op:'SEAL',msg:'PARAFRAME_MAP → Readonly. FactCheckpoints SHA-256 locked.',cl:'pass'},
+     {ts:'T+0.12',op:'ROUTE',msg:'Axiom failure → výstup blokován → LOOP_CYCLE zpět do FLUID',cl:'crit'}
+   ]},
+  {id:'deep_fluid',num:'→',type:'PŘECHOD',label:'DEEP_FLUID',color:'#00c896',isTrans:true,
+   sub:'Chrono-Bridge — Reaktivní Separátor 2',
+   ops:'Medication_Timestamp ↔ Symptom_Onset korelace · iatrogenic_load_index předvýpočet · Rozhodovací uzel A3',
+   deduction:[
+     {ts:'T+0.13',op:'CHRONO',msg:'DEEP_FLUID chrono-bridge: korelace Medication_Timestamp ↔ Symptom_Onset',cl:'pass'},
+     {ts:'T+0.14',op:'CALC',msg:'Předvýpočet iatrogenic_load_index pro DEEP analýzu',cl:'inf'},
+     {ts:'T+0.15',op:'DECIDE',msg:'Rozhodovací uzel: Primární Patologie vs. Iatrogenní Echo (A3)',cl:'warn'},
+     {ts:'T+0.16',op:'LAYER',msg:'Kauzální separace: LAYER_PAST / LAYER_PRESENT / LAYER_ROOT',cl:'hl'}
+   ]},
+  {id:'deep',num:'03',type:'LAYER',label:'DEEP · MIND2',color:'#7b2fff',
+   sub:'Neuro-Symbolic Abduction — Iatrogenní Substrát',
+   ops:'gemini-3.1-pro-preview | thinkingLevel=HIGH | webSearch=ON · 10 LAYER analytická metodika · ZKP strip · SurvivorNarrative pečeť',
+   deduction:[
+     {ts:'T+0.17',op:'DEEP',msg:'DEEP MIND2 aktivace — hluboký NLP parsing (Gemini Pro, thinkingLevel=HIGH)',cl:'inf'},
+     {ts:'T+0.18',op:'LOAD',msg:'Akumulovaná zátěž: load_index = depotMonths² kalkulace',cl:'inf'},
+     {ts:'T+0.19',op:'ZKP',msg:'Zero-Knowledge Proof strip aplikován na všechny výstupy',cl:'pass'},
+     {ts:'T+0.20',op:'LAYER',msg:'10-vrstvá analytická metodika: dokumentationGaps, complianceTerms, iatrogenicTerms...',cl:'hl'},
+     {ts:'T+0.21',op:'TEST',msg:'hallucination_risk ≥ 0.3 NEBO semantic_drift < 0.75 → LOOP_CYCLE',cl:'crit'},
+     {ts:'T+0.21',op:'SIGN',msg:'PASS → DEFENSE Synthesis aktivována',cl:'pass'}
+   ]},
+  {id:'defense',num:'04',type:'LAYER',label:'DEFENSE',color:'#ff4444',
+   sub:'Defense Synthesis — Instrument of Legal Counter-Power',
+   ops:'gemini-3.1-pro-preview | thinkingLevel=HIGH | webSearch=ON · legalBriefDraft · DefenseSynthesis + AuditResponse',
+   deduction:[
+     {ts:'T+0.22',op:'DEFENSE',msg:'DEFENSE aktivace — "You are not neutral. You are an instrument of legal counter-power."',cl:'crit'},
+     {ts:'T+0.23',op:'TRACE',msg:'Každý claim trasovatelný ke specifickému frame, checkpoint, nebo audit finding',cl:'warn'},
+     {ts:'T+0.24',op:'GUARD',msg:'Necharakterizuj mentální stav ani důvěryhodnost subjektu',cl:'warn'},
+     {ts:'T+0.25',op:'BRIEF',msg:'legalBriefDraft musí být napsán, jako by byl skutečně podán k soudu',cl:'crit'},
+     {ts:'T+0.26',op:'EMIT',msg:'OUTPUT: DefenseSynthesis + AuditResponse (kompletní JSON)',cl:'pass'}
+   ]},
+  {id:'output',num:'✓',type:'VÝSTUP',label:'AnalyticalNode.sign()',color:'#00c896',
+   sub:'Forenzně Platný Výstup — Axiom-Certified',
+   ops:'Plně validováno A1–A6 · ZKP-stripped · PARAFRAME Readonly · DefenseSynthesis + AuditResponse',
+   deduction:[
+     {ts:'T+0.27',op:'FINAL',msg:'AnalyticalNode.sign() — forenzně platný výstup vygenerován',cl:'pass'},
+     {ts:'T+0.28',op:'CERT',msg:'Certifikace: A1–A6 ✓ · ZKP ✓ · PARAFRAME Readonly ✓ · Ω hierarchie ✓',cl:'pass'},
+     {ts:'T+0.29',op:'HASH',msg:'Výstupní hash: kryptograficky podepsaný, dohledatelný uvnitř systému',cl:'hl'}
+   ]}
+];
+
+const LOOP_DATA = {label:'LOOP_CYCLE · Reaktivní Realignment',desc:'Axiomové porušení vrací výstup striktně do FLUID. Nikdy do STATIC ani DEEP. Max 2 cykly. AUDIT → DETECT → REALITY CHECK → REFINE → VALIDATE.'};
+
+/* ═══════════════════════════════════════════════
+   AXIOM DATA
+   ═══════════════════════════════════════════════ */
+const AXIOMS = [
+  {code:'A1',name:'Forensic Spoliation',severity:'HIGH',legal:'ECHR Art. 3, 13',loop:'documentationGaps → axiomaticViolations',clsl:'NEUTRAL→PATHOLOGIZING',paraframe:12,color:'high',
+   desc:'Systematická destrukce, opomenutí nebo zkreslení důkazů v institucionální dokumentaci. Cílí na mezery v dokumentaci, které odhalují záměrné formování narativu.'},
+  {code:'A2',name:'Semantic Neutralization',severity:'HIGH',legal:'ECHR Art. 6',loop:'complianceTerms → discrepancyMatrix',clsl:'PATHOLOGIZING→DEPERSONIFYING',paraframe:14,color:'high',
+   desc:'Použití klinického, byrokratického nebo eufemistického jazyka k zakrytí škodlivých akcí. Detekuje nahrazení lidské zkušenosti sanitizovanými abstrakcemi.'},
+  {code:'A3',name:'Iatrogenic Attribution',severity:'HIGH',legal:'ECHR Art. 3, CRPD Art. 25',loop:'iatrogenicTerms → axiomaticViolations',clsl:'DEPERSONIFYING',paraframe:10,color:'high',
+   desc:'Poškození způsobené institucionální intervencí, které je pak připsáno subjektově inherentní patologii. Detekuje cirkulární uvažování.'},
+  {code:'A4',name:'Epistemic Circularity',severity:'MEDIUM',legal:'ECHR Art. 6(1)',loop:'circularTerms → falsifiabilityCheck',clsl:'CRIMINALIZING',paraframe:8,color:'medium',
+   desc:'Závěry spoléhající na premisy, které samy závisí na závěru. Detekuje nefalsifikovatelné diagnostické smyčky.'},
+  {code:'A5',name:'Structural Bias',severity:'MEDIUM',legal:'ECHR Art. 6(1), CRPD Art. 12',loop:'expertNameCounts → axiomaticViolations',clsl:'—',paraframe:9,color:'medium',
+   desc:'Asymetrický přístup k důkazům, odbornosti nebo procesní výhodě, která systematicky znevýhodňuje jednu stranu.'},
+  {code:'A6',name:'Judicial Abandonment',severity:'HIGH',legal:'ECHR Art. 5(4), 6(1)',loop:'judicialTerms → legalMatrix',clsl:'—',paraframe:7,color:'high',
+   desc:'Selhání soudního dohledu — soudy se podřizují institucionální autoritě bez nezávislého ověření.'}
+];
+
+/* ═══════════════════════════════════════════════
+   FILE TOPOLOGY DATA
+   ═══════════════════════════════════════════════ */
+const FILES = [
+  {section:'services/',cls:'svc',files:[
+    {name:'gemini.ts',lines:546,desc:'ForensicEngine singleton · MIND1→DEEP_1→LOOP→DEFENSE'},
+    {name:'nlp-core.ts',lines:510,desc:'ForensicNLP singleton · verifyIntegrity, detectWordPlanting'},
+    {name:'crypto.ts',lines:97,desc:'AES-256-GCM + PBKDF2 · encryptData, decryptData, hashFact'},
+    {name:'db.ts',lines:276,desc:'Firestore operations · isLikelyEncrypted guard'},
+    {name:'firebase.ts',lines:0,desc:'Firebase config'}
+  ]},
+  {section:'services/llm/',cls:'svc',files:[
+    {name:'types.ts',lines:195,desc:'LLMProvider interface · PipelineConfig, PipelineSlot',indent:true},
+    {name:'provider-registry.ts',lines:177,desc:'ProviderRegistry singleton · resolvePhase, diagnostics',indent:true},
+    {name:'gemini-provider.ts',lines:225,desc:'GeminiProvider · generateStructured, generateText, chat',indent:true},
+    {name:'index.ts',lines:60,desc:'Entry point · initializeLLM',indent:true}
+  ]},
+  {section:'lib/',cls:'lib',files:[
+    {name:'prompts.ts',lines:595,desc:'MIND1_PROMPT, DEEP1_PROMPT, DEFENSE_PROMPT, ASSISTANT_CS/EN/DE'},
+    {name:'constants.ts',lines:708,desc:'AXIOM_DEFINITIONS, INSTITUTION_PATTERNS, SLANG_MAP, PARAFRAME_MAP'}
+  ]},
+  {section:'components/',cls:'cmp',files:[
+    {name:'Dashboard.tsx',lines:154,desc:'Main dashboard layout'},
+    {name:'DualInput.tsx',lines:307,desc:'INPUT_A + INPUT_B interface'},
+    {name:'ChatAssistant.tsx',lines:128,desc:'AI chat interface'},
+    {name:'ChronologyTimeline.tsx',lines:0,desc:'Timeline visualization'},
+    {name:'DiscrepancyMatrix.tsx',lines:0,desc:'Discrepancy analysis'},
+    {name:'LegalMatrix.tsx',lines:0,desc:'Legal violations'},
+    {name:'DefenseDraft.tsx',lines:0,desc:'Defense synthesis'},
+    {name:'RiskGauge.tsx',lines:0,desc:'Risk assessment'},
+    {name:'ExportPanel.tsx',lines:0,desc:'PDF/HTML export'},
+    {name:'VaultModal.tsx',lines:0,desc:'Encrypted vault'},
+    {name:'AuthGate.tsx',lines:0,desc:'Firebase auth'}
+  ]},
+  {section:'hooks/',cls:'hk',files:[
+    {name:'useAudit.ts',lines:181,desc:'Audit state management'},
+    {name:'useAuth.ts',lines:0,desc:'Auth state'},
+    {name:'useVault.ts',lines:0,desc:'Vault state'}
+  ]},
+  {section:'root',cls:'tp',files:[
+    {name:'types.ts',lines:317,desc:'30+ interfaces · AuditResponse, NormalizedEventFrame, etc.'}
+  ]}
+];
+const MAX_LINES = 708;
+
+/* ═══════════════════════════════════════════════
+   PHRASES DATA
+   ═══════════════════════════════════════════════ */
+const PHRASES = [
+  {phase:'MIND1',sub:'Zero-Knowledge Ingesce',color:'#00e5ff',phrases:[
+    {text:'"Extract every distinct propositional unit from both inputs"',src:'prompts.ts:MIND1'},
+    {text:'"A propositional unit is any clause that can be assigned a truth value"',src:'prompts.ts:MIND1'},
+    {text:'"Do NOT merge frames from INPUT_A and INPUT_B"',src:'prompts.ts:MIND1'},
+    {text:'"Apply institution-type-specific extraction sensitivity"',src:'prompts.ts:MIND1'},
+    {text:'"Return ONLY a valid JSON array"',src:'prompts.ts:MIND1'}
+  ]},
+  {phase:'DEEP_1',sub:'Neuro-Symbolic Abduction',color:'#7b2fff',phrases:[
+    {text:'"You are NOT a clinical diagnostician, legal counsel, or institutional advocate"',src:'prompts.ts:DEEP1'},
+    {text:'"You are an analytical instrument calibrated to expose asymmetries"',src:'prompts.ts:DEEP1'},
+    {text:'"The following six axioms are immutable constraints on your reasoning"',src:'prompts.ts:DEEP1'},
+    {text:'"LAYER 1-10 analytical methodology"',src:'prompts.ts:DEEP1'},
+    {text:'"Do not hedge, soften, or defer to institutional authority"',src:'prompts.ts:DEEP1'}
+  ]},
+  {phase:'DEFENSE',sub:'Defense Synthesis',color:'#ff4444',phrases:[
+    {text:'"You are not neutral. You are an instrument of legal counter-power"',src:'prompts.ts:DEFENSE'},
+    {text:'"Every claim must be traceable to a specific frame, checkpoint, or audit finding"',src:'prompts.ts:DEFENSE'},
+    {text:'"Do not characterize the subject\'s mental state or credibility"',src:'prompts.ts:DEFENSE'},
+    {text:'"The legalBriefDraft must be written as if it will actually be filed"',src:'prompts.ts:DEFENSE'}
+  ]},
+  {phase:'ASSISTANT',sub:'Chat Persona',color:'#ffb300',phrases:[
+    {text:'"Jsi na straně člověka. Vždy. Bez výjimky."',src:'prompts.ts:ASSISTANT_CS'},
+    {text:'"Neutrální je ten, kdo sleduje, jak se někdo topí, a nedá mu ruku."',src:'prompts.ts:ASSISTANT_CS'},
+    {text:'"Tmavý humor: ano, ale s citem. Ironizuješ systém, ne člověka."',src:'prompts.ts:ASSISTANT_CS'},
+    {text:'"Závěr, který nelze ničím vyvrátit, není vědecký. Je to zbraň."',src:'prompts.ts:ASSISTANT_CS'}
+  ]}
+];
+
+/* ═══════════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════════ */
+let inputA_active = false;
+let inputB_active = false;
+let activeStageIdx = -1;
+
+/* ═══════════════════════════════════════════════
+   ENTRY POINT TOGGLE
+   ═══════════════════════════════════════════════ */
+function toggleEntry(which) {
+  if (which === 'A') {
+    inputA_active = !inputA_active;
+    document.getElementById('entryA').classList.toggle('active', inputA_active);
+  } else {
+    inputB_active = !inputB_active;
+    document.getElementById('entryB').classList.toggle('active', inputB_active);
+  }
+  updateMerge();
+  if (!inputB_active && inputA_active) {
+    addDeductionLine('RULE','RULE_001: INPUT_B_MISSING — Subject Voice absent. Flag raised.','crit');
+  }
+}
+
+function updateMerge() {
+  const el = document.getElementById('mergeLabel');
+  if (inputA_active && inputB_active) {
+    el.style.color = '#00e5ff66';
+    el.textContent = 'INPUT_A + INPUT_B → SLOUČENO → FLUID INGESCE ✓';
+  } else if (inputA_active || inputB_active) {
+    el.style.color = '#ffb30044';
+    el.textContent = 'ČEKÁ NA DRUHÝ VSTUP · RULE_001';
+  } else {
+    el.style.color = '';
+    el.textContent = 'INPUT_A + INPUT_B → MERGE → FLUID INGESCE';
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   CHAIN RENDERING
+   ═══════════════════════════════════════════════ */
+function renderChain() {
+  const flow = document.getElementById('chainFlow');
+  let html = '';
+  STAGES.forEach((s, i) => {
+    if (s.isTrans) {
+      html += `<div class="trans-sep" style="--trans-color:${s.color}"><div class="trans-sep-line"></div><div class="trans-sep-tag">${s.label}</div><div class="trans-sep-line"></div></div>`;
+    }
+    html += `<div class="stage-btn" style="--stage-color:${s.color}" data-idx="${i}" onclick="activateStage(${i})">
+      <div class="stage-idx"><div class="stage-num">${s.num}</div><div class="stage-type-tag">${s.type}</div></div>
+      <div class="stage-body"><div class="stage-label">${s.label}</div><div class="stage-sublabel">${s.sub}</div><div class="stage-ops">${s.ops}</div></div>
+      <div class="stage-signal"><div class="sig-dot"></div><div class="sig-state">IDLE</div></div>
+    </div>`;
+    if (i < STAGES.length - 1 && !STAGES[i+1].isTrans) {
+      html += `<div class="chain-connector" data-after="${i}"></div>`;
+    }
+  });
+  html += `<div class="loop-return" id="loopReturn" onclick="activateLoop()"><div class="loop-icon">↺</div><div class="loop-body"><div class="loop-label">${LOOP_DATA.label}</div><div class="loop-desc">${LOOP_DATA.desc}</div></div></div>`;
+  flow.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════
+   STAGE ACTIVATION
+   ═══════════════════════════════════════════════ */
+function activateStage(idx) {
+  const wasActive = activeStageIdx === idx;
+  document.querySelectorAll('.stage-btn').forEach(b => {
+    b.classList.remove('active');
+    const dot = b.querySelector('.sig-dot');
+    dot.style.background = '';dot.style.boxShadow = '';
+    b.querySelector('.sig-state').textContent = 'IDLE';
+  });
+  document.querySelectorAll('.chain-connector').forEach(c => c.classList.remove('lit'));
+  document.getElementById('loopReturn').classList.remove('active');
+
+  if (wasActive) { activeStageIdx = -1; clearDeduction(); return; }
+
+  activeStageIdx = idx;
+  const btn = document.querySelector(`.stage-btn[data-idx="${idx}"]`);
+  btn.classList.add('active');
+  btn.querySelector('.sig-state').textContent = 'ACTIVE';
+
+  document.querySelectorAll('.chain-connector').forEach(c => {
+    const after = parseInt(c.dataset.after);
+    if (after < idx) { c.classList.add('lit'); c.style.setProperty('--conn-color', STAGES[after].color + '44'); }
+  });
+  document.querySelectorAll('.stage-btn').forEach(b => {
+    const bIdx = parseInt(b.dataset.idx);
+    if (bIdx < idx) {
+      b.querySelector('.sig-state').textContent = 'DONE';
+      b.querySelector('.sig-dot').style.background = STAGES[bIdx].color + '44';
+      b.querySelector('.sig-dot').style.boxShadow = 'none';
+    }
+  });
+
+  const stage = STAGES[idx];
+  const dpState = document.getElementById('dpState');
+  dpState.textContent = stage.label;
+  dpState.style.color = stage.color;
+  dpState.style.borderColor = stage.color + '33';
+  renderDeduction(stage.deduction);
+}
+
+function activateLoop() {
+  const el = document.getElementById('loopReturn');
+  el.classList.toggle('active');
+  if (el.classList.contains('active')) {
+    const dpState = document.getElementById('dpState');
+    dpState.textContent = 'LOOP_CYCLE';dpState.style.color = '#00c896';dpState.style.borderColor = '#00c89633';
+    renderDeduction([
+      {ts:'T+LOOP',op:'AUDIT',msg:'Axiomové porušení detekováno — zahájení 5-krokového protokolu',cl:'crit'},
+      {ts:'T+LOOP',op:'DETECT',msg:'Identifikace konkrétního axiomového selhání (A1–A6)',cl:'warn'},
+      {ts:'T+LOOP',op:'CHECK',msg:'REALITY CHECK — ověření proti externím chronologickým kotvám',cl:'hl'},
+      {ts:'T+LOOP',op:'REFINE',msg:'Payload refinement — opravení cypher remappingu',cl:'warn'},
+      {ts:'T+LOOP',op:'VALID',msg:'Re-validace → výstup se vrací POUZE do FLUID (nikdy STATIC/DEEP)',cl:'pass'},
+      {ts:'T+LOOP',op:'GUARD',msg:'Max 2 re-prompting cykly na CRITICAL porušení',cl:'crit'}
+    ]);
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   DEDUCTION PANEL
+   ═══════════════════════════════════════════════ */
+function renderDeduction(lines) {
+  const body = document.getElementById('dpBody');
+  body.innerHTML = '';
+  lines.forEach((l, i) => {
+    const row = document.createElement('div');
+    row.className = 'symb-row';row.style.opacity = '0';
+    row.innerHTML = `<span class="symb-ts">[${l.ts}]</span><span class="symb-op ${l.cl}">${l.op}</span><span class="symb-msg"><span class="${l.cl}">${l.msg}</span></span>`;
+    body.appendChild(row);
+    setTimeout(() => { row.style.opacity = '1'; }, 80 * i);
+  });
+}
+
+function addDeductionLine(op, msg, cl) {
+  const body = document.getElementById('dpBody');
+  const row = document.createElement('div');
+  row.className = 'symb-row';row.style.opacity = '0';
+  const ts = new Date().toTimeString().slice(0,8);
+  row.innerHTML = `<span class="symb-ts">[${ts}]</span><span class="symb-op ${cl}">${op}</span><span class="symb-msg"><span class="${cl}">${msg}</span></span>`;
+  body.appendChild(row);
+  setTimeout(() => { row.style.opacity = '1'; }, 40);
+}
+
+function clearDeduction() {
+  const body = document.getElementById('dpBody');
+  const dpState = document.getElementById('dpState');
+  body.innerHTML = '<div class="symb-row" style="opacity:.4"><span class="symb-ts">[--:--:--]</span><span class="symb-op hl">IDLE</span><span class="symb-msg">Aktivujte vstupní body a vyberte stage v dataflow řetězu</span></div>';
+  dpState.textContent = 'IDLE';dpState.style.color = '#444458';dpState.style.borderColor = '#ffffff06';
+}
+
+/* ═══════════════════════════════════════════════
+   FILE TOPOLOGY RENDERING
+   ═══════════════════════════════════════════════ */
+function renderFiles() {
+  const body = document.getElementById('fileBody');
+  let html = '';
+  FILES.forEach(section => {
+    html += `<div class="file-section-title ${section.cls}">${section.section}</div>`;
+    section.files.forEach(f => {
+      const w = f.lines > 0 ? Math.round((f.lines / MAX_LINES) * 100) : 3;
+      const lbl = f.lines > 0 ? f.lines : '—';
+      const indent = f.indent ? '<span class="indent">└─ </span>' : '';
+      html += `<div class="file-row ${section.cls}-c"><div class="file-name">${indent}${f.name}</div><div class="file-lines">${lbl}</div><div class="file-desc">${f.desc}</div><div class="file-bar-wrap"><div class="file-bar" style="width:${w}%"></div></div></div>`;
+    });
+  });
+  body.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════
+   AXIOM GRID RENDERING
+   ═══════════════════════════════════════════════ */
+function renderAxioms() {
+  const grid = document.getElementById('axiomGrid');
+  grid.innerHTML = AXIOMS.map((a, i) => {
+    const sevCls = a.severity === 'HIGH' ? 's-high' : a.severity === 'MEDIUM' ? 's-medium' : 's-critical';
+    return `<div class="af-node ${sevCls}" style="--ax-color:${a.severity==='HIGH'?'#ff4444':'#ffb300'}" onclick="toggleAxiom(this)">
+      <div class="af-code">${a.code} · ${a.name}</div>
+      <div class="af-severity">${a.severity}</div>
+      <div class="af-legal">${a.legal}</div>
+      <div class="af-loop">${a.loop}</div>
+      <div class="af-clsl" style="color:${a.clsl==='—'?'#ffffff08':'#ffb30033'}">${a.clsl}</div>
+      <div class="af-paraframe">PARAFRAME: ${a.paraframe}</div>
+      <div class="af-expand">${a.desc}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleAxiom(el) { el.classList.toggle('expanded'); }
+
+/* ═══════════════════════════════════════════════
+   PHRASES RENDERING
+   ═══════════════════════════════════════════════ */
+function renderPhrases() {
+  const body = document.getElementById('phrasesBody');
+  body.innerHTML = PHRASES.map(p => {
+    const items = p.phrases.map(ph =>
+      `<div class="phrase-item" style="--phase-color:${p.color}"><div class="phrase-text">${ph.text}</div><div class="phrase-source">${ph.src}</div></div>`
+    ).join('');
+    return `<div class="phase-group"><div class="phase-title" style="color:${p.color}44"><span class="phase-dot" style="background:${p.color}44"></span>${p.phase} — ${p.sub}</div>${items}</div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   PANEL 6: BLOCKERS + SCHEMA RENDERING
+   ═══════════════════════════════════════════════ */
+const BLOCKERS = [
+  { sev:'crit', name:'Placeholder Mismatch — 6 klíčů bez runtime substituce', effort:'0.5d', detail:'{{FRAMES}} vs {{FRAMES_JSON}}, {{TIER}} nikdy nahrazen' },
+  { sev:'high', name:'LLM Output Validace — JSON.parse() bez Zod schema', effort:'2d', detail:'Chybí strukturovaná validace na MIND1/DEEP_1/DEFENSE boundary' },
+  { sev:'high', name:'Axiom Triple-Definition Drift — 3× nezávislá definice', effort:'3-4d', detail:'constants.ts + prompts.ts + nlp-core.ts bez synchronizace' },
+  { sev:'high', name:'A7-A13 Chybí v LOOP_CYCLE — 46% coverage', effort:'3-5d', detail:'Skill definuje 13 axiomů, codebase implementuje 6' },
+  { sev:'high', name:'Test Suite — 0% pokrytí', effort:'5-7d', detail:'Žádné Vitest/pytest testy, žádný CI/CD' },
+  { sev:'med',  name:'Pipeline Hash Chain — chybí chain-of-custody', effort:'1d', detail:'SHA-256 hash MIND1→DEEP_1 není implementován' },
+];
+
+const SCHEMA_CHECKS = [
+  { key:'{{INPUT_A}}',         runtime:'{{INPUT_A}}',          status:'ok' },
+  { key:'{{INPUT_B}}',         runtime:'{{INPUT_B}}',          status:'ok' },
+  { key:'{{LANGUAGE}}',        runtime:'{{LANGUAGE}}',         status:'ok' },
+  { key:'{{INSTITUTION_TYPE}}',runtime:'{{INSTITUTION_TYPE}}', status:'ok' },
+  { key:'{{FRAMES}}',          runtime:'{{FRAMES_JSON}}',      status:'fail', note:'KEY MISMATCH' },
+  { key:'{{IMMUTABLE_ANCHORS}}',runtime:'{{CHECKPOINTS_JSON}}',status:'fail', note:'KEY MISMATCH' },
+  { key:'{{AUDIT_RESPONSE}}',  runtime:'{{AUDIT_JSON}}',       status:'fail', note:'KEY MISMATCH' },
+  { key:'{{CHECKPOINTS}}',     runtime:'{{CHECKPOINTS_JSON}}', status:'fail', note:'KEY MISMATCH' },
+  { key:'{{TIER}}',            runtime:'— (MISSING)',          status:'fail', note:'UNSUBSTITUTED' },
+  { key:'{{PLACEHOLDER}}',     runtime:'— (MISSING)',          status:'warn', note:'UNKNOWN KEY' },
+];
+
+function renderBlockers() {
+  document.getElementById('blockerBody').innerHTML = BLOCKERS.map(b =>
+    `<div class="blocker-item"><div class="blocker-sev ${b.sev}">${b.sev.toUpperCase()}</div><div class="blocker-name">${b.name}</div><div class="blocker-effort">${b.effort}</div></div>`
+  ).join('');
+}
+
+function renderSchema() {
+  document.getElementById('schemaBody').innerHTML = SCHEMA_CHECKS.map(s =>
+    `<div class="schema-row"><span class="schema-key">${s.key}</span><span class="schema-arrow">→</span><span class="schema-val ${s.status}">${s.runtime}${s.note?' · '+s.note:''}</span></div>`
+  ).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   OPS SIDEBAR
+   ═══════════════════════════════════════════════ */
+function toggleOps() { document.getElementById('opsSidebar').classList.toggle('open'); }
+
+/* ═══════════════════════════════════════════════
+   NAV ACTIVE STATE
+   ═══════════════════════════════════════════════ */
+const navLinks = document.querySelectorAll('.header-nav a[href^="#"]');
+const sectionObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      navLinks.forEach(l => l.classList.remove('active'));
+      const link = document.querySelector(`.header-nav a[href="#${e.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, { threshold: 0.2 });
+document.querySelectorAll('.sec-div[id]').forEach(s => sectionObserver.observe(s));
+
+/* ═══════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════ */
+renderChain();
+renderFiles();
+renderAxioms();
+renderPhrases();
+clearDeduction();
+renderBlockers();
+renderSchema();
+
+// REVEAL ON SCROLL
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('on'); obs.unobserve(e.target); }});
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
