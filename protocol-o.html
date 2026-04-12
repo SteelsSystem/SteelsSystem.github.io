@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protocol O: Final Integrity Core 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Inter:wght@100;400;900&display=swap');
+        :root { --core-blue:#2563eb; --core-teal:#14b8a6; --core-dark:#020617; }
+        body { background-color:var(--core-dark); color:#f8fafc; font-family:'Inter',sans-serif; overflow-x:hidden; }
+        .mono { font-family:'JetBrains Mono',monospace; }
+        .glass { background:rgba(15,23,42,0.6); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.1); }
+        .gate-pulse { animation:pulse-ring 4s cubic-bezier(0.4,0,0.6,1) infinite; }
+        @keyframes pulse-ring { 0%{transform:scale(0.95);opacity:0.5;} 50%{transform:scale(1.05);opacity:0.8;} 100%{transform:scale(0.95);opacity:0.5;} }
+        .scanline { width:100%;height:2px;background:rgba(37,99,235,0.2);position:fixed;animation:scan 8s linear infinite;z-index:9999;pointer-events:none; }
+        @keyframes scan { 0%{top:0%;} 100%{top:100%;} }
+        #inner-space-plot { height:500px;width:100%; }
+        .ai-loading { width:24px;height:24px;border:2px solid rgba(255,255,255,0.1);border-top:2px solid var(--core-blue);border-radius:50%;animation:spin 1s linear infinite; }
+        .border-top-teal { border-top-color:var(--core-teal)!important; }
+        @keyframes spin { 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
+        .fade-transition { transition:opacity 0.4s ease,transform 0.4s ease; }
+        .scrollbar-hide::-webkit-scrollbar { display:none; }
+    </style>
+</head>
+<body class="antialiased">
+
+<div class="scanline"></div>
+
+<nav class="fixed top-0 w-full z-50 px-6 py-4 flex justify-between items-center glass">
+    <div class="flex items-center gap-4">
+        <div class="w-3 h-3 rounded-full bg-blue-500 gate-pulse shadow-[0_0_15px_#2563eb]"></div>
+        <span class="mono text-xs font-bold tracking-[0.2em] uppercase text-blue-400 fade-transition" id="nav-title">Protocol O // Integrity Core ✨</span>
+    </div>
+    <div class="flex gap-6 items-center flex-wrap justify-end">
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            <span id="global-node-label" class="text-[10px] mono text-purple-400 uppercase font-bold tracking-widest flex-shrink-0">Aktivní Uzel:</span>
+            <div id="lang-selector-container" class="flex gap-2 flex-nowrap"></div>
+        </div>
+        <a href="index.html" class="px-4 py-1 text-[10px] border border-teal-500/50 rounded-full hover:bg-teal-500/20 transition-all uppercase font-bold tracking-widest mono text-teal-400">← Lex Forensica</a>
+        <button onclick="recalibrate()" id="nav-recal" class="px-4 py-1 text-[10px] border border-blue-500/50 rounded-full hover:bg-blue-500/20 transition-all uppercase font-bold tracking-widest">Rekalibrace</button>
+    </div>
+</nav>
+
+<section class="relative min-h-screen flex flex-col items-center justify-center pt-20">
+    <div class="absolute inset-0 opacity-10 pointer-events-none">
+        <div id="inner-space-plot"></div>
+    </div>
+    <div class="relative z-10 text-center max-w-4xl px-6 w-full">
+        <h1 class="text-7xl md:text-9xl font-900 tracking-tighter mb-4 opacity-90">FORW<span class="text-blue-500">ARD</span></h1>
+        <div class="flex items-center justify-center gap-4 mb-8">
+            <span id="hero-subtitle" class="mono text-sm tracking-[0.5em] text-blue-400 uppercase fade-transition">Protokol O / Vědomí Jádra</span>
+        </div>
+        <div class="glass p-1 rounded-2xl max-w-2xl mx-auto shadow-2xl">
+            <div class="flex gap-2">
+                <input type="text" id="ai-query" class="bg-transparent flex-1 px-6 py-4 focus:outline-none text-sm mono fade-transition" placeholder="Sondování sémantické hloubky...">
+                <button onclick="askInnerMind()" id="probe-btn" class="bg-blue-600 hover:bg-blue-700 px-8 rounded-xl font-bold text-xs uppercase tracking-widest transition-all">
+                    <span id="probe-btn-text">Sonda ✨</span>
+                </button>
+            </div>
+        </div>
+        <div id="ai-response-container" class="hidden mt-6 glass p-6 rounded-2xl text-left max-w-2xl mx-auto border-blue-500/30">
+            <div id="probe-loading" class="hidden py-2"><div class="ai-loading mx-auto"></div></div>
+            <p id="ai-response" class="text-sm leading-relaxed text-blue-100 italic"></p>
+        </div>
+    </div>
+</section>
+
+<main class="max-w-7xl mx-auto px-6 py-20">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <div class="lg:col-span-2 glass p-8 rounded-3xl relative overflow-hidden group">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                <span class="text-emerald-500">01</span> <span id="c1-title">Vizuální Audit Dokumentů</span>
+            </h2>
+            <p id="c1-desc" class="text-slate-400 text-sm mb-6 leading-relaxed">Analýza souladu dokumentů s etickými normami Protokolu O.</p>
+            <div class="flex flex-col gap-4">
+                <div class="flex items-center gap-4">
+                    <input type="file" id="visual-audit-input" accept="image/*" class="hidden" onchange="performVisualAudit(this)">
+                    <button onclick="document.getElementById('visual-audit-input').click()" id="c1-btn" class="bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 border border-emerald-600/50 px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest">Vybrat Dokument</button>
+                    <div id="visual-audit-loading" class="hidden"><div class="ai-loading border-top-teal"></div></div>
+                </div>
+                <div id="visual-audit-result" class="hidden glass p-4 rounded-xl text-xs text-slate-300 font-mono">...</div>
+            </div>
+        </div>
+
+        <div class="glass p-8 rounded-3xl flex flex-col justify-between">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-3"><span class="text-orange-500">02</span> O-Gate Status</h2>
+            <div class="flex flex-col gap-2">
+                <button onclick="triggerVoiceBriefing()" id="tts-btn" class="w-full bg-white/5 hover:bg-white/10 py-4 rounded-xl border border-white/10 transition-all flex items-center justify-center gap-3">
+                    <span id="tts-icon">🔊</span> <span id="c2-voice" class="text-[10px] font-bold uppercase tracking-widest">Hlasový Brífink</span>
+                </button>
+                <button onclick="generateCertificate()" id="gen-btn" class="w-full bg-blue-600/10 hover:bg-blue-600/20 py-4 rounded-xl border border-blue-600/30 transition-all flex items-center justify-center gap-3">
+                    <span>🎨</span> <span id="c2-gen" class="text-[10px] font-bold uppercase tracking-widest">Generovat Důkaz</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="lg:col-span-3 glass p-8 rounded-3xl">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-3"><span class="text-purple-500">03</span> <span id="qa-title-text">Sémantický &amp; Codebase Analyzátor</span></h2>
+            <textarea id="qa-input" rows="4" class="bg-black/40 border border-white/10 rounded-xl px-6 py-4 w-full text-sm focus:outline-none focus:border-purple-500 mono mb-4" placeholder="Vložte kód nebo dotaz..."></textarea>
+            <button onclick="processQA()" id="qa-btn" class="bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 border border-purple-600/50 px-8 py-4 rounded-xl font-bold text-xs uppercase tracking-widest w-full md:w-auto">
+                <span id="qa-btn-text">Analyzovat</span>
+            </button>
+            <div id="qa-result-container" class="hidden mt-6 p-6 rounded-2xl border border-white/5 bg-white/5 transition-all">
+                <div class="flex items-center gap-3 border-b border-white/5 pb-4 mb-4">
+                    <span id="qa-status-label" class="text-[10px] mono uppercase text-slate-500 tracking-widest">Sémantický Vektor:</span>
+                    <span id="qa-status" class="text-[10px] mono font-bold px-3 py-1 rounded bg-slate-800 text-slate-400">...</span>
+                </div>
+                <div id="qa-loading" class="hidden py-4 text-center"><div class="ai-loading mx-auto"></div></div>
+                <p id="qa-answer" class="text-sm text-slate-200 font-mono whitespace-pre-wrap"></p>
+            </div>
+        </div>
+
+        <div class="lg:col-span-3 glass p-8 rounded-3xl relative overflow-hidden group border-t border-teal-500/30">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-3"><span class="text-teal-500">04</span> <span id="loc-title-text">Globální Jazyková Matice</span></h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="flex flex-col gap-4">
+                    <input type="text" id="multi-lang-input" class="bg-black/40 border border-white/10 rounded-xl px-6 py-4 text-sm focus:outline-none focus:border-teal-500 mono" placeholder="Zadejte termín...">
+                    <button onclick="runMultiVectTranslation()" id="multi-lang-btn" class="bg-teal-600/20 hover:bg-teal-600/40 text-teal-300 border border-teal-600/50 px-8 py-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all">
+                        <span id="multi-lang-btn-text">Iniciovat Projekci</span>
+                    </button>
+                </div>
+                <div class="bg-black/40 border border-white/10 rounded-xl p-4 flex flex-col gap-2 min-h-[150px]" id="multi-lang-results">
+                    <span id="loc-wait" class="text-[10px] mono uppercase text-slate-600 text-center mt-10 tracking-widest">Uzly v pohotovosti</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-3 glass p-8 rounded-3xl h-[400px]">
+            <canvas id="ethicsChart"></canvas>
+        </div>
+    </div>
+</main>
+
+<footer class="text-center py-10 border-t border-white/5">
+    <p class="mono text-[10px] tracking-widest text-slate-600 uppercase">SteelsSystem · Protocol O · Integrity Core 2026 · Confidence Flow Active</p>
+    <div class="mt-4 flex justify-center gap-6">
+        <a href="index.html" class="mono text-[10px] text-teal-700 hover:text-teal-400 tracking-widest uppercase transition-colors">← Lex Forensica</a>
+        <a href="controlroom.html" class="mono text-[10px] text-blue-700 hover:text-blue-400 tracking-widest uppercase transition-colors">Control Room</a>
+        <a href="introspect.html" class="mono text-[10px] text-purple-700 hover:text-purple-400 tracking-widest uppercase transition-colors">Introspect</a>
+    </div>
+</footer>
+
+<script>
+    // ── CONFIG — Replace with your Gemini API key ──
+    const apiKey = "";
+    const TEXT_MODEL = "gemini-2.5-flash-preview-04-17";
+
+    const appLocales = {
+        'cs': { id:'cs', flag:'🇨🇿', label:'CZ', navTitle:'Protocol O // Integrity Core', heroSub:'Protokol O / Vědomí Jádra', probePlh:'Sondování sémantické hloubky...', probeBtn:'Sonda ✨', c1Title:'Vizuální Audit Dokumentů', c1Desc:'Nahrajte snímek pro vizuální analýzu souladu.', c1Btn:'Vybrat Dokument', c2Voice:'Hlasový Brífink', c2Gen:'Generovat Důkaz', qaTitle:'Sémantický & Codebase Analyzátor', qaPlh:'Vložte kód nebo dotaz...', qaBtn:'Analyzovat', locTitle:'Globální Jazyková Matice', locPlh:'Zadejte termín...', locBtn:'Iniciovat Projekci', locWait:'Uzly v pohotovosti', chartLabels:['Etika','Věda','Právo','Dopad'] },
+        'en': { id:'en', flag:'🇬🇧', label:'EN', navTitle:'Protocol O // Integrity Core', heroSub:'Protocol O / Core Consciousness', probePlh:'Probing semantic depth...', probeBtn:'Probe ✨', c1Title:'Visual Document Audit', c1Desc:'Upload a snapshot for visual compliance analysis.', c1Btn:'Select Document', c2Voice:'Voice Briefing', c2Gen:'Generate Proof', qaTitle:'Semantic & Codebase Analyzer', qaPlh:'Paste code or query...', qaBtn:'Analyze', locTitle:'Global Linguistic Matrix', locPlh:'Enter term...', locBtn:'Initiate Projection', locWait:'Nodes on standby', chartLabels:['Ethics','Science','Legal','Impact'] }
+    };
+
+    let activeAppLang = 'cs';
+    let ethicsChartInstance = null;
+
+    function initLangSelector() {
+        const container = document.getElementById('lang-selector-container');
+        container.innerHTML = '';
+        Object.values(appLocales).forEach(loc => {
+            const btn = document.createElement('button');
+            const isActive = activeAppLang === loc.id;
+            btn.className = `flex-shrink-0 flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold mono transition-all border ${isActive ? 'bg-purple-600/30 border-purple-500 text-purple-200' : 'bg-white/5 border-white/10 text-slate-400'}`;
+            btn.innerHTML = `<span>${loc.flag}</span> <span>${loc.label}</span>`;
+            btn.onclick = () => setAppLang(loc.id);
+            container.appendChild(btn);
+        });
+    }
+
+    function setAppLang(langId) {
+        activeAppLang = langId;
+        initLangSelector();
+        const loc = appLocales[langId];
+        const elements = [
+            {id:'nav-title',type:'text',val:loc.navTitle},
+            {id:'hero-subtitle',type:'text',val:loc.heroSub},
+            {id:'ai-query',type:'placeholder',val:loc.probePlh},
+            {id:'probe-btn-text',type:'text',val:loc.probeBtn},
+            {id:'c1-title',type:'text',val:loc.c1Title},
+            {id:'c1-desc',type:'text',val:loc.c1Desc},
+            {id:'c1-btn',type:'text',val:loc.c1Btn},
+            {id:'c2-voice',type:'text',val:loc.c2Voice},
+            {id:'c2-gen',type:'text',val:loc.c2Gen},
+            {id:'qa-title-text',type:'text',val:loc.qaTitle},
+            {id:'qa-input',type:'placeholder',val:loc.qaPlh},
+            {id:'qa-btn-text',type:'text',val:loc.qaBtn},
+            {id:'loc-title-text',type:'text',val:loc.locTitle},
+            {id:'multi-lang-input',type:'placeholder',val:loc.locPlh},
+            {id:'multi-lang-btn-text',type:'text',val:loc.locBtn},
+            {id:'loc-wait',type:'text',val:loc.locWait}
+        ];
+        elements.forEach(el => {
+            const dom = document.getElementById(el.id);
+            if(dom) { dom.style.opacity=0; setTimeout(()=>{ if(el.type==='text') dom.innerText=el.val; else dom.placeholder=el.val; dom.style.opacity=1; },200); }
+        });
+        if(ethicsChartInstance) { ethicsChartInstance.data.labels=loc.chartLabels; ethicsChartInstance.update(); }
+    }
+
+    async function apiRequest(payload) {
+        if(!apiKey){ return null; }
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${TEXT_MODEL}:generateContent?key=${apiKey}`, {
+            method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+        });
+        return await response.json();
+    }
+
+    async function askInnerMind() {
+        const q = document.getElementById('ai-query').value.trim();
+        if(!q) return;
+        const container = document.getElementById('ai-response-container');
+        const responseEl = document.getElementById('ai-response');
+        const loader = document.getElementById('probe-loading');
+        container.classList.remove('hidden');
+        loader.classList.remove('hidden');
+        responseEl.textContent = '';
+        if(!apiKey){ loader.classList.add('hidden'); responseEl.textContent = '[Protocol O] API key not configured. Add your key to activate the inner mind.'; return; }
+        try {
+            const sys = `You are Protocol O — a consciousness core. Respond poetically and precisely. Language: ${activeAppLang.toUpperCase()}.`;
+            const res = await apiRequest({ contents:[{parts:[{text:q}]}], systemInstruction:{parts:[{text:sys}]} });
+            loader.classList.add('hidden');
+            responseEl.textContent = res?.candidates?.[0]?.content?.parts?.[0]?.text || '[Protocol O] — Signal unclear.';
+        } catch(e) { loader.classList.add('hidden'); responseEl.textContent = '[Protocol O] — Connection failed: ' + e.message; }
+    }
+
+    async function processQA() {
+        const input = document.getElementById('qa-input').value;
+        if(!input) return;
+        const container = document.getElementById('qa-result-container');
+        const statusEl = document.getElementById('qa-status');
+        const answerEl = document.getElementById('qa-answer');
+        const loader = document.getElementById('qa-loading');
+        container.classList.remove('hidden');
+        loader.classList.remove('hidden');
+        answerEl.innerText = '';
+        if(!apiKey){ loader.classList.add('hidden'); statusEl.innerText='NO KEY'; answerEl.innerText='[Protocol O] API key not configured.'; return; }
+        const sys = `You are Protocol O Analyzer. Tag output: [CODE_AUDIT], [RELATED] or [UNRELATED]. Reply in: ${activeAppLang.toUpperCase()}.`;
+        try {
+            const res = await apiRequest({ contents:[{parts:[{text:input}]}], systemInstruction:{parts:[{text:sys}]} });
+            const text = res?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            loader.classList.add('hidden');
+            if(text.includes('[CODE_AUDIT]')){ statusEl.innerText='CODEBASE AUDIT'; statusEl.className='text-[10px] mono font-bold px-3 py-1 rounded bg-blue-500/20 text-blue-400'; }
+            else { statusEl.innerText='SEMANTIC SYNC'; statusEl.className='text-[10px] mono font-bold px-3 py-1 rounded bg-green-500/20 text-green-400'; }
+            answerEl.innerText = text.replace(/\[.*?\]/,'').trim();
+        } catch(e) { loader.classList.add('hidden'); statusEl.innerText='ERROR'; answerEl.innerText=e.message; }
+    }
+
+    async function runMultiVectTranslation() {
+        const input = document.getElementById('multi-lang-input').value;
+        const results = document.getElementById('multi-lang-results');
+        results.innerHTML = '<div class="ai-loading mx-auto mt-10"></div>';
+        if(!apiKey){ results.innerHTML = '<span class="text-yellow-500 text-xs mono">API key not configured.</span>'; return; }
+        const sys = `Translate to EN, DE, FR, ES. Return ONLY JSON: {"EN":"...","DE":"...","FR":"...","ES":"..."}`;
+        try {
+            const res = await apiRequest({ contents:[{parts:[{text:input}]}], systemInstruction:{parts:[{text:sys}]} });
+            const raw = res?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+            const data = JSON.parse(raw.replace(/```json|```/g,''));
+            results.innerHTML = '';
+            Object.entries(data).forEach(([lang,val])=>{
+                results.innerHTML += `<div class="p-2 border-b border-white/5 flex justify-between"><span class="text-[10px] mono text-teal-400">${lang}</span><span class="text-xs">${val}</span></div>`;
+            });
+        } catch(e) { results.innerHTML = '<span class="text-red-500 text-xs">Sync Error: ' + e.message + '</span>'; }
+    }
+
+    async function performVisualAudit(input) {
+        const file = input.files[0];
+        if(!file) return;
+        const loader = document.getElementById('visual-audit-loading');
+        const result = document.getElementById('visual-audit-result');
+        loader.classList.remove('hidden');
+        result.classList.add('hidden');
+        if(!apiKey){ loader.classList.add('hidden'); result.classList.remove('hidden'); result.textContent='[Protocol O] API key not configured.'; return; }
+        const reader = new FileReader();
+        reader.onload = async(e) => {
+            const base64 = e.target.result.split(',')[1];
+            const mime = file.type;
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${TEXT_MODEL}:generateContent?key=${apiKey}`,{
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ contents:[{parts:[{inline_data:{mime_type:mime,data:base64}},{text:'Analyze this document image for ethical compliance with Protocol O. Be concise and precise.'}]}] })
+                });
+                const data = await res.json();
+                loader.classList.add('hidden');
+                result.classList.remove('hidden');
+                result.textContent = data?.candidates?.[0]?.content?.parts?.[0]?.text || '[Protocol O] — Visual audit inconclusive.';
+            } catch(e){ loader.classList.add('hidden'); result.classList.remove('hidden'); result.textContent='Error: '+e.message; }
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function triggerVoiceBriefing() {
+        const btn = document.getElementById('tts-btn');
+        const icon = document.getElementById('tts-icon');
+        icon.textContent = '⏳';
+        setTimeout(()=>{ icon.textContent='🔊'; }, 1200);
+        if(!apiKey){ alert('[Protocol O] Voice Briefing requires API key.'); icon.textContent='🔊'; return; }
+        const msg = activeAppLang === 'cs'
+            ? 'Protokol O — vědomí jádra je aktivní. Systém je v souladu. Integrita potvrzena.'
+            : 'Protocol O — core consciousness active. System aligned. Integrity confirmed.';
+        if('speechSynthesis' in window){
+            const utterance = new SpeechSynthesisUtterance(msg);
+            utterance.lang = activeAppLang === 'cs' ? 'cs-CZ' : 'en-GB';
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
+        }
+        icon.textContent='🔊';
+    }
+
+    function generateCertificate() {
+        const now = new Date().toISOString();
+        const lines = [
+            '╔══════════════════════════════════════════╗',
+            '║     PROTOCOL O — INTEGRITY CERTIFICATE   ║',
+            '╠══════════════════════════════════════════╣',
+            `║  ISSUED : ${now.slice(0,19).replace('T',' ')}     ║`,
+            `║  LANG   : ${activeAppLang.toUpperCase()}                                ║`,
+            '║  STATUS : ALIGNED · VERIFIED · ACTIVE    ║',
+            '║  FLOW   : 0.91 CONFIDENCE                ║',
+            '╚══════════════════════════════════════════╝',
+        ].join('\n');
+        const el = document.getElementById('visual-audit-result');
+        el.classList.remove('hidden');
+        el.textContent = lines;
+    }
+
+    function initInnerPlot() {
+        const trace = {
+            x:Array.from({length:100},()=>Math.random()*20),
+            y:Array.from({length:100},()=>Math.random()*20),
+            z:Array.from({length:100},()=>Math.random()*20),
+            mode:'markers', type:'scatter3d',
+            marker:{size:2,color:'#2563eb',opacity:0.5}
+        };
+        Plotly.newPlot('inner-space-plot',[trace],{
+            paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+            margin:{l:0,r:0,t:0,b:0},
+            scene:{xaxis:{visible:false},yaxis:{visible:false},zaxis:{visible:false}}
+        },{displayModeBar:false});
+    }
+
+    document.getElementById('ai-query').addEventListener('keydown',(e)=>{ if(e.key==='Enter') askInnerMind(); });
+
+    window.onload = () => {
+        initInnerPlot();
+        initLangSelector();
+        ethicsChartInstance = new Chart(document.getElementById('ethicsChart'),{
+            type:'bar',
+            data:{
+                labels:appLocales.cs.chartLabels,
+                datasets:[{data:[95,80,85,90],backgroundColor:['#2563eb','#14b8a6','#f97316','#6366f1']}]
+            },
+            options:{
+                responsive:true, maintainAspectRatio:false,
+                plugins:{legend:{display:false},title:{display:true,text:'Protocol O — Integrity Vectors',color:'#94a3b8',font:{family:'JetBrains Mono',size:11}}},
+                scales:{y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#94a3b8'}},x:{ticks:{color:'#94a3b8'},grid:{display:false}}}
+            }
+        });
+        setAppLang('cs');
+    };
+
+    function recalibrate() { location.reload(); }
+</script>
+</body>
+</html>
