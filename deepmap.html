@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEEP MAP — REFXRGLSD Interconnectivity</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Inter:wght@100;400;900&display=swap');
+        :root {
+            --core-dark: #020617;
+            --core-blue: #2563eb;
+            --core-teal: #14b8a6;
+            --core-green: #22c55e;
+            --core-orange: #f97316;
+            --core-purple: #a855f7;
+            --core-gold: #eab308;
+        }
+        * { box-sizing: border-box; }
+        body {
+            background-color: var(--core-dark);
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .glass {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .glass-teal { border-color: rgba(20,184,166,0.25); }
+        .glass-blue { border-color: rgba(37,99,235,0.25); }
+        .glass-purple { border-color: rgba(168,85,247,0.25); }
+        .glass-gold { border-color: rgba(234,179,8,0.25); }
+
+        /* scanline */
+        .scanline {
+            width: 100%; height: 2px;
+            background: rgba(37,99,235,0.15);
+            position: fixed; animation: scan 10s linear infinite;
+            z-index: 9999; pointer-events: none;
+        }
+        @keyframes scan { 0%{top:0%} 100%{top:100%} }
+
+        /* pulse */
+        .gate-pulse { animation: pulse-ring 4s cubic-bezier(0.4,0,0.6,1) infinite; }
+        @keyframes pulse-ring {
+            0%{transform:scale(0.95);opacity:0.5}
+            50%{transform:scale(1.05);opacity:0.9}
+            100%{transform:scale(0.95);opacity:0.5}
+        }
+
+        /* node map */
+        .node-map {
+            display: flex; flex-direction: column; gap: 0;
+            position: relative;
+        }
+        .node-item {
+            display: flex; align-items: center; gap: 16px;
+            padding: 14px 20px;
+            border-left: 2px solid rgba(255,255,255,0.06);
+            transition: all 0.25s ease;
+            cursor: pointer;
+        }
+        .node-item:hover { background: rgba(255,255,255,0.04); border-left-color: var(--core-teal); }
+        .node-item.active { background: rgba(20,184,166,0.07); border-left-color: var(--core-teal); }
+        .node-dot {
+            width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+            box-shadow: 0 0 8px currentColor;
+        }
+        .node-connector {
+            width: 2px; background: rgba(255,255,255,0.06);
+            height: 20px; margin-left: 24px; flex-shrink: 0;
+        }
+
+        /* tier */
+        .tier-row {
+            display: grid; grid-template-columns: 80px 1fr 1fr;
+            gap: 12px; align-items: center;
+            padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .tier-row:last-child { border-bottom: none; }
+
+        /* loop step */
+        .loop-step {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 16px; border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.06);
+            cursor: pointer; transition: all 0.2s;
+        }
+        .loop-step:hover { border-color: rgba(20,184,166,0.4); background: rgba(20,184,166,0.05); }
+        .loop-step.active-step {
+            border-color: var(--core-teal);
+            background: rgba(20,184,166,0.1);
+            box-shadow: 0 0 20px rgba(20,184,166,0.15);
+        }
+
+        /* git rail */
+        .git-step {
+            display: flex; gap: 14px; align-items: flex-start;
+            padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .git-step:last-child { border-bottom: none; }
+        .git-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px; letter-spacing: 2px;
+            padding: 3px 8px; border-radius: 99px;
+            text-transform: uppercase; flex-shrink: 0;
+        }
+
+        /* log */
+        .log-line { padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .log-line:last-child { border-bottom: none; }
+
+        /* ticker */
+        .ticker-wrap {
+            overflow: hidden; white-space: nowrap;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .ticker-inner {
+            display: inline-block;
+            animation: ticker-scroll 40s linear infinite;
+        }
+        @keyframes ticker-scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+        @media (max-width: 768px) {
+            .tier-row { grid-template-columns: 60px 1fr; }
+            .tier-row > :last-child { display: none; }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+<div class="scanline"></div>
+
+<!-- NAV -->
+<nav class="fixed top-0 w-full z-50 px-6 py-4 flex justify-between items-center glass">
+    <div class="flex items-center gap-4">
+        <div class="w-3 h-3 rounded-full bg-teal-400 gate-pulse shadow-[0_0_12px_#14b8a6]"></div>
+        <span class="mono text-xs font-bold tracking-[0.2em] uppercase text-teal-400">DEEP MAP // REFXRGLSD ✦</span>
+    </div>
+    <div class="flex gap-3 items-center">
+        <span id="clock" class="mono text-[10px] text-slate-600 tracking-widest"></span>
+        <a href="index.html" class="px-3 py-1 text-[10px] border border-teal-500/40 rounded-full hover:bg-teal-500/10 transition-all uppercase font-bold tracking-widest mono text-teal-500">← Lex</a>
+        <a href="protocol-o.html" class="px-3 py-1 text-[10px] border border-blue-500/40 rounded-full hover:bg-blue-500/10 transition-all uppercase font-bold tracking-widest mono text-blue-400">Protocol O</a>
+        <a href="controlroom.html" class="px-3 py-1 text-[10px] border border-purple-500/40 rounded-full hover:bg-purple-500/10 transition-all uppercase font-bold tracking-widest mono text-purple-400">Control Room</a>
+        <button onclick="exportCSV()" class="px-3 py-1 text-[10px] border border-green-500/40 rounded-full hover:bg-green-500/10 transition-all uppercase font-bold tracking-widest mono text-green-400">↓ CSV</button>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="relative min-h-screen flex flex-col items-center justify-center pt-20 px-6">
+    <div class="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
+        <canvas id="hero-canvas" class="w-full h-full"></canvas>
+    </div>
+    <div class="relative z-10 text-center max-w-5xl w-full">
+        <div class="mono text-[10px] tracking-[0.4em] text-teal-500/60 uppercase mb-6">SteelsSystem · REFXRGLSD · 2026</div>
+        <h1 class="text-7xl md:text-[9rem] font-black tracking-tighter mb-4 leading-none">
+            DEEP<span class="text-teal-400"> MAP</span>
+        </h1>
+        <p class="mono text-sm tracking-[0.3em] text-slate-400 uppercase mb-10">Interconnectivity · Authority Hierarchy · Operation Rail</p>
+
+        <!-- Status cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto">
+            <div class="glass glass-teal p-4 rounded-2xl text-left">
+                <div class="mono text-[9px] text-teal-500/60 uppercase tracking-widest mb-2">Loop State</div>
+                <div class="mono text-lg font-bold text-teal-400" id="hero-loop">MIND1</div>
+                <div class="text-[10px] text-slate-500 mt-1">Active node</div>
+            </div>
+            <div class="glass glass-blue p-4 rounded-2xl text-left">
+                <div class="mono text-[9px] text-blue-500/60 uppercase tracking-widest mb-2">Authority</div>
+                <div class="mono text-lg font-bold text-blue-400">TIER [Ω]</div>
+                <div class="text-[10px] text-slate-500 mt-1">Human dignity</div>
+            </div>
+            <div class="glass glass-purple p-4 rounded-2xl text-left">
+                <div class="mono text-[9px] text-purple-500/60 uppercase tracking-widest mb-2">Git Branch</div>
+                <div class="mono text-sm font-bold text-purple-400">feature/deep-map</div>
+                <div class="text-[10px] text-slate-500 mt-1">Safe force ready</div>
+            </div>
+            <div class="glass glass-gold p-4 rounded-2xl text-left">
+                <div class="mono text-[9px] text-yellow-500/60 uppercase tracking-widest mb-2">Layers</div>
+                <div class="mono text-lg font-bold text-yellow-400">3</div>
+                <div class="text-[10px] text-slate-500 mt-1">Pres / Logic / Proto</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- MAIN GRID -->
+<main class="max-w-7xl mx-auto px-6 pb-24 space-y-8">
+
+    <!-- ── SECTION 1: AUTHORITY HIERARCHY ── -->
+    <div class="glass glass-gold p-8 rounded-3xl">
+        <h2 class="text-xl font-bold mb-2 flex items-center gap-3">
+            <span class="text-yellow-500 mono text-sm">01</span>
+            Structural Framework — Hierarchical Authority
+        </h2>
+        <p class="mono text-[10px] text-slate-500 uppercase tracking-widest mb-8">Immutable authority hierarchy · Lex Forensica Code of Conduct</p>
+
+        <div class="space-y-2">
+            <!-- Header row -->
+            <div class="tier-row">
+                <div class="mono text-[9px] text-slate-600 uppercase tracking-widest">Tier</div>
+                <div class="mono text-[9px] text-slate-600 uppercase tracking-widest">Domain</div>
+                <div class="mono text-[9px] text-slate-600 uppercase tracking-widest">Core Principles</div>
+            </div>
+
+            <!-- TIER 1 Ω -->
+            <div class="tier-row group hover:bg-yellow-500/5 rounded-xl px-2 transition-all cursor-default">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-yellow-500/10 border border-yellow-500/40 flex items-center justify-center">
+                        <span class="mono text-xs font-bold text-yellow-400">Ω</span>
+                    </div>
+                    <div>
+                        <div class="mono text-[10px] font-bold text-yellow-400">TIER 1</div>
+                        <div class="mono text-[8px] text-slate-600">IMMUTABLE</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="font-semibold text-sm text-yellow-300 mb-1">Moral Standard</div>
+                    <div class="text-[11px] text-slate-400">Human dignity · Informed consent · Truth-preservation · Identity sovereignty</div>
+                </div>
+                <div class="space-y-1">
+                    <span class="inline-block mono text-[9px] px-2 py-1 bg-yellow-500/10 border border-yellow-500/20 rounded text-yellow-400">Human dignity</span>
+                    <span class="inline-block mono text-[9px] px-2 py-1 bg-yellow-500/10 border border-yellow-500/20 rounded text-yellow-400 ml-1">Truth-preservation</span>
+                    <span class="inline-block mono text-[9px] px-2 py-1 bg-yellow-500/10 border border-yellow-500/20 rounded text-yellow-400">Identity sovereignty</span>
+                </div>
+            </div>
+
+            <!-- TIER 2 Δ -->
+            <div class="tier-row group hover:bg-blue-500/5 rounded-xl px-2 transition-all cursor-default">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-500/10 border border-blue-500/40 flex items-center justify-center">
+                        <span class="mono text-xs font-bold text-blue-400">Δ</span>
+                    </div>
+                    <div>
+                        <div class="mono text-[10px] font-bold text-blue-400">TIER 2</div>
+                        <div class="mono text-[8px] text-slate-600">SEMANTIC</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="font-semibold text-sm text-blue-300 mb-1">Press / Media</div>
+                    <div class="text-[11px] text-slate-400">Semantic integrity · Anti-stigma · Patient voice protection</div>
+                </div>
+                <div class="space-y-1">
+                    <span class="inline-block mono text-[9px] px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded text-blue-400">Semantic integrity</span>
+                    <span class="inline-block mono text-[9px] px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded text-blue-400 ml-1">Anti-stigma</span>
+                    <span class="inline-block mono text-[9px] px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded text-blue-400">Patient voice</span>
+                </div>
+            </div>
+
+            <!-- TIER 3 ◈ -->
+            <div class="tier-row group hover:bg-teal-500/5 rounded-xl px-2 transition-all cursor-default">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-teal-500/10 border border-teal-500/40 flex items-center justify-center">
+                        <span class="mono text-xs font-bold text-teal-400">◈</span>
+                    </div>
+                    <div>
+                        <div class="mono text-[10px] font-bold text-teal-400">TIER 3</div>
+                        <div class="mono text-[8px] text-slate-600">FORENSIC</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="font-semibold text-sm text-teal-300 mb-1">Government / Institutional</div>
+                    <div class="text-[11px] text-slate-400">Chronological audit · Chain-of-custody · Forensic accountability</div>
+                </div>
+                <div class="space-y-1">
+                    <span class="inline-block mono text-[9px] px-2 py-1 bg-teal-500/10 border border-teal-500/20 rounded text-teal-400">Chrono audit</span>
+                    <span class="inline-block mono text-[9px] px-2 py-1 bg-teal-500/10 border border-teal-500/20 rounded text-teal-400 ml-1">Chain-of-custody</span>
+                    <span class="inline-block mono text-[9px] px-2 py-1 bg-teal-500/10 border border-teal-500/20 rounded text-teal-400">Forensic accountability</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── SECTION 2: LOOP SEQUENCER + NODE MAP ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        <!-- Loop Sequencer -->
+        <div class="glass glass-teal p-8 rounded-3xl">
+            <h2 class="text-xl font-bold mb-2 flex items-center gap-3">
+                <span class="text-teal-500 mono text-sm">02</span>
+                REFXRGLSD Loop Sequencer
+            </h2>
+            <p class="mono text-[10px] text-slate-500 uppercase tracking-widest mb-6">Pre-instructed action sequence · Predeterministic cycle</p>
+
+            <div class="space-y-3" id="loop-container"></div>
+
+            <div class="mt-6 flex gap-3">
+                <button onclick="advanceLoop()" class="flex-1 py-3 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 rounded-xl mono text-xs font-bold uppercase tracking-widest text-teal-400 transition-all">
+                    Advance →
+                </button>
+                <button onclick="resetLoop()" class="px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl mono text-xs font-bold uppercase tracking-widest text-slate-400 transition-all">
+                    Reset
+                </button>
+            </div>
+
+            <div id="loop-detail" class="mt-4 p-4 bg-black/30 rounded-xl border border-teal-500/20">
+                <div class="mono text-[9px] text-teal-500/60 uppercase tracking-widest mb-2">Current Node Detail</div>
+                <div id="loop-detail-content" class="text-sm text-slate-300"></div>
+            </div>
+        </div>
+
+        <!-- Node Map -->
+        <div class="glass glass-blue p-8 rounded-3xl">
+            <h2 class="text-xl font-bold mb-2 flex items-center gap-3">
+                <span class="text-blue-500 mono text-sm">03</span>
+                Topology Node Map
+            </h2>
+            <p class="mono text-[10px] text-slate-500 uppercase tracking-widest mb-6">REFXRGLSD system interconnect · Live status</p>
+
+            <div class="node-map" id="node-map-container"></div>
+        </div>
+    </div>
+
+    <!-- ── SECTION 3: LAYERED ARCHITECTURE ── -->
+    <div class="glass glass-purple p-8 rounded-3xl">
+        <h2 class="text-xl font-bold mb-2 flex items-center gap-3">
+            <span class="text-purple-500 mono text-sm">04</span>
+            Layered Architecture — REFXRGLSD
+        </h2>
+        <p class="mono text-[10px] text-slate-500 uppercase tracking-widest mb-8">Presentation 82.6% · Logic 17.4% · Protocol core</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            <!-- Presentation -->
+            <div class="bg-black/30 border border-purple-500/20 rounded-2xl p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-2 h-10 rounded-full bg-purple-500"></div>
+                    <div>
+                        <div class="font-bold text-purple-300">Presentation Layer</div>
+                        <div class="mono text-[9px] text-slate-500 tracking-widest">HTML / CSS — 82.6%</div>
+                    </div>
+                </div>
+                <ul class="space-y-2">
+                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-purple-500 flex-shrink-0">▸</span> Hero · Nav · DEEP TOPOLOGY panel</li>
+                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-purple-500 flex-shrink-0">▸</span> Visual Snapshot section</li>
+                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-purple-500 flex-shrink-0">▸</span> Summit Post / SUBSTACK-SUMMIT</li>
+                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-purple-500 flex-shrink-0">▸</span> CHANGELOG.auto timeline</li>
+                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-purple-500 flex-shrink-0">▸</span> TITLE-STATE · Control Room panel</li>
+                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-purple-500 flex-shrink-0">▸</span> Pure render — zero domain logic</li>
+                </ul>
+                <div class="mt-4 h-1 bg-white/5 rounded-full overflow-hidden">
+                    <div class="h-full bg-purple-500 rounded-full" style="width:82.6%"></div>
+                </div>
+                <div class="mono text-[9px] text-purple-500/60 mt-1 text-right">82.6%</div>
+            </div>
+
+            <!-- Logic -->
+            <div class="bg-black/30 border border-blue-500/20 rounded-2xl p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-2 h-10 rounded-full bg-blue-500"></div>
+                    <div>
+                        <div class="font-bold text-blue-300">Logic Layer</div>
+                        <div class="mono text-[9px] text-slate-500 tracking-widest">JavaScript — 17.4%</div>
+                    </div>
+                </div>
+                <ul class="space-y-2">
+                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-blue-500 flex-shrink-0">▸</span> <code class="mono text-blue-400/80 text-[10px]">handleTabSwitch(sectionId)</code></li>
+                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-blue-500 flex-shrink-0">▸</span> <code class="mono text-blue-400/80 text-[10px]">renderTimeline(changelogData)</code></li>
+                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-blue-500 flex-shrink-0">▸</span> <code class="mono text-blue-400/80 text-[10px]">exportCSV(refxrglsdGraph)</code></li>
+                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-blue-500 flex-shrink-0">▸</span> <code class="mono text-blue-400/80 text-[10px]">generatePressReport()</code></li>
+                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-blue-500 flex-shrink-0">▸</span> <code class="mono text-blue-400/80 text-[10px]">advanceLoop()</code></li>
+                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-blue-500 flex-shrink-0">▸</span> <code class="mono text-blue-400/80 text-[10px]">enforceAuthority(event)</code></li>
+                </ul>
+                <div class="mt-4 h-1 bg-white/5 rounded-full overflow-hidden">
+                    <div class="h-full bg-blue-500 rounded-full" style="width:17.4%"></div>
+                </div>
+                <div class="mono text-[9px] text-blue-500/60 mt-1 text-right">17.4%</div>
+            </div>
+
+            <!-- Protocol -->
+            <div class="bg-black/30 border border-teal-500/20 rounded-2xl p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-2 h-10 rounded-full bg-teal-500"></div>
+                    <div>
+                        <div class="font-bold text-teal-300">Protocol Layer</div>
+                        <div class="mono text-[9px] text-slate-500 tracking-widest">REFXRGLSD core</div>
+                    </div>
+                </div>
+                <ul class="space-y-2">
+                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-teal-500 flex-shrink-0">▸</span> MIND1 → BRIDGE → DEEP_1</li>
+                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-teal-500 flex-shrink-0">▸</span> LOOP_CYCLE → DEFENSE_SYNTHESIS</li>
+                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-teal-500 flex-shrink-0">▸</span> Authority TIER Ω / Δ / ◈</li>
+                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-teal-500 flex-shrink-0">▸</span> MC-1: No overwrite without evidence</li>
+                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-teal-500 flex-shrink-0">▸</span> MC-2: REF-MOD-CHRONO surface</li>
+                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-teal-500 flex-shrink-0">▸</span> Zero UI awareness — pure logic</li>
+                </ul>
+                <div class="mt-4 h-1 bg-white/5 rounded-full overflow-hidden">
+                    <div class="h-full bg-teal-500 rounded-full" style="width:100%"></div>
+                </div>
+                <div class="mono text-[9px] text-teal-500/60 mt-1 text-right">CORE</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── SECTION 4: GIT RAIL ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        <!-- Git Rail -->
+        <div class="glass p-8 rounded-3xl">
+            <h2 class="text-xl font-bold mb-2 flex items-center gap-3">
+                <span class="text-green-500 mono text-sm">05</span>
+                Git Rail — Safe Force Sekvence
+            </h2>
+            <p class="mono text-[10px] text-slate-500 uppercase tracking-widest mb-6">feature → rebase → pf → merge → main</p>
+
+            <div class="space-y-1" id="git-rail-container"></div>
+
+            <div class="mt-6 p-4 bg-green-500/5 border border-green-500/20 rounded-xl">
+                <div class="mono text-[9px] text-green-500/70 uppercase tracking-widest mb-2">Alias (jednou nastavit)</div>
+                <code class="mono text-[11px] text-green-400">git config --global alias.pf<br>"push --force-with-lease --force-if-includes"</code>
+            </div>
+        </div>
+
+        <!-- Integrity Chart -->
+        <div class="glass p-8 rounded-3xl">
+            <h2 class="text-xl font-bold mb-2 flex items-center gap-3">
+                <span class="text-orange-500 mono text-sm">06</span>
+                Integrity Vectors
+            </h2>
+            <p class="mono text-[10px] text-slate-500 uppercase tracking-widest mb-6">REFXRGLSD authority alignment metrics</p>
+            <div style="height:280px">
+                <canvas id="integrity-chart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── SECTION 5: LIVE LOG ── -->
+    <div class="glass p-8 rounded-3xl">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="text-xl font-bold flex items-center gap-3">
+                    <span class="text-red-500 mono text-sm">07</span>
+                    Live Operation Log
+                </h2>
+                <p class="mono text-[10px] text-slate-500 uppercase tracking-widest mt-1">Real-time event stream · REFXRGLSD operations</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="clearLog()" class="px-3 py-1 mono text-[10px] border border-white/10 rounded-full hover:bg-white/5 text-slate-500 transition-all uppercase tracking-widest">Clear</button>
+                <button onclick="exportLog()" class="px-3 py-1 mono text-[10px] border border-blue-500/30 rounded-full hover:bg-blue-500/10 text-blue-400 transition-all uppercase tracking-widest">↓ Export</button>
+            </div>
+        </div>
+        <div id="live-log" class="space-y-0 max-h-64 overflow-y-auto font-mono text-[11px]"></div>
+    </div>
+
+    <!-- ── SECTION 6: PRESS REPORT ── -->
+    <div class="glass glass-teal p-8 rounded-3xl">
+        <h2 class="text-xl font-bold mb-2 flex items-center gap-3">
+            <span class="text-teal-500 mono text-sm">08</span>
+            Press Report Generator
+        </h2>
+        <p class="mono text-[10px] text-slate-500 uppercase tracking-widest mb-6">DeltaStateDashboard.generatePressReport() — Lex Forensica style</p>
+        <div class="flex gap-4 flex-wrap">
+            <button onclick="generatePressReport()" class="px-8 py-4 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 rounded-xl mono text-xs font-bold uppercase tracking-widest text-teal-400 transition-all">
+                Generate Press Report
+            </button>
+            <button onclick="exportCSV()" class="px-8 py-4 bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 rounded-xl mono text-xs font-bold uppercase tracking-widest text-green-400 transition-all">
+                Export CSV
+            </button>
+        </div>
+        <div id="press-output" class="hidden mt-6 p-6 bg-black/40 border border-teal-500/20 rounded-xl">
+            <pre id="press-content" class="mono text-[11px] text-teal-200 whitespace-pre-wrap overflow-x-auto"></pre>
+        </div>
+    </div>
+
+</main>
+
+<!-- TICKER -->
+<div class="ticker-wrap py-3 px-6 bg-black/60 border-t border-white/5">
+    <span class="ticker-inner mono text-[10px] text-slate-600 tracking-widest uppercase">
+        REFXRGLSD · TIER Ω ACTIVE · LOOP CYCLE RUNNING · GIT RAIL: feature/deep-map → rebase origin/main → push --force-with-lease · MIND1 → BRIDGE → DEEP_1 → LOOP_CYCLE → DEFENSE_SYNTHESIS · MC-1: NO OVERWRITE · MC-2: REF-MOD-CHRONO · STEELS SYSTEM 2026 ·
+        REFXRGLSD · TIER Ω ACTIVE · LOOP CYCLE RUNNING · GIT RAIL: feature/deep-map → rebase origin/main → push --force-with-lease · MIND1 → BRIDGE → DEEP_1 → LOOP_CYCLE → DEFENSE_SYNTHESIS · MC-1: NO OVERWRITE · MC-2: REF-MOD-CHRONO · STEELS SYSTEM 2026 ·
+    </span>
+</div>
+
+<!-- FOOTER -->
+<footer class="text-center py-10 border-t border-white/5">
+    <p class="mono text-[10px] tracking-widest text-slate-700 uppercase">SteelsSystem · DEEP MAP · REFXRGLSD · Lex Forensica · 2026</p>
+    <div class="mt-4 flex justify-center gap-6 flex-wrap">
+        <a href="index.html" class="mono text-[10px] text-teal-700 hover:text-teal-400 tracking-widest uppercase transition-colors">← Lex Forensica</a>
+        <a href="protocol-o.html" class="mono text-[10px] text-blue-700 hover:text-blue-400 tracking-widest uppercase transition-colors">Protocol O</a>
+        <a href="controlroom.html" class="mono text-[10px] text-purple-700 hover:text-purple-400 tracking-widest uppercase transition-colors">Control Room</a>
+        <a href="introspect.html" class="mono text-[10px] text-slate-700 hover:text-slate-400 tracking-widest uppercase transition-colors">Introspect</a>
+    </div>
+</footer>
+
+<script>
+// ─────────────────────────────────────────────
+//  REFXRGLSD PROTOCOL CORE
+// ─────────────────────────────────────────────
+
+const AUTHORITY_HIERARCHY = [
+    { tier: 'TIER 1 [Ω]', symbol: 'Ω', domain: 'Moral Standard', color: '#eab308',
+      principles: ['Human dignity', 'Informed consent', 'Truth-preservation', 'Identity sovereignty'] },
+    { tier: 'TIER 2 [Δ]', symbol: 'Δ', domain: 'Press / Media', color: '#3b82f6',
+      principles: ['Semantic integrity', 'Anti-stigma', 'Patient voice protection'] },
+    { tier: 'TIER 3 [◈]', symbol: '◈', domain: 'Government / Institutional', color: '#14b8a6',
+      principles: ['Chronological audit', 'Chain-of-custody', 'Forensic accountability'] },
+];
+
+const LOOP_SEQUENCE = [
+    { id: 'MIND1',            layer: 'INTAKE',    role: 'Subject-perceived state intake',         color: '#14b8a6' },
+    { id: 'BRIDGE',           layer: 'ALIGN',     role: 'Mapping subject ↔ system',               color: '#3b82f6' },
+    { id: 'DEEP_1',           layer: 'ANALYSIS',  role: 'Forensic engine analysis',               color: '#a855f7' },
+    { id: 'LOOP_CYCLE',       layer: 'FEEDBACK',  role: 'Iterative correction loop',              color: '#f97316' },
+    { id: 'DEFENSE_SYNTHESIS',layer: 'OUTPUT',    role: 'Defense artifacts generation',           color: '#22c55e' },
+];
+
+const METACONDUCT_RULES = [
+    { id: 'MC-1', tier: 'Ω', description: 'No layer may overwrite subject baseline without evidence.' },
+    { id: 'MC-2', tier: '◈', description: 'Time cracks must be surfaced as REF-MOD-CHRONO.' },
+    { id: 'MC-3', tier: 'Ω', description: 'Subject emotional signal takes precedence over institutional record.' },
+    { id: 'MC-4', tier: 'Δ', description: 'Media framing cannot override direct subject testimony.' },
+    { id: 'MC-5', tier: '◈', description: 'Chain-of-custody must be preserved in all forensic outputs.' },
+    { id: 'MC-6', tier: 'Ω', description: 'Identity sovereignty is non-negotiable at all tiers.' },
+];
+
+const GIT_RAIL = [
+    { step: '01', cmd: 'git checkout main && git pull origin main', tag: 'SYNC', color: '#14b8a6', note: 'Začni vždy z aktuálního main' },
+    { step: '02', cmd: 'git checkout -b feature/deep-map', tag: 'BRANCH', color: '#3b82f6', note: 'Vytvoř feature branch' },
+    { step: '03', cmd: 'git add . && git commit -m "feat: deep map update"', tag: 'COMMIT', color: '#a855f7', note: 'Commit na feature větvi' },
+    { step: '04', cmd: 'git fetch origin && git rebase origin/main', tag: 'REBASE', color: '#f97316', note: 'Inflect — zarovnej na main' },
+    { step: '05', cmd: 'git rebase -i HEAD~3', tag: 'SQUASH', color: '#eab308', note: 'Volitelné — čistá historie' },
+    { step: '06', cmd: 'git pf origin feature/deep-map', tag: 'SAFE FORCE', color: '#22c55e', note: '⚡ --force-with-lease --force-if-includes' },
+    { step: '07', cmd: 'git checkout main && git merge --ff-only feature/deep-map', tag: 'MERGE', color: '#14b8a6', note: 'Fast-forward do main' },
+    { step: '08', cmd: 'git push origin main', tag: 'PUBLISH', color: '#3b82f6', note: 'GitHub Pages live ✓' },
+];
+
+// ─────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────
+
+let loopIndex = 0;
+let logEntries = [];
+
+// ─────────────────────────────────────────────
+//  CLOCK
+// ─────────────────────────────────────────────
+
+function updateClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent =
+        now.toISOString().slice(0,19).replace('T',' ') + ' UTC';
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ─────────────────────────────────────────────
+//  HERO CANVAS — particle network
+// ─────────────────────────────────────────────
+
+function initHeroCanvas() {
+    const canvas = document.getElementById('hero-canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H, particles;
+
+    function resize() {
+        W = canvas.width = canvas.offsetWidth;
+        H = canvas.height = canvas.offsetHeight;
+        particles = Array.from({length:60}, () => ({
+            x: Math.random()*W, y: Math.random()*H,
+            vx: (Math.random()-0.5)*0.4, vy: (Math.random()-0.5)*0.4,
+            r: Math.random()*2+1
+        }));
+    }
+
+    function draw() {
+        ctx.clearRect(0,0,W,H);
+        for(let i=0;i<particles.length;i++) {
+            const p = particles[i];
+            p.x += p.vx; p.y += p.vy;
+            if(p.x<0||p.x>W) p.vx*=-1;
+            if(p.y<0||p.y>H) p.vy*=-1;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+            ctx.fillStyle = 'rgba(20,184,166,0.4)';
+            ctx.fill();
+            for(let j=i+1;j<particles.length;j++) {
+                const q = particles[j];
+                const dist = Math.hypot(p.x-q.x, p.y-q.y);
+                if(dist < 100) {
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                    ctx.lineTo(q.x, q.y);
+                    ctx.strokeStyle = `rgba(20,184,166,${0.15*(1-dist/100)})`;
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                }
+            }
+        }
+        requestAnimationFrame(draw);
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+    draw();
+}
+
+// ─────────────────────────────────────────────
+//  LOOP SEQUENCER
+// ─────────────────────────────────────────────
+
+function renderLoop() {
+    const container = document.getElementById('loop-container');
+    container.innerHTML = '';
+    LOOP_SEQUENCE.forEach((node, i) => {
+        const el = document.createElement('div');
+        el.className = `loop-step${i === loopIndex ? ' active-step' : ''}`;
+        el.onclick = () => { loopIndex = i; renderLoop(); addLog('LOOP', `Manual select → ${node.id}`); };
+        el.innerHTML = `
+            <div style="width:8px;height:8px;border-radius:50%;background:${node.color};box-shadow:0 0 8px ${node.color};flex-shrink:0"></div>
+            <div style="flex:1">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span class="mono text-xs font-bold" style="color:${node.color}">${node.id}</span>
+                    <span class="mono text-[9px] text-slate-600 uppercase tracking-widest">${node.layer}</span>
+                </div>
+                <div class="text-[11px] text-slate-400 mt-1">${node.role}</div>
+            </div>
+        `;
+        container.appendChild(el);
+    });
+
+    const cur = LOOP_SEQUENCE[loopIndex];
+    document.getElementById('hero-loop').textContent = cur.id;
+    document.getElementById('loop-detail-content').innerHTML =
+        `<span class="mono text-xs" style="color:${cur.color}">${cur.id}</span>
+         <span class="mono text-[10px] text-slate-500 ml-2 uppercase tracking-widest">[${cur.layer}]</span>
+         <div class="text-xs text-slate-400 mt-2">${cur.role}</div>`;
+}
+
+function advanceLoop() {
+    loopIndex = (loopIndex + 1) % LOOP_SEQUENCE.length;
+    renderLoop();
+    const cur = LOOP_SEQUENCE[loopIndex];
+    addLog('LOOP', `Advanced → ${cur.id} [${cur.layer}]`);
+}
+
+function resetLoop() {
+    loopIndex = 0;
+    renderLoop();
+    addLog('LOOP', 'Loop reset → MIND1');
+}
+
+// ─────────────────────────────────────────────
+//  NODE MAP
+// ─────────────────────────────────────────────
+
+const ALL_NODES = [
+    { id: 'SteelsSystem.github.io', type: 'REPO', color: '#14b8a6', status: 'LIVE' },
+    { id: 'lexforensica', type: 'REPO', color: '#3b82f6', status: 'ACTIVE' },
+    { id: 'Protocol O', type: 'MODULE', color: '#a855f7', status: 'ALIGNED' },
+    { id: 'REFXRGLSD', type: 'PROTOCOL', color: '#f97316', status: 'RUNNING' },
+    { id: 'Lex Forensica v8', type: 'ENGINE', color: '#22c55e', status: 'STABLE' },
+    { id: 'Control Room', type: 'UI', color: '#eab308', status: 'LINKED' },
+    { id: 'DEEP MAP', type: 'PAGE', color: '#14b8a6', status: 'PUBLISHING' },
+];
+
+function renderNodeMap() {
+    const container = document.getElementById('node-map-container');
+    container.innerHTML = '';
+    ALL_NODES.forEach((node, i) => {
+        if(i > 0) {
+            const conn = document.createElement('div');
+            conn.className = 'node-connector';
+            container.appendChild(conn);
+        }
+        const el = document.createElement('div');
+        el.className = 'node-item';
+        el.innerHTML = `
+            <div class="node-dot" style="background:${node.color};color:${node.color}"></div>
+            <div style="flex:1">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span class="font-semibold text-sm">${node.id}</span>
+                    <span class="mono text-[9px] px-2 py-0.5 rounded-full border" style="color:${node.color};border-color:${node.color}44;background:${node.color}11">${node.status}</span>
+                </div>
+                <div class="mono text-[9px] text-slate-600 uppercase tracking-widest mt-1">${node.type}</div>
+            </div>
+        `;
+        container.appendChild(el);
+    });
+}
+
+// ─────────────────────────────────────────────
+//  GIT RAIL
+// ─────────────────────────────────────────────
+
+function renderGitRail() {
+    const container = document.getElementById('git-rail-container');
+    container.innerHTML = '';
+    GIT_RAIL.forEach(step => {
+        const el = document.createElement('div');
+        el.className = 'git-step';
+        el.innerHTML = `
+            <span class="git-badge" style="background:${step.color}18;border:1px solid ${step.color}44;color:${step.color}">${step.tag}</span>
+            <div style="flex:1">
+                <code class="mono text-[10px] text-slate-300">${step.cmd}</code>
+                <div class="text-[10px] text-slate-600 mt-0.5">${step.note}</div>
+            </div>
+        `;
+        container.appendChild(el);
+    });
+}
+
+// ─────────────────────────────────────────────
+//  LIVE LOG
+// ─────────────────────────────────────────────
+
+function addLog(tag, msg) {
+    const colors = { LOOP:'#14b8a6', GIT:'#22c55e', SYSTEM:'#3b82f6', AUTH:'#eab308', EXPORT:'#a855f7' };
+    const color = colors[tag] || '#94a3b8';
+    const ts = new Date().toISOString().slice(11,19);
+    const entry = { ts, tag, msg, color };
+    logEntries.unshift(entry);
+    if(logEntries.length > 100) logEntries.pop();
+    renderLog();
+}
+
+function renderLog() {
+    const container = document.getElementById('live-log');
+    container.innerHTML = logEntries.slice(0,40).map(e => `
+        <div class="log-line flex gap-3 items-baseline">
+            <span class="mono text-[9px] text-slate-700 flex-shrink-0">${e.ts}</span>
+            <span class="mono text-[9px] px-1.5 py-0.5 rounded flex-shrink-0" style="color:${e.color};background:${e.color}18">${e.tag}</span>
+            <span class="text-[11px] text-slate-400">${e.msg}</span>
+        </div>
+    `).join('');
+}
+
+function clearLog() {
+    logEntries = [];
+    renderLog();
+    addLog('SYSTEM', 'Log cleared');
+}
+
+function exportLog() {
+    const lines = logEntries.map(e => `${e.ts}\t${e.tag}\t${e.msg}`).join('\n');
+    const header = 'TIMESTAMP\tTAG\tMESSAGE\n';
+    downloadText('deepmap-log.txt', header + lines);
+    addLog('EXPORT', 'Log exported → deepmap-log.txt');
+}
+
+// ─────────────────────────────────────────────
+//  INTEGRITY CHART
+// ─────────────────────────────────────────────
+
+function initIntegrityChart() {
+    const ctx = document.getElementById('integrity-chart').getContext('2d');
+    new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['TIER Ω', 'TIER Δ', 'TIER ◈', 'LOOP', 'GIT RAIL', 'ARCH'],
+            datasets: [{
+                label: 'Alignment',
+                data: [98, 87, 82, 91, 95, 89],
+                backgroundColor: 'rgba(20,184,166,0.1)',
+                borderColor: 'rgba(20,184,166,0.7)',
+                pointBackgroundColor: '#14b8a6',
+                pointBorderColor: '#14b8a6',
+                borderWidth: 1.5,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+            },
+            scales: {
+                r: {
+                    backgroundColor: 'transparent',
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    angleLines: { color: 'rgba(255,255,255,0.05)' },
+                    pointLabels: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } },
+                    ticks: { display: false },
+                    min: 0, max: 100,
+                }
+            }
+        }
+    });
+}
+
+// ─────────────────────────────────────────────
+//  PRESS REPORT
+// ─────────────────────────────────────────────
+
+function generatePressReport() {
+    const now = new Date();
+    const ts = now.toISOString().slice(0,19).replace('T',' ');
+    const hash = Math.random().toString(36).substr(2,10).toUpperCase();
+    const cur = LOOP_SEQUENCE[loopIndex];
+
+    const report = [
+        '╔══════════════════════════════════════════════════════════════╗',
+        '║         STEELS SYSTEM — DEEP MAP PRESS REPORT                ║',
+        '╠══════════════════════════════════════════════════════════════╣',
+        `║  ISSUED      : ${ts}                         ║`,
+        `║  REPORT ID   : DEEPMAP-${hash}                     ║`,
+        `║  SYSTEM      : REFXRGLSD v1 · Lex Forensica 2026            ║`,
+        '╠══════════════════════════════════════════════════════════════╣',
+        '║  AUTHORITY HIERARCHY                                         ║',
+        '║  TIER 1 [Ω] Moral Standard       — ACTIVE · IMMUTABLE       ║',
+        '║  TIER 2 [Δ] Press / Media         — MONITORING              ║',
+        '║  TIER 3 [◈] Government/Inst.      — FORENSIC AUDIT          ║',
+        '╠══════════════════════════════════════════════════════════════╣',
+        '║  LOOP STATE                                                   ║',
+        `║  Current Node : ${cur.id.padEnd(16)} [${cur.layer}]                ║`,
+        `║  Role         : ${cur.role.substring(0,44).padEnd(44)}  ║`,
+        '╠══════════════════════════════════════════════════════════════╣',
+        '║  LAYERED ARCHITECTURE                                         ║',
+        '║  Presentation : 82.6%  (HTML/CSS — Tailwind)                 ║',
+        '║  Logic        : 17.4%  (JavaScript — event/export/loop)      ║',
+        '║  Protocol     : CORE   (REFXRGLSD object + MC rules)         ║',
+        '╠══════════════════════════════════════════════════════════════╣',
+        '║  GIT RAIL                                                     ║',
+        '║  feature/deep-map → rebase origin/main → pf → merge main     ║',
+        '║  Alias: git pf = push --force-with-lease --force-if-includes  ║',
+        '╠══════════════════════════════════════════════════════════════╣',
+        '║  METACONDUCT RULES ACTIVE: MC-1 · MC-2 · MC-3 · MC-4 · MC-5 · MC-6  ║',
+        '╠══════════════════════════════════════════════════════════════╣',
+        '║  STATUS: ALIGNED · VERIFIED · PUBLISHING                     ║',
+        '║  PAGES : https://steelssystem.github.io/deepmap.html         ║',
+        '╚══════════════════════════════════════════════════════════════╝',
+    ].join('\n');
+
+    const el = document.getElementById('press-output');
+    document.getElementById('press-content').textContent = report;
+    el.classList.remove('hidden');
+    addLog('EXPORT', `Press report generated — DEEPMAP-${hash}`);
+}
+
+// ─────────────────────────────────────────────
+//  CSV EXPORT
+// ─────────────────────────────────────────────
+
+function exportCSV() {
+    const rows = [
+        ['TYPE','ID','LAYER','ROLE_OR_DESC','STATUS','COLOR'],
+        ...LOOP_SEQUENCE.map(n => ['LOOP_NODE', n.id, n.layer, n.role, 'ACTIVE', n.color]),
+        ...AUTHORITY_HIERARCHY.map(a => ['AUTHORITY', a.tier, a.domain, a.principles.join(' | '), 'IMMUTABLE', a.color]),
+        ...METACONDUCT_RULES.map(r => ['MC_RULE', r.id, r.tier, r.description, 'ACTIVE', '']),
+        ...ALL_NODES.map(n => ['NODE', n.id, n.type, '', n.status, n.color]),
+    ];
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    downloadText('deepmap-refxrglsd.csv', csv);
+    addLog('EXPORT', 'CSV exported → deepmap-refxrglsd.csv');
+}
+
+// ─────────────────────────────────────────────
+//  UTILS
+// ─────────────────────────────────────────────
+
+function downloadText(filename, content) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([content], {type:'text/plain'}));
+    a.download = filename;
+    a.click();
+}
+
+// ─────────────────────────────────────────────
+//  SIMULATED LOG STREAM
+// ─────────────────────────────────────────────
+
+const autoLogMessages = [
+    ['SYSTEM', 'DEEP MAP initialized — REFXRGLSD v1'],
+    ['AUTH',   'Authority hierarchy loaded — TIER Ω/Δ/◈'],
+    ['LOOP',   'Loop sequence initialized — MIND1 (INTAKE)'],
+    ['SYSTEM', 'Particle topology canvas active'],
+    ['GIT',    'Git rail loaded — 8 steps ready'],
+    ['SYSTEM', 'Integrity radar chart active'],
+    ['AUTH',   'MC-1: No overwrite without evidence — enforced'],
+    ['AUTH',   'MC-2: REF-MOD-CHRONO surfacing active'],
+    ['LOOP',   'Loop ready — awaiting Advance signal'],
+];
+
+let autoLogIdx = 0;
+function streamAutoLog() {
+    if(autoLogIdx < autoLogMessages.length) {
+        const [tag, msg] = autoLogMessages[autoLogIdx++];
+        addLog(tag, msg);
+        setTimeout(streamAutoLog, 300 + Math.random()*400);
+    } else {
+        setInterval(() => {
+            const tags = ['LOOP','SYSTEM','AUTH','GIT'];
+            const msgs = [
+                'Heartbeat check — integrity nominal',
+                `Loop node ${LOOP_SEQUENCE[loopIndex].id} holding`,
+                'Tier Ω guard active — no violations',
+                'Git rail: pf alias verified',
+                'REFXRGLSD protocol cycle tick',
+            ];
+            addLog(tags[Math.floor(Math.random()*tags.length)], msgs[Math.floor(Math.random()*msgs.length)]);
+        }, 8000 + Math.random()*7000);
+    }
+}
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+
+window.onload = () => {
+    initHeroCanvas();
+    renderLoop();
+    renderNodeMap();
+    renderGitRail();
+    initIntegrityChart();
+    setTimeout(streamAutoLog, 600);
+};
+</script>
+</body>
+</html>
