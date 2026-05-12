@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-    <title>Lex Forensica | HEX-NLP Manifold v12</title>
+    <title>Lex Forensica | HEX-NLP Manifold v13</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
@@ -47,17 +47,13 @@
         .status-dot.warn { background: #f90; box-shadow: 0 0 8px #f90; }
         .back-link {
             position: fixed;
-            top: 20px;
-            left: 20px;
+            top: 20px; left: 20px;
             z-index: 200;
             font-family: 'Share Tech Mono', monospace;
-            font-size: 8px;
-            letter-spacing: 3px;
+            font-size: 8px; letter-spacing: 3px;
             color: rgba(0,229,255,0.3);
-            text-decoration: none;
-            text-transform: uppercase;
-            transition: color 0.3s;
-            pointer-events: auto;
+            text-decoration: none; text-transform: uppercase;
+            transition: color 0.3s; pointer-events: auto;
         }
         .back-link:hover { color: #00e5ff; }
     </style>
@@ -77,47 +73,31 @@
 
     <!-- BOTTOM RIGHT: MAIN PANEL -->
     <div class="glass interact p-5 rounded-lg w-64 flex flex-col gap-3">
-
-        <!-- HEADER -->
         <div class="text-center border-b border-emerald-500/20 pb-3">
             <div class="glow-text text-emerald-300 text-base font-bold tracking-[0.3em]">LEX FORENSICA</div>
-            <div class="text-[8px] text-emerald-500/50 tracking-widest mt-0.5">INTERACTIVE MANIFOLD · v12</div>
+            <div class="text-[8px] text-emerald-500/50 tracking-widest mt-0.5">INTERACTIVE MANIFOLD · v13</div>
         </div>
-
-        <!-- AXIOM STATUS -->
         <div class="text-[8px] text-emerald-400/60 leading-relaxed axiom-pulse border border-emerald-500/10 rounded p-2">
             <div id="axiomDisplay">A0 · Pipeline integrity verified</div>
         </div>
-
-        <!-- UPLOAD -->
         <label class="btn block text-center cursor-pointer">
             <span id="fileLabel">↑ UPLOAD AUDIO SOURCE</span>
             <input type="file" id="aud" class="hidden" accept="audio/*">
         </label>
-
-        <!-- PLAY -->
         <button id="play" class="btn font-bold text-sm py-3 tracking-widest">INITIALIZE SYSTEM</button>
-
-        <!-- MODE CONTROLS -->
         <div class="flex gap-2">
-            <button id="toggleNLP"  class="btn flex-1 active">NLP: ON</button>
+            <button id="toggleNLP" class="btn flex-1 active">NLP: ON</button>
             <button id="toggleMode" class="btn flex-1">FLUID</button>
         </div>
-
-        <!-- INTENSITY SLIDER -->
         <div class="flex flex-col gap-1">
             <div class="text-[8px] text-emerald-500/50 tracking-widest">SIGNAL INTENSITY</div>
             <input type="range" id="intensity" min="0.1" max="3" step="0.05" value="1"
                 style="accent-color:#00ffb4; width:100%; cursor:pointer;">
         </div>
-
-        <!-- STATUS BAR -->
         <div class="flex items-center gap-2 pt-1 border-t border-emerald-500/10">
             <span class="status-dot idle" id="statusDot"></span>
             <span class="text-[8px] text-emerald-400/50 tracking-tight uppercase" id="status">System Idle · Waiting Target</span>
         </div>
-
-        <!-- ZERO-KNOWLEDGE TAG -->
         <div class="text-[7px] text-emerald-600/30 text-center tracking-widest">
             Ω · DIGNITY > PROCESS > INSTITUTION · ZK-ACTIVE
         </div>
@@ -128,7 +108,6 @@
 // ─────────────────────────────────────────────────────────
 // HEX-NLP 12-STATE PLANE
 // 6 Speech Acts × 2 Register Valences = 12 × 30° sectors
-// Colors derived from Lex Forensica visual identity
 // ─────────────────────────────────────────────────────────
 const NLP12 = [
     { id:0,  label:"ASSERT⁺", act:"Assertive",   reg:"Formal",   hue:165 },
@@ -145,7 +124,6 @@ const NLP12 = [
     { id:11, label:"META⁻",   act:"Meta",        reg:"Informal", hue:75  },
 ];
 
-// AXIOM CYCLE — from steelssystem.github.io pipeline axioms
 const AXIOMS = [
     "A0 · Pipeline integrity verified",
     "A1 · Axiom validation active",
@@ -252,9 +230,75 @@ document.getElementById('intensity').oninput = function() {
 };
 
 // ─────────────────────────────────────────────────────────
-// RENDER ENGINE
+// ENHANCED VISUAL SYSTEMS — v13
 // ─────────────────────────────────────────────────────────
-let t = 0;
+
+// — Mouse parallax —
+let mouse = { x: 0.5, y: 0.5 };
+window.addEventListener('pointermove', e => {
+    mouse.x = e.clientX / window.innerWidth;
+    mouse.y = e.clientY / window.innerHeight;
+});
+
+// — Particles —
+let particles = [];
+function emitParticle(x, y, hue, power) {
+    if (particles.length > 1100) return;
+    particles.push({
+        x, y,
+        vx: (Math.random() - 0.5) * (1.0 + power * 3.2),
+        vy: (Math.random() - 0.5) * (1.0 + power * 3.2),
+        life: 28 + Math.random() * 42,
+        maxLife: 70,
+        size: 0.7 + Math.random() * 2.2 + power * 1.4,
+        hue
+    });
+}
+
+// — Pulse rings —
+let pulseRings = [];
+let beatEnergy = 0;
+let beatHold = 0;
+let energyBaseline = 0;
+
+function detectBeat() {
+    if (!isStarted || !freqData) return 0;
+    let low = 0;
+    const lim = Math.min(28, freqData.length);
+    for (let i = 0; i < lim; i++) low += freqData[i];
+    low /= lim;
+
+    energyBaseline = energyBaseline * 0.91 + low * 0.09;
+    const delta = Math.max(0, low - energyBaseline);
+    const beat = delta > 16 ? Math.min(1, delta / 85) : 0;
+
+    if (beat > 0.10 && beatHold <= 0) {
+        beatHold = 9;
+        pulseRings.push({ r: 14, a: 0.72 + beat * 0.28, w: 1.5 + beat * 6.5 });
+        if (beat > 0.35) pulseRings.push({ r: 6, a: 0.45, w: 1.0 });
+    } else {
+        beatHold--;
+    }
+
+    beatEnergy = beatEnergy * 0.84 + beat * 0.42;
+    return beat;
+}
+
+// — Constellation —
+let framePeakNodes = [];
+
+// — Data glyph rain columns —
+const GLYPH_CHARS = NLP12.map(n => n.label.replace('⁺','+')).join('').split('');
+const RAIN_COLS = 28;
+let rainDrops = Array.from({length: RAIN_COLS}, () => ({
+    x: 0, y: Math.random() * -400,
+    speed: 0.6 + Math.random() * 1.4,
+    chars: Array.from({length: 12}, () => GLYPH_CHARS[Math.floor(Math.random() * GLYPH_CHARS.length)]),
+    hue: NLP12[Math.floor(Math.random() * 12)].hue,
+    alpha: 0.04 + Math.random() * 0.12
+}));
+
+// — Idle seeds —
 const seeds = Array.from({length:8}, () => ({
     ox: Math.random() * 800,
     oy: Math.random() * 600,
@@ -276,6 +320,218 @@ function getNLP12Cat(x, y, cx, cy) {
     return Math.floor(((a * 180 / Math.PI) + 360) % 360 / 30);
 }
 
+// ─── DRAW HELPERS ───────────────────────────────────────
+
+function drawSectorFields(cx, cy, maxR, beat) {
+    if (!nlpActive) return;
+    for (let i = 0; i < 12; i++) {
+        const cat = NLP12[i];
+        const a0 = i * (Math.PI / 6) - Math.PI / 12;
+        const a1 = a0 + Math.PI / 6;
+        const grad = ctx.createRadialGradient(cx, cy, 28, cx, cy, maxR * 0.8);
+        grad.addColorStop(0,   `hsla(${cat.hue},100%,62%,${0.012 + beat * 0.028})`);
+        grad.addColorStop(0.4, `hsla(${cat.hue},100%,55%,0.032)`);
+        grad.addColorStop(1,   `hsla(${cat.hue},100%,48%,0)`);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, maxR * 0.8, a0, a1);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+    }
+}
+
+function drawVortex(cx, cy, t, beat) {
+    const rings = 5;
+    for (let ri = 0; ri < rings; ri++) {
+        const baseR  = 48 + ri * 28;
+        const speed  = (ri % 2 === 0 ? 1 : -1) * (0.22 + ri * 0.06 + beat * 0.6);
+        const phase  = t * speed;
+        const segs   = 12 + ri * 4;
+        const gap    = 0.18 + ri * 0.04;
+        const alpha  = (0.06 + beatEnergy * 0.22) * (1 - ri * 0.14);
+        const hue    = (165 + ri * 24 + t * 6) % 360;
+
+        ctx.save();
+        ctx.lineWidth = 1.4 - ri * 0.18;
+        ctx.strokeStyle = `hsla(${hue},100%,65%,${alpha})`;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = `hsl(${hue},100%,65%)`;
+        for (let s = 0; s < segs; s++) {
+            const a0 = (s / segs) * Math.PI * 2 + phase;
+            const a1 = a0 + (Math.PI * 2 / segs) * (1 - gap);
+            ctx.beginPath();
+            ctx.arc(cx, cy, baseR, a0, a1);
+            ctx.stroke();
+        }
+        ctx.shadowBlur = 0;
+        ctx.restore();
+    }
+}
+
+function drawSpiralArms(cx, cy, beat, t) {
+    if (!isStarted) return;
+    ctx.save();
+    for (let arm = 0; arm < 2; arm++) {
+        ctx.beginPath();
+        ctx.lineWidth = 1.1 + beat * 1.4;
+        for (let i = 0; i < 200; i++) {
+            const fi  = i / 200;
+            const f   = freqData[(i * 2) % freqData.length] / 255;
+            const ang = fi * 9.8 + t * (0.38 + arm * 0.14) + arm * Math.PI;
+            const rad = 28 + fi * Math.min(cx, cy) * 0.68 + f * 28 * intensityMul;
+            const x   = cx + Math.cos(ang) * rad;
+            const y   = cy + Math.sin(ang) * rad * 0.76;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = `hsla(${arm === 0 ? 165 : 285},100%,62%,${0.14 + beat * 0.22})`;
+        ctx.shadowBlur = 12 + beat * 10;
+        ctx.shadowColor = arm === 0 ? '#00ffb4' : '#7c5cff';
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+    ctx.restore();
+}
+
+function drawTopSpectrum(W, beat) {
+    if (!isStarted) return;
+    const bars = 52;
+    const gap  = 3;
+    const bw   = (W * 0.6 - gap * (bars - 1)) / bars;
+    const ox   = W * 0.2;
+    for (let i = 0; i < bars; i++) {
+        const v  = freqData[Math.floor(i * (freqData.length / bars))] / 255;
+        const h  = 6 + v * 44 * intensityMul;
+        const x  = ox + i * (bw + gap);
+        const hue = 165 + i * 2.8;
+        ctx.fillStyle = `hsla(${hue},100%,58%,${0.12 + v * 0.72})`;
+        ctx.fillRect(x, 10 + (44 - h), bw, h);
+        if (v > 0.7) {
+            ctx.shadowBlur = 8; ctx.shadowColor = `hsl(${hue},100%,65%)`;
+            ctx.fillRect(x, 10 + (44 - h), bw, h);
+            ctx.shadowBlur = 0;
+        }
+    }
+}
+
+function drawPulseRings(cx, cy) {
+    pulseRings.forEach(r => {
+        r.r  += 6.0;
+        r.a  *= 0.960;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r.r, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(0,255,180,${r.a})`;
+        ctx.lineWidth = r.w * (1 - r.r / 600);
+        ctx.stroke();
+    });
+    pulseRings = pulseRings.filter(r => r.a > 0.025 && r.r < 580);
+}
+
+function drawParticles() {
+    for (const p of particles) {
+        p.x   += p.vx;
+        p.y   += p.vy;
+        p.vx  *= 0.972;
+        p.vy  *= 0.972;
+        p.life -= 1;
+        const a = Math.max(0, p.life / p.maxLife);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * a, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${p.hue},100%,72%,${a * 0.78})`;
+        ctx.shadowBlur  = 8;
+        ctx.shadowColor = `hsl(${p.hue},100%,70%)`;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+    particles = particles.filter(p => p.life > 0);
+}
+
+function drawConstellation() {
+    if (framePeakNodes.length < 2) return;
+    for (let i = 0; i < framePeakNodes.length; i++) {
+        for (let j = i + 1; j < framePeakNodes.length; j++) {
+            const a = framePeakNodes[i], b = framePeakNodes[j];
+            const dx = a.x - b.x, dy = a.y - b.y;
+            const d  = Math.sqrt(dx*dx + dy*dy);
+            if (d < 130) {
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                ctx.lineTo(b.x, b.y);
+                ctx.strokeStyle = `hsla(${(a.h + b.h) * 0.5},100%,68%,${0.18 * (1 - d / 130)})`;
+                ctx.lineWidth = 0.8;
+                ctx.stroke();
+            }
+        }
+    }
+}
+
+function drawGlyphRain(W, H, t) {
+    const colW = W / RAIN_COLS;
+    rainDrops.forEach((col, ci) => {
+        col.x = (ci + 0.5) * colW;
+        col.y += col.speed;
+        if (col.y > H + 200) {
+            col.y = -80 - Math.random() * 300;
+            col.hue = NLP12[Math.floor(Math.random() * 12)].hue;
+            col.speed = 0.5 + Math.random() * 1.5;
+        }
+        ctx.font = '7px Share Tech Mono, Courier New';
+        ctx.textAlign = 'center';
+        col.chars.forEach((ch, ci2) => {
+            const yc = col.y - ci2 * 11;
+            const a  = col.alpha * (1 - ci2 / col.chars.length) * 0.9;
+            ctx.fillStyle = `hsla(${col.hue},90%,65%,${a})`;
+            ctx.fillText(ch, col.x, yc);
+        });
+    });
+}
+
+function drawScanFlash(W, H, beat, t) {
+    if (beat < 0.14) return;
+    const lineCount = 4 + Math.floor(beat * 6);
+    for (let i = 0; i < lineCount; i++) {
+        const y = ((t * 200 + i * (H / lineCount)) % (H + 80)) - 40;
+        ctx.fillStyle = `rgba(0,255,180,${0.018 * beat})`;
+        ctx.fillRect(0, y, W, 1.5);
+    }
+    // Hard flash strip on extreme beat
+    if (beat > 0.7) {
+        ctx.fillStyle = `rgba(0,255,180,${(beat - 0.7) * 0.06})`;
+        ctx.fillRect(0, 0, W, H);
+    }
+}
+
+function drawRadarSweep(cx, cy, maxR, t) {
+    const sweepAng = t * 0.7 % (Math.PI * 2);
+    const grad = ctx.createConicalGradient
+        ? null
+        : null; // fallback: manual arc sector
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, maxR * 0.9, sweepAng - 0.55, sweepAng);
+    ctx.closePath();
+    const rg = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR * 0.9);
+    rg.addColorStop(0, 'rgba(0,255,180,0)');
+    rg.addColorStop(0.8, `rgba(0,255,180,${0.03 + beatEnergy * 0.07})`);
+    rg.addColorStop(1, 'rgba(0,255,180,0)');
+    ctx.fillStyle = rg;
+    ctx.fill();
+    // Sweep leading edge
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + maxR * 0.9 * Math.cos(sweepAng), cy + maxR * 0.9 * Math.sin(sweepAng));
+    ctx.strokeStyle = `rgba(0,255,180,${0.18 + beatEnergy * 0.22})`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+}
+
+// ─────────────────────────────────────────────────────────
+// RENDER ENGINE
+// ─────────────────────────────────────────────────────────
+let t = 0;
+
 function draw() {
     requestAnimationFrame(draw);
     t += 0.012;
@@ -283,22 +539,39 @@ function draw() {
     canvas.height = window.innerHeight;
     const W = canvas.width, H = canvas.height;
     const cx = W / 2, cy = H / 2;
+    const maxR = Math.max(W, H) * 1.22;
 
-    if (visualMode === 0) {
-        ctx.fillStyle = 'rgba(0,3,8,0.18)';
-    } else if (visualMode === 1) {
-        ctx.fillStyle = '#000308';
-    } else {
-        ctx.fillStyle = 'rgba(0,1,5,0.45)';
-    }
+    // — Background fade —
+    if (visualMode === 0)      ctx.fillStyle = 'rgba(0,3,8,0.18)';
+    else if (visualMode === 1) ctx.fillStyle = '#000308';
+    else                       ctx.fillStyle = 'rgba(0,1,5,0.45)';
     ctx.fillRect(0, 0, W, H);
 
+    // — Read audio —
     if (isStarted) {
         analyser.getByteFrequencyData(freqData);
         analyser.getByteTimeDomainData(waveData);
     }
+    const beat = detectBeat();
 
-    // WAVEFORM RIBBON
+    // — Layer 0: glyph rain (deep background) —
+    drawGlyphRain(W, H, t);
+
+    // — Layer 1: sector fields —
+    drawSectorFields(cx, cy, maxR, beat);
+
+    // — Radar sweep —
+    drawRadarSweep(cx, cy, maxR * 0.5, t);
+
+    // — Layer 2: apply subtle mouse-parallax tilt to scene —
+    const tiltX = (mouse.y - 0.5) * 0.055;
+    const tiltY = (mouse.x - 0.5) * 0.055;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.transform(1, tiltX, tiltY, 1, 0, 0);
+    ctx.translate(-cx, -cy);
+
+    // — Waveform ribbon —
     if (isStarted) {
         ctx.beginPath();
         ctx.moveTo(0, cy);
@@ -307,32 +580,31 @@ function draw() {
             const v = (waveData[i] / 128.0 - 1) * 60 * intensityMul;
             ctx.lineTo(i * step, cy + v);
         }
-        ctx.strokeStyle = 'rgba(0,255,180,0.12)';
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = `rgba(0,255,180,${0.08 + beat * 0.18})`;
+        ctx.lineWidth = 1 + beat;
         ctx.stroke();
     }
 
-    // HEXAGONAL GRID
+    // — Hexagonal grid —
     const r  = 36;
     const gw = r * Math.sqrt(3);
     const gh = r * 1.5;
 
+    framePeakNodes = [];
+
     for (let row = -1; row * gh < H + r; row++) {
-        const hy0 = row * gh;
+        const hy0   = row * gh;
         const shift = (((row % 2) + 2) % 2) * (gw / 2);
 
         for (let col = -1; col * gw < W + gw; col++) {
             const hx = col * gw + shift;
             const hy = hy0;
 
-            const dx = hx - cx, dy = hy - cy;
+            const dx   = hx - cx, dy = hy - cy;
             const dist = Math.sqrt(dx*dx + dy*dy);
 
             const idx = Math.floor((dist / (Math.max(W,H)*0.72)) * (freqData.length/2)) % (freqData.length/2);
-            const raw = isStarted
-                ? freqData[idx]
-                : idleVal(hx, hy, t);
-
+            const raw = isStarted ? freqData[idx] : idleVal(hx, hy, t);
             const val = Math.min(255, raw * intensityMul);
             const p   = val / 255;
 
@@ -342,13 +614,10 @@ function draw() {
 
             if (visualMode === 2) baseHue = (baseHue + t * 30 * p) % 360;
 
-            const breathe = visualMode === 0
-                ? Math.sin(t * 1.8 + dist * 0.018) * 0.1
-                : 0;
-            const hexR = r * (0.38 + p * 0.62 + breathe);
-
-            const light = 40 + p * 25;
-            const alpha = 0.12 + p * 0.88;
+            const breathe = visualMode === 0 ? Math.sin(t * 1.8 + dist * 0.018) * 0.1 : 0;
+            const hexR    = r * (0.38 + p * 0.62 + breathe);
+            const light   = 40 + p * 25;
+            const alpha   = 0.12 + p * 0.88;
 
             ctx.beginPath();
             for (let i = 0; i < 6; i++) {
@@ -363,21 +632,43 @@ function draw() {
             }
 
             ctx.strokeStyle = `hsla(${baseHue},100%,${light}%,${alpha})`;
-            ctx.lineWidth = 0.6 + p * 4.5;
+            ctx.lineWidth   = 0.6 + p * 4.5;
             ctx.stroke();
 
             if (p > 0.75) {
-                ctx.shadowBlur = 12 * p;
+                ctx.shadowBlur  = 12 * p + beatEnergy * 8;
                 ctx.shadowColor = `hsl(${baseHue},100%,70%)`;
                 ctx.stroke();
                 ctx.shadowBlur = 0;
             }
+
+            // Collect peak nodes for constellation
+            if (p > 0.80 && Math.random() < 0.10) {
+                framePeakNodes.push({ x: hx, y: hy, h: baseHue });
+            }
+            // Emit particles from hot cells
+            if (p > 0.86 && Math.random() < 0.16) {
+                emitParticle(hx, hy, baseHue, p);
+            }
         }
     }
 
-    // NLP SECTOR DIVIDERS
+    // — Spiral arms —
+    drawSpiralArms(cx, cy, beat, t);
+
+    // — Constellation links —
+    drawConstellation();
+
+    // — Pulse rings —
+    drawPulseRings(cx, cy);
+
+    // — Particles —
+    drawParticles();
+
+    ctx.restore(); // end tilt transform
+
+    // — NLP sector dividers —
     if (nlpActive) {
-        const maxR = Math.max(W, H) * 1.2;
         ctx.save();
         for (let i = 0; i < 12; i++) {
             const ang = (Math.PI / 6) * i;
@@ -386,40 +677,58 @@ function draw() {
             ctx.beginPath();
             ctx.moveTo(cx, cy);
             ctx.lineTo(cx + maxR * Math.cos(ang), cy + maxR * Math.sin(ang));
-            ctx.strokeStyle = `hsla(${cat.hue},80%,55%,0.07)`;
-            ctx.lineWidth = 1;
+            ctx.strokeStyle = `hsla(${cat.hue},80%,55%,${0.06 + beatEnergy * 0.06})`;
+            ctx.lineWidth   = 1;
             ctx.stroke();
 
             const midAng = ang + Math.PI / 12;
-            const lr = 150 + 20 * Math.sin(t * 0.8 + i);
-            const lx = cx + lr * Math.cos(midAng);
-            const ly = cy + lr * Math.sin(midAng);
+            const lr     = 150 + 20 * Math.sin(t * 0.8 + i);
+            const lx     = cx + lr * Math.cos(midAng);
+            const ly     = cy + lr * Math.sin(midAng);
 
-            ctx.fillStyle = `hsla(${cat.hue},85%,65%,0.55)`;
-            ctx.font = 'bold 8px Share Tech Mono, Courier New';
-            ctx.textAlign = 'center';
+            ctx.fillStyle    = `hsla(${cat.hue},85%,65%,${0.45 + beatEnergy * 0.3})`;
+            ctx.font         = 'bold 8px Share Tech Mono, Courier New';
+            ctx.textAlign    = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(cat.label, lx, ly);
         }
         ctx.restore();
     }
 
-    // CENTER OMEGA MARK
-    const omegaAlpha = 0.12 + 0.08 * Math.sin(t * 1.2);
+    // — Vortex rings around Omega —
+    drawVortex(cx, cy, t, beat);
+
+    // — Top spectrum bars —
+    drawTopSpectrum(W, beat);
+
+    // — Center Omega mark —
+    const omegaScale = 1 + beatEnergy * 0.6;
+    const omegaAlpha = 0.18 + 0.14 * Math.sin(t * 1.2) + beatEnergy * 0.3;
     ctx.save();
-    ctx.font = 'bold 22px Share Tech Mono, Courier New';
-    ctx.fillStyle = `rgba(0,255,180,${omegaAlpha})`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('Ω', cx, cy);
+    ctx.translate(cx, cy);
+    ctx.scale(omegaScale, omegaScale);
+    ctx.font            = `bold ${20 + beat * 8}px Share Tech Mono, Courier New`;
+    ctx.fillStyle       = `rgba(0,255,180,${omegaAlpha})`;
+    ctx.textAlign       = 'center';
+    ctx.textBaseline    = 'middle';
+    ctx.shadowBlur      = 18 + beatEnergy * 24;
+    ctx.shadowColor     = '#00ffb4';
+    ctx.fillText('Ω', 0, 0);
+    ctx.shadowBlur = 0;
     ctx.restore();
 
-    // FOOTER STRIP
+    // — Scan flash —
+    drawScanFlash(W, H, beat, t);
+
+    // — Footer strip —
     ctx.save();
-    ctx.font = '8px Share Tech Mono, Courier New';
-    ctx.fillStyle = 'rgba(0,255,180,0.15)';
+    ctx.font      = '8px Share Tech Mono, Courier New';
+    ctx.fillStyle = `rgba(0,255,180,${0.12 + beatEnergy * 0.12})`;
     ctx.textAlign = 'left';
-    ctx.fillText(`LOOP_CYCLE · NLP:${nlpActive?'ACTIVE':'OFF'} · MODE:${MODES[visualMode]} · t:${t.toFixed(1)}`, 14, H - 14);
+    ctx.fillText(
+        `LOOP_CYCLE · NLP:${nlpActive?'ACTIVE':'OFF'} · MODE:${MODES[visualMode]} · BEAT:${(beatEnergy*100).toFixed(0)}% · t:${t.toFixed(1)}`,
+        14, H - 14
+    );
     ctx.restore();
 }
 
