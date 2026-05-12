@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-    <title>Lex Forensica | HEX-NLP Manifold v14</title>
+    <title>Lex Forensica | HEX-NLP Manifold v15</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
@@ -14,8 +14,14 @@
             background: rgba(0,4,12,0.80);
             backdrop-filter: blur(16px);
             border: 1px solid rgba(0,255,180,0.10);
+            transition: border-color 1.2s ease, background 1.2s ease;
         }
-        .glow-text { text-shadow: 0 0 14px rgba(0,255,180,0.55); }
+        .glass.suspended {
+            background: rgba(8,4,20,0.85);
+            border-color: rgba(160,80,255,0.18);
+        }
+        .glow-text { text-shadow: 0 0 14px rgba(0,255,180,0.55); transition: text-shadow 1.2s ease, color 1.2s ease; }
+        .glow-text.suspended { color: #c084fc; text-shadow: 0 0 14px rgba(160,80,255,0.55); }
         .axiom-pulse { animation: axiomPulse 3.2s ease-in-out infinite; }
         @keyframes axiomPulse { 0%,100%{opacity:0.30} 50%{opacity:0.85} }
         ::-webkit-scrollbar { width: 3px; }
@@ -30,18 +36,27 @@
             font-family: inherit;
             font-size: 10px;
             letter-spacing: 0.10em;
-            transition: all 0.18s;
+            transition: all 0.22s;
             text-transform: uppercase;
         }
         .btn:hover  { background: rgba(0,255,180,0.12); border-color: rgba(0,255,180,0.75); box-shadow: 0 0 14px rgba(0,255,180,0.18); }
         .btn.active { background: rgba(0,255,180,0.18); border-color: #00ffb4; box-shadow: 0 0 18px rgba(0,255,180,0.30); }
+        .btn.suspended-btn {
+            border-color: rgba(160,80,255,0.55) !important;
+            color: #c084fc !important;
+            background: rgba(160,80,255,0.08) !important;
+            box-shadow: 0 0 18px rgba(160,80,255,0.22) !important;
+        }
         .status-dot {
             width:6px; height:6px; border-radius:50%;
             background:#00ffb4; box-shadow:0 0 8px #00ffb4;
             display:inline-block;
             animation: blink 1.6s ease-in-out infinite;
+            transition: background 1.2s, box-shadow 1.2s;
         }
+        .status-dot.suspended { background:#c084fc; box-shadow:0 0 8px #c084fc; animation: blinkSusp 2.8s ease-in-out infinite; }
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.15} }
+        @keyframes blinkSusp { 0%,100%{opacity:0.7} 50%{opacity:0.15} }
         .status-dot.idle { background:#223; box-shadow:none; animation:none; }
         .status-dot.warn { background:#f90; box-shadow:0 0 8px #f90; }
         .back-link {
@@ -62,16 +77,16 @@
 <div class="ui h-screen w-full flex flex-col items-end justify-between p-5">
 
     <!-- TOP RIGHT: NLP LEGEND -->
-    <div class="glass interact p-4 rounded-lg w-56">
-        <div class="text-[9px] tracking-widest text-emerald-400 mb-2 opacity-50 uppercase">HEX-NLP · 12 Planes</div>
+    <div class="glass interact p-4 rounded-lg w-56" id="glassPanel">
+        <div class="text-[9px] tracking-widest text-emerald-400 mb-2 opacity-50 uppercase" id="legendHeader">HEX-NLP · 12 Planes</div>
         <div id="nlp-legend" class="grid grid-cols-2 gap-y-1 gap-x-2"></div>
     </div>
 
     <!-- BOTTOM RIGHT: CONTROL PANEL -->
-    <div class="glass interact p-5 rounded-lg w-64 flex flex-col gap-3">
+    <div class="glass interact p-5 rounded-lg w-64 flex flex-col gap-3" id="controlPanel">
         <div class="text-center border-b border-emerald-500/20 pb-3">
-            <div class="glow-text text-emerald-300 text-base font-bold tracking-[0.3em]">LEX FORENSICA</div>
-            <div class="text-[8px] text-emerald-500/40 tracking-widest mt-0.5">INTERACTIVE MANIFOLD · v14</div>
+            <div class="glow-text text-emerald-300 text-base font-bold tracking-[0.3em]" id="titleText">LEX FORENSICA</div>
+            <div class="text-[8px] text-emerald-500/40 tracking-widest mt-0.5" id="versionText">INTERACTIVE MANIFOLD · v15</div>
         </div>
         <div class="text-[8px] text-emerald-400/55 leading-relaxed axiom-pulse border border-emerald-500/10 rounded p-2">
             <div id="axiomDisplay">A0 · Pipeline integrity verified</div>
@@ -102,10 +117,11 @@
 
 <script>
 /* =============================================================
-   HEX-NLP MANIFOLD v14
-   Design principle: every layer has a defined alpha budget.
-   Idle state is organic. Audio state is reactive, not noisy.
-   5 render layers, each serving a distinct perceptual role.
+   HEX-NLP MANIFOLD v15
+   NEW: SUSPENDED mode — activates on audio pause.
+   Waveform memory decays slowly. Hex field morphs via
+   fluid noise displacement. Thermal color shift (teal→violet/amber).
+   All existing modes preserved when audio plays/resumes.
    ============================================================= */
 
 // ── NLP 12-PLANE TAXONOMY ────────────────────────────────
@@ -128,6 +144,19 @@ const AXIOMS = [
   'A12 · NLP_DRIFT: monitoring','A13 · LOOP_CYCLE →100%',
 ];
 
+const AXIOMS_SUSPENDED = [
+  'SUSPENDED · Signal at rest',
+  'LIQUID STATE · Memory decaying',
+  'Waveform echo · fading',
+  'Manifold holds last shape',
+  'Fluid morphology active',
+  'Thermal drift · violet band',
+  'Zero-pressure mode · Ω',
+  'Waiting for signal resume',
+  'Memory half-life: 8s',
+  'NLP sectors: ambient',
+];
+
 // Build legend
 const legendEl = document.getElementById('nlp-legend');
 NLP12.forEach(n => {
@@ -139,9 +168,10 @@ NLP12.forEach(n => {
 });
 
 let axiomIdx = 0;
+let axiomPool = AXIOMS;
 setInterval(() => {
-  axiomIdx = (axiomIdx + 1) % AXIOMS.length;
-  document.getElementById('axiomDisplay').textContent = AXIOMS[axiomIdx];
+  axiomIdx = (axiomIdx + 1) % axiomPool.length;
+  document.getElementById('axiomDisplay').textContent = axiomPool[axiomIdx];
 }, 2800);
 
 // ── AUDIO ENGINE ─────────────────────────────────────────
@@ -150,16 +180,54 @@ const ctx    = canvas.getContext('2d');
 const audio  = new Audio();
 
 let aCtx, analyser, freqData, waveData;
-let isStarted   = false;
-let nlpActive   = true;
-let visualMode  = 0;          // 0=FLUID 1=STATIC 2=DEEP
+let isStarted    = false;
+let nlpActive    = true;
+let visualMode   = 0;
 let intensityMul = 1.0;
 const MODES = ['FLUID','STATIC','DEEP'];
+
+// ── SUSPENDED STATE ──────────────────────────────────────
+// isPaused: true when audio is paused after having started
+// suspendBlend: 0 = fully active, 1 = fully suspended (smooth transition)
+// memFreq / memWave: frozen copy of last frame's audio data, decaying over time
+let isPaused      = false;
+let suspendBlend  = 0;     // lerp target 0 or 1
+let suspendLerp   = 0;     // actual blended value
+let memFreq, memWave;      // memory buffers — filled on pause, decay each frame
+let memDecay      = 0.9985; // per-frame decay (full silence after ~8s at 60fps)
+let suspendT      = 0;     // local time for suspended fluid sim, runs slower
+
+// Fluid noise offset fields — drive hex cell displacement in suspended mode
+// We use a simple layered sine approximation (no external lib needed)
+function fluidNoise(x, y, st) {
+  const a = Math.sin(x*0.018 + st*0.28 + Math.cos(y*0.022 + st*0.19)*1.2)*0.5+0.5;
+  const b = Math.sin(y*0.021 - st*0.21 + Math.cos(x*0.016 - st*0.14)*1.1)*0.5+0.5;
+  const c = Math.sin((x+y)*0.013 + st*0.16)*0.5+0.5;
+  return (a*0.45 + b*0.35 + c*0.20);
+}
+
+// Blob displacement — gives cells a liquid-surface wobble when suspended
+function fluidDisplace(hx, hy, st, strength) {
+  const dx = Math.sin(hx*0.019 + hy*0.011 + st*0.33)*strength;
+  const dy = Math.cos(hx*0.012 - hy*0.017 - st*0.27)*strength;
+  return { dx, dy };
+}
+
+// UI transition helpers
+function setSuspendedUI(on) {
+  const panels  = document.querySelectorAll('.glass');
+  const title   = document.getElementById('titleText');
+  const playBtn = document.getElementById('play');
+  panels.forEach(p => p.classList.toggle('suspended', on));
+  title.classList.toggle('suspended', on);
+  playBtn.classList.toggle('suspended-btn', on);
+}
 
 function setStatus(msg, type='active') {
   document.getElementById('status').textContent = msg;
   const dot = document.getElementById('statusDot');
-  dot.className = 'status-dot' + (type==='idle'?' idle':type==='warn'?' warn':'');
+  dot.className = 'status-dot' +
+    (type==='idle'?' idle':type==='warn'?' warn':type==='suspended'?' suspended':'');
 }
 
 function initAudio() {
@@ -172,8 +240,29 @@ function initAudio() {
   src.connect(analyser); analyser.connect(aCtx.destination);
   freqData = new Uint8Array(analyser.frequencyBinCount);
   waveData = new Uint8Array(analyser.frequencyBinCount);
+  // init memory buffers
+  memFreq = new Float32Array(analyser.frequencyBinCount);
+  memWave = new Float32Array(analyser.frequencyBinCount);
   isStarted = true;
   setStatus('Manifold Active · NLP12 Engaged');
+}
+
+// Capture memory snapshot when pausing
+function captureMemory() {
+  if (!freqData || !waveData) return;
+  for (let i=0; i<freqData.length; i++) {
+    memFreq[i] = freqData[i];
+    memWave[i] = waveData[i];
+  }
+}
+
+// Decay memory toward silence each frame while suspended
+function decayMemory() {
+  for (let i=0; i<memFreq.length; i++) {
+    memFreq[i] *= memDecay;
+    // wave decays toward 128 (silence center)
+    memWave[i] = 128 + (memWave[i]-128)*memDecay;
+  }
 }
 
 document.getElementById('aud').onchange = e => {
@@ -182,19 +271,32 @@ document.getElementById('aud').onchange = e => {
   document.getElementById('fileLabel').textContent = '♪ ' + f.name.slice(0,22);
   setStatus('SRC: ' + f.name.slice(0,20));
 };
+
 document.getElementById('play').onclick = () => {
   initAudio();
   if (aCtx.state === 'suspended') aCtx.resume();
   if (audio.paused) {
     audio.play();
+    isPaused = false;
+    suspendBlend = 0;
+    axiomPool = AXIOMS;
+    setSuspendedUI(false);
     document.getElementById('play').textContent = 'PAUSE SIGNAL';
     setStatus('Signal streaming · NLP active');
   } else {
     audio.pause();
+    isPaused = true;
+    suspendBlend = 1;
+    suspendT = 0;
+    axiomPool = AXIOMS_SUSPENDED;
+    axiomIdx  = 0;
+    captureMemory();
+    setSuspendedUI(true);
     document.getElementById('play').textContent = 'RESUME SIGNAL';
-    setStatus('Signal paused', 'warn');
+    setStatus('SUSPENDED · Fluid mode active', 'suspended');
   }
 };
+
 document.getElementById('toggleNLP').onclick = function() {
   nlpActive = !nlpActive;
   this.textContent = nlpActive ? 'NLP: ON' : 'NLP: OFF';
@@ -211,7 +313,6 @@ document.getElementById('intensity').oninput = function() {
 // ── GLOBAL STATE ─────────────────────────────────────────
 let t = 0;
 
-// Mouse (smooth-lerped)
 const mouse    = { x: 0.5, y: 0.5 };
 const mouseTgt = { x: 0.5, y: 0.5 };
 window.addEventListener('pointermove', e => {
@@ -219,39 +320,32 @@ window.addEventListener('pointermove', e => {
   mouseTgt.y = e.clientY / window.innerHeight;
 });
 
-// Beat
-let beatEnergy   = 0;   // 0–1 smoothed energy
+let beatEnergy   = 0;
 let beatHold     = 0;
 let beatBaseline = 0;
-let beatImpact   = 0;   // single-frame transient
+let beatImpact   = 0;
 
-// Particles  (budget: 600 max)
 const PART_MAX = 600;
 const parts = [];
-
-// Pulse rings  (budget: 8 max)
 const rings = [];
 
-// Idle field seeds
 const seeds = Array.from({length:6}, () => ({
   ox: Math.random()*900, oy: Math.random()*600,
   freq: 0.25 + Math.random()*0.5,
   phase: Math.random()*Math.PI*2,
 }));
 
-// Glyph rain  (28 columns, very low alpha — background texture only)
 const GLYPHS = 'ASSERT+ASSERT-DIRECT+DIRECT-COMMIT+COMMIT-EXPR+EXPR-DECL+DECL-META+META-ΩZK→≠≡∞';
 const RAIN_N = 26;
 const rain = Array.from({length:RAIN_N}, (_,i) => ({
-  x: 0, y: -Math.random()*600,
+  x:0, y:-Math.random()*600,
   speed: 0.45 + Math.random()*1.1,
-  hue: NLP12[i % 12].hue,
-  col: Array.from({length:10}, () => GLYPHS[Math.floor(Math.random()*GLYPHS.length)]),
-  alpha: 0.025 + Math.random()*0.045,  // hard cap — stays in background
+  hue: NLP12[i%12].hue,
+  col: Array.from({length:10}, ()=>GLYPHS[Math.floor(Math.random()*GLYPHS.length)]),
+  alpha: 0.025 + Math.random()*0.045,
 }));
 
 // ── HELPERS ──────────────────────────────────────────────
-
 function idleVal(x, y) {
   let v = 0;
   for (const s of seeds) {
@@ -266,36 +360,30 @@ function sectorOf(x, y, cx, cy) {
   return Math.floor(((a*180/Math.PI)+360)%360/30);
 }
 
-function readFreq(dist, W, H) {
-  const fi = Math.floor((dist/(Math.max(W,H)*0.72))*(freqData.length/2)) % (freqData.length/2);
-  return freqData[fi];
+function readFreq(dist, W, H, buf) {
+  const fi = Math.floor((dist/(Math.max(W,H)*0.72))*(buf.length/2)) % (buf.length/2);
+  return buf[fi];
 }
 
 // ── BEAT DETECTION ───────────────────────────────────────
-// Uses sub-bass bin average vs. adaptive baseline.
-// beatEnergy: 0–1 smoothed;  beatImpact: 0–1 single-frame spike.
 function processBeat() {
   beatImpact = 0;
-  if (!isStarted) return;
+  if (!isStarted || isPaused) return;
   let low = 0;
   const N = Math.min(20, freqData.length);
-  for (let i = 0; i < N; i++) low += freqData[i];
+  for (let i=0; i<N; i++) low += freqData[i];
   low /= N;
-
   beatBaseline = beatBaseline*0.93 + low*0.07;
   const delta  = Math.max(0, low - beatBaseline);
   beatImpact   = delta > 14 ? Math.min(1, delta/80) : 0;
-
   if (beatImpact > 0.08 && beatHold <= 0) {
     beatHold = 10;
     if (rings.length < 8)
       rings.push({ r:12, a: 0.55 + beatImpact*0.35, w: 1.2 + beatImpact*5 });
   } else { beatHold--; }
-
   beatEnergy = beatEnergy*0.88 + beatImpact*0.38;
 }
 
-// ── PARTICLE HELPERS ─────────────────────────────────────
 function spawnParticle(x, y, hue, power) {
   if (parts.length >= PART_MAX) return;
   const spd = 0.6 + power*2.4;
@@ -304,45 +392,45 @@ function spawnParticle(x, y, hue, power) {
     x, y,
     vx: Math.cos(ang)*spd*(0.5+Math.random()),
     vy: Math.sin(ang)*spd*(0.5+Math.random()),
-    life: 30 + Math.random()*40,
-    max:  70,
-    r:    0.6 + Math.random()*1.8 + power,
-    hue,
+    life: 30 + Math.random()*40, max:70,
+    r: 0.6 + Math.random()*1.8 + power, hue,
   });
 }
 
 // ── LAYER RENDERERS ──────────────────────────────────────
 
-/* L0 — Glyph rain: NLP-label chars, deep background texture.
-   Alpha budget: max 0.07 per char — never competes with hex field. */
-function renderGlyphRain(W, H) {
-  const cw = W / RAIN_N;
+function renderGlyphRain(W, H, blend) {
+  const cw = W/RAIN_N;
   ctx.font = '7px Share Tech Mono,Courier New';
   ctx.textAlign = 'center';
+  // In suspended mode, rain slows and shifts hue toward violet
+  const speedMul = blend > 0 ? (1 - blend*0.72) : 1;
   for (const col of rain) {
     col.x = (rain.indexOf(col)+0.5)*cw;
-    col.y += col.speed;
+    col.y += col.speed * speedMul;
     if (col.y > H+180) { col.y = -60-Math.random()*300; col.speed = 0.4+Math.random()*1.2; }
     col.col.forEach((ch,i) => {
       const a = col.alpha*(1 - i/col.col.length);
-      ctx.fillStyle = `hsla(${col.hue},80%,62%,${a})`;
+      // Hue blends toward violet (280) when suspended
+      const hue = col.hue*(1-blend) + 280*blend;
+      ctx.fillStyle = `hsla(${hue},80%,62%,${a*(1+blend*0.4)})`;
       ctx.fillText(ch, col.x, col.y - i*10);
     });
   }
 }
 
-/* L1 — Sector fields: radial gradient washes per NLP wedge.
-   Alpha budget: 0.01–0.04 base, +0.02 on beat peak.
-   Role: classify space, not illuminate it. */
-function renderSectorFields(cx, cy, maxR, beat) {
+function renderSectorFields(cx, cy, maxR, beat, blend) {
   if (!nlpActive) return;
-  for (let i = 0; i < 12; i++) {
+  for (let i=0; i<12; i++) {
     const { hue } = NLP12[i];
     const a0 = i*(Math.PI/6) - Math.PI/12;
+    // In suspended mode: hue drifts, alpha rises slightly, edges become softer
+    const h = hue*(1-blend) + ((hue+120)%360)*blend;
+    const aBoost = blend*0.025;
     const g = ctx.createRadialGradient(cx,cy,20, cx,cy,maxR*0.78);
-    g.addColorStop(0,   `hsla(${hue},100%,60%,${0.010+beat*0.018})`);
-    g.addColorStop(0.5, `hsla(${hue},100%,52%,0.022)`);
-    g.addColorStop(1,   `hsla(${hue},100%,45%,0)`);
+    g.addColorStop(0,   `hsla(${h},100%,60%,${0.010+beat*0.018+aBoost})`);
+    g.addColorStop(0.5, `hsla(${h},100%,52%,${0.022+aBoost*0.5})`);
+    g.addColorStop(1,   `hsla(${h},100%,45%,0)`);
     ctx.beginPath();
     ctx.moveTo(cx,cy);
     ctx.arc(cx,cy,maxR*0.78,a0,a0+Math.PI/6);
@@ -351,68 +439,155 @@ function renderSectorFields(cx, cy, maxR, beat) {
   }
 }
 
-/* L2 — Hex field: the primary visual layer.
-   Each cell maps to a freq bin by radial distance.
-   Size, brightness, and stroke weight encode energy.
-   Constellation links drawn inline (no extra pass needed). */
-function renderHexField(cx, cy, W, H, beat) {
+// ── SUSPENDED FLUID SURFACE ───────────────────────────────
+// A rippling liquid membrane drawn on top of the hex field when blend > 0.
+// Made of multiple overlapping sine-displaced ellipses with very low alpha.
+function renderFluidSurface(cx, cy, W, H, blend, st) {
+  if (blend < 0.02) return;
+  ctx.save();
+  const layers = 5;
+  for (let l=0; l<layers; l++) {
+    const fi  = l/layers;
+    const rx  = W*0.28 + W*0.18*Math.sin(st*0.14+fi*2.1);
+    const ry  = H*0.22 + H*0.14*Math.cos(st*0.17+fi*1.7);
+    const ox  = cx + Math.sin(st*0.23+fi*2.8)*W*0.08;
+    const oy  = cy + Math.cos(st*0.19-fi*2.2)*H*0.07;
+    const hue = 260 + l*18 + st*4;
+    const a   = blend * (0.025 + l*0.008);
+
+    ctx.beginPath();
+    ctx.ellipse(ox, oy, rx, ry, st*0.05+fi*0.4, 0, Math.PI*2);
+    const g = ctx.createRadialGradient(ox,oy,0, ox,oy,Math.max(rx,ry));
+    g.addColorStop(0, `hsla(${hue},100%,72%,${a*1.8})`);
+    g.addColorStop(0.5, `hsla(${hue+20},100%,60%,${a})`);
+    g.addColorStop(1,   `hsla(${hue+40},100%,48%,0)`);
+    ctx.fillStyle = g;
+    ctx.fill();
+  }
+
+  // Ripple arcs emanating from center — only in suspended mode
+  for (let r=0; r<6; r++) {
+    const rr = (st*28 + r*55) % Math.max(W,H);
+    const ra = blend * (0.06 * (1 - rr/Math.max(W,H)));
+    if (ra < 0.005) continue;
+    ctx.beginPath();
+    ctx.arc(cx, cy, rr, 0, Math.PI*2);
+    ctx.strokeStyle = `hsla(${270+r*14},90%,70%,${ra})`;
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ── SUSPENDED DRIFT PARTICLES ─────────────────────────────
+// Slow-floating motes that appear when suspended — different from beat particles.
+// They drift upward and fade, giving a "suspended in liquid" feel.
+const driftMotes = Array.from({length:55}, () => ({
+  x: Math.random()*1400,
+  y: Math.random()*900,
+  vy: -(0.08 + Math.random()*0.22),
+  vx: (Math.random()-0.5)*0.08,
+  r:  0.6 + Math.random()*2.2,
+  hue: 240 + Math.random()*80,
+  alpha: 0.12 + Math.random()*0.25,
+  phase: Math.random()*Math.PI*2,
+}));
+
+function renderDriftMotes(W, H, blend) {
+  if (blend < 0.05) return;
+  for (const m of driftMotes) {
+    m.y += m.vy * blend;
+    m.x += m.vx * blend + Math.sin(suspendT*0.4+m.phase)*0.12*blend;
+    if (m.y < -20) m.y = H+20;
+    const a = m.alpha * blend;
+    ctx.beginPath();
+    ctx.arc(m.x % W, m.y, m.r, 0, Math.PI*2);
+    ctx.fillStyle = `hsla(${m.hue},90%,72%,${a})`;
+    ctx.shadowBlur = 4*blend;
+    ctx.shadowColor = `hsl(${m.hue},100%,70%)`;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+}
+
+function renderHexField(cx, cy, W, H, beat, blend) {
   const R  = 36;
   const gw = R*Math.sqrt(3);
   const gh = R*1.5;
-  const nodes = [];   // peak nodes for constellation
+  const nodes = [];
 
-  for (let row = -1; row*gh < H+R; row++) {
+  // Which data source to use: live audio or decayed memory
+  const fBuf = (isStarted && !isPaused) ? freqData : (memFreq || freqData);
+  const wBuf = (isStarted && !isPaused) ? waveData  : (memWave  || waveData);
+
+  for (let row=-1; row*gh<H+R; row++) {
     const hy0   = row*gh;
     const shift = (((row%2)+2)%2)*(gw/2);
-    for (let col = -1; col*gw < W+gw; col++) {
-      const hx   = col*gw + shift;
-      const hy   = hy0;
+    for (let col=-1; col*gw<W+gw; col++) {
+      let hx = col*gw + shift;
+      let hy = hy0;
+
+      // Fluid displacement in suspended mode
+      if (blend > 0.01) {
+        const disp = fluidDisplace(hx, hy, suspendT, blend*12);
+        hx += disp.dx;
+        hy += disp.dy;
+      }
+
       const dist = Math.hypot(hx-cx, hy-cy);
+      const raw = isStarted ? readFreq(dist,W,H,fBuf) : idleVal(hx,hy);
 
-      const raw = isStarted ? readFreq(dist,W,H) : idleVal(hx,hy);
-      const p   = Math.min(1, (raw*intensityMul)/255);
+      // Add fluid noise on top of audio data when suspended
+      let p = Math.min(1, (raw*intensityMul)/255);
+      if (blend > 0) {
+        const fn = fluidNoise(hx, hy, suspendT);
+        p = p*(1-blend*0.6) + fn*blend*0.5;
+      }
 
-      const sid    = nlpActive ? sectorOf(hx,hy,cx,cy) : null;
-      let   hue    = sid !== null ? NLP12[sid].hue : 165+p*80;
+      const sid  = nlpActive ? sectorOf(hx,hy,cx,cy) : null;
+      let   hue  = sid !== null ? NLP12[sid].hue : 165+p*80;
+
+      // Hue shifts toward amber/violet spectrum when suspended
+      const suspHue = (hue + 120) % 360;
+      hue = hue*(1-blend) + suspHue*blend;
+
       if (visualMode===2) hue = (hue + t*28*p) % 360;
 
       const breath = visualMode===0 ? Math.sin(t*1.6+dist*0.016)*0.08 : 0;
-      const hexR   = R*(0.36 + p*0.62 + breath);
-      const light  = 38 + p*26;
+      // Cells breathe more slowly and deeply when suspended
+      const suspBreath = blend * Math.sin(suspendT*0.8+dist*0.009)*0.18;
+      const hexR = R*(0.36 + p*0.62 + breath + suspBreath);
+      const light = 38 + p*26;
 
-      // Draw hex
       ctx.beginPath();
-      const rotOff = visualMode===2 ? t*0.035 : 0;
+      const rotOff = visualMode===2 ? t*0.035 : blend*suspendT*0.012;
       for (let i=0;i<6;i++) {
         const a = (Math.PI/3)*i + rotOff;
         ctx.lineTo(hx+hexR*Math.cos(a), hy+hexR*Math.sin(a));
       }
       ctx.closePath();
 
-      if (p > 0.38) {
-        ctx.fillStyle = `hsla(${hue},88%,${light}%,${p*0.16})`;
+      if (p>0.38) {
+        ctx.fillStyle=`hsla(${hue},88%,${light}%,${p*0.16})`;
         ctx.fill();
       }
-      ctx.strokeStyle = `hsla(${hue},100%,${light}%,${0.10+p*0.88})`;
-      ctx.lineWidth   = 0.5 + p*4.2;
+      ctx.strokeStyle=`hsla(${hue},100%,${light}%,${0.10+p*0.88})`;
+      ctx.lineWidth=0.5+p*4.2;
       ctx.stroke();
 
-      if (p > 0.72) {
-        ctx.shadowBlur  = 10*p + beatEnergy*6;
-        ctx.shadowColor = `hsl(${hue},100%,68%)`;
+      if (p>0.72) {
+        ctx.shadowBlur=10*p + beatEnergy*6;
+        ctx.shadowColor=`hsl(${hue},100%,68%)`;
         ctx.stroke();
-        ctx.shadowBlur  = 0;
+        ctx.shadowBlur=0;
       }
 
-      // Constellation node collection (sampled sparsely)
-      if (p > 0.78 && Math.random() < 0.08) nodes.push({x:hx,y:hy,h:hue});
-      // Particle emission (only on strong signal)
-      if (p > 0.84 && Math.random() < 0.12) spawnParticle(hx,hy,hue,p);
+      if (p>0.78 && Math.random()<0.08) nodes.push({x:hx,y:hy,h:hue});
+      if (p>0.84 && Math.random()<0.12 && !isPaused) spawnParticle(hx,hy,hue,p);
     }
   }
 
-  // Constellation: connect nearby peak nodes with hairlines
-  // Alpha capped at 0.15 — decorative, not dominant
+  // Constellation
   for (let i=0;i<nodes.length;i++) {
     for (let j=i+1;j<nodes.length;j++) {
       const dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y;
@@ -427,85 +602,88 @@ function renderHexField(cx, cy, W, H, beat) {
   }
 }
 
-/* L3 — Mid-layer audio overlays:
-   a) Waveform ribbon — single horizontal trace
-   b) Spiral arms — 2 rotating polar frequency curves
-   c) Radial frequency ring — polar freq plot at fixed radius
-   These share a combined alpha budget so they don't stack into noise. */
-function renderAudioOverlays(cx, cy, W, H, beat) {
-  // Waveform ribbon
-  if (isStarted) {
-    ctx.beginPath();
-    const step = W/waveData.length;
-    ctx.moveTo(0,cy);
-    for (let i=0;i<waveData.length;i++) {
-      ctx.lineTo(i*step, cy + (waveData[i]/128-1)*52*intensityMul);
-    }
-    ctx.strokeStyle = `rgba(0,255,180,${0.07+beat*0.14})`;
-    ctx.lineWidth = 1.0+beat*0.8;
-    ctx.stroke();
-  }
+function renderAudioOverlays(cx, cy, W, H, beat, blend) {
+  const wBuf = (isStarted && !isPaused) ? waveData : (memWave || waveData);
+  const fBuf = (isStarted && !isPaused) ? freqData : (memFreq || freqData);
+  const alpha = 1 - blend*0.7;
 
-  // Spiral arms — only when audio active
+  // Waveform ribbon — uses memory buffer when suspended, with gentle drift
+  ctx.beginPath();
+  const step = W/wBuf.length;
+  ctx.moveTo(0,cy);
+  for (let i=0;i<wBuf.length;i++) {
+    let v = (wBuf[i]/128-1)*52*intensityMul;
+    // Add slow liquid wave distortion on top when suspended
+    if (blend > 0) v += Math.sin(i*0.045 + suspendT*0.8)*18*blend;
+    ctx.lineTo(i*step, cy+v);
+  }
+  const ribbonHue = 165*(1-blend) + 280*blend;
+  ctx.strokeStyle=`hsla(${ribbonHue},100%,65%,${(0.07+beat*0.14)*alpha})`;
+  ctx.lineWidth=1.0+beat*0.8+blend*0.5;
+  ctx.stroke();
+
   if (!isStarted) return;
+
   ctx.save();
   for (let arm=0;arm<2;arm++) {
     ctx.beginPath();
     for (let i=0;i<180;i++) {
-      const fi  = i/180;
-      const f   = freqData[(i*2)%freqData.length]/255;
-      const ang = fi*8.4 + t*(0.32+arm*0.12) + arm*Math.PI;
+      const fi = i/180;
+      const f  = fBuf[(i*2)%fBuf.length]/255;
+      // Spiral slows down significantly when suspended
+      const spd = (0.32+arm*0.12)*(1-blend*0.75);
+      const ang = fi*8.4 + t*spd + arm*Math.PI;
       const rad = 24 + fi*Math.min(cx,cy)*0.60 + f*22*intensityMul;
       const x   = cx+Math.cos(ang)*rad;
       const y   = cy+Math.sin(ang)*rad*0.74;
-      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
     }
-    ctx.strokeStyle = `hsla(${arm===0?165:285},100%,60%,${0.10+beat*0.18})`;
-    ctx.lineWidth   = 0.9+beat*1.0;
-    ctx.shadowBlur  = 8+beat*8;
-    ctx.shadowColor = arm===0?'#00ffb4':'#7c5cff';
+    const spiralHue = (arm===0?165:285)*(1-blend) + (arm===0?280:320)*blend;
+    ctx.strokeStyle=`hsla(${spiralHue},100%,60%,${(0.10+beat*0.18)*alpha})`;
+    ctx.lineWidth=0.9+beat*1.0;
+    ctx.shadowBlur=8+beat*8;
+    ctx.shadowColor=arm===0?'#00ffb4':'#7c5cff';
     ctx.stroke();
     ctx.shadowBlur=0;
   }
 
-  // Polar frequency ring — maps full spectrum to a circle
-  const ringR = Math.min(cx,cy)*0.38;
+  // Polar ring
+  const ringR=Math.min(cx,cy)*0.38;
   ctx.beginPath();
-  for (let i=0;i<freqData.length;i+=4) {
-    const f   = freqData[i]/255;
-    const ang = (i/freqData.length)*Math.PI*2 - Math.PI/2;
-    const r   = ringR + f*28*intensityMul;
-    const x   = cx+Math.cos(ang)*r;
-    const y   = cy+Math.sin(ang)*r;
-    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  for (let i=0;i<fBuf.length;i+=4) {
+    const f=fBuf[i]/255;
+    const ang=(i/fBuf.length)*Math.PI*2-Math.PI/2;
+    const r=ringR+f*28*intensityMul;
+    const x=cx+Math.cos(ang)*r;
+    const y=cy+Math.sin(ang)*r;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
   }
   ctx.closePath();
-  ctx.strokeStyle = `rgba(0,255,180,${0.06+beatEnergy*0.10})`;
-  ctx.lineWidth   = 0.8;
+  const ringHue = 165*(1-blend) + 280*blend;
+  ctx.strokeStyle=`hsla(${ringHue},90%,62%,${(0.06+beatEnergy*0.10)*alpha})`;
+  ctx.lineWidth=0.8;
   ctx.stroke();
   ctx.restore();
 }
 
-/* L4 — Foreground: vortex rings, pulse rings, particles, sector labels.
-   This layer is always in front — clean, legible, responsive. */
-
-function renderVortex(cx, cy, beat) {
-  // 4 segmented rings — alternating rotation, hue drift
+function renderVortex(cx, cy, beat, blend) {
+  // Vortex slows down and shifts hue toward violet when suspended
   for (let ri=0;ri<4;ri++) {
-    const baseR = 44 + ri*26;
-    const dir   = ri%2===0 ? 1 : -1;
-    const spd   = (0.18+ri*0.05+beatEnergy*0.35)*dir;
-    const phase = t*spd;
-    const segs  = 10+ri*4;
-    const gap   = 0.20+ri*0.04;
-    const alpha = (0.055+beatEnergy*0.18)*(1-ri*0.18);
-    const hue   = (165+ri*22+t*5)%360;
-
+    const baseR=44+ri*26;
+    const dir=ri%2===0?1:-1;
+    const speedMul = 1 - blend*0.82;
+    const spd=(0.18+ri*0.05+beatEnergy*0.35)*dir*speedMul;
+    const phase=t*spd;
+    const segs=10+ri*4;
+    const gap=0.20+ri*0.04;
+    const alpha=(0.055+beatEnergy*0.18)*(1-ri*0.18);
+    const hue=(165+ri*22+t*5)%360;
+    const h = hue*(1-blend) + ((hue+115)%360)*blend;
     ctx.save();
-    ctx.strokeStyle = `hsla(${hue},100%,62%,${alpha})`;
-    ctx.lineWidth   = 1.3-ri*0.16;
-    ctx.shadowBlur  = 6+beatEnergy*8;
-    ctx.shadowColor = `hsl(${hue},100%,62%)`;
+    ctx.strokeStyle=`hsla(${h},100%,62%,${alpha})`;
+    ctx.lineWidth=1.3-ri*0.16;
+    ctx.shadowBlur=6+beatEnergy*8;
+    ctx.shadowColor=`hsl(${h},100%,62%)`;
     for (let s=0;s<segs;s++) {
       const a0=(s/segs)*Math.PI*2+phase;
       const a1=a0+(Math.PI*2/segs)*(1-gap);
@@ -517,114 +695,122 @@ function renderVortex(cx, cy, beat) {
 
 function renderPulseRings(cx, cy) {
   for (const r of rings) {
-    r.r += 5.5; r.a *= 0.962;
-    const lw = Math.max(0.3, r.w*(1-r.r/500));
-    ctx.beginPath();
-    ctx.arc(cx,cy,r.r,0,Math.PI*2);
-    ctx.strokeStyle = `rgba(0,255,180,${r.a})`;
-    ctx.lineWidth   = lw;
-    ctx.stroke();
+    r.r+=5.5; r.a*=0.962;
+    const lw=Math.max(0.3,r.w*(1-r.r/500));
+    ctx.beginPath(); ctx.arc(cx,cy,r.r,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(0,255,180,${r.a})`;
+    ctx.lineWidth=lw; ctx.stroke();
   }
   for (let i=rings.length-1;i>=0;i--)
-    if (rings[i].a<0.022||rings[i].r>480) rings.splice(i,1);
+    if(rings[i].a<0.022||rings[i].r>480) rings.splice(i,1);
 }
 
 function renderParticles() {
   for (const p of parts) {
     p.x+=p.vx; p.y+=p.vy; p.vx*=0.974; p.vy*=0.974; p.life--;
     const a=Math.max(0,p.life/p.max);
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,p.r*a,0,Math.PI*2);
-    ctx.fillStyle   = `hsla(${p.hue},100%,70%,${a*0.72})`;
-    ctx.shadowBlur  = 6;
-    ctx.shadowColor = `hsl(${p.hue},100%,68%)`;
-    ctx.fill();
-    ctx.shadowBlur=0;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r*a,0,Math.PI*2);
+    ctx.fillStyle=`hsla(${p.hue},100%,70%,${a*0.72})`;
+    ctx.shadowBlur=6; ctx.shadowColor=`hsl(${p.hue},100%,68%)`;
+    ctx.fill(); ctx.shadowBlur=0;
   }
   for (let i=parts.length-1;i>=0;i--) if(parts[i].life<=0) parts.splice(i,1);
 }
 
-function renderSectorLabels(cx, cy, maxR, beat) {
+function renderSectorLabels(cx, cy, maxR, beat, blend) {
   if (!nlpActive) return;
   ctx.save();
   for (let i=0;i<12;i++) {
-    const { hue, label } = NLP12[i];
-    const ang = (Math.PI/6)*i;
-
-    // Sector divider
+    const { hue, label }=NLP12[i];
+    const ang=(Math.PI/6)*i;
+    const h = hue*(1-blend) + ((hue+120)%360)*blend;
     ctx.beginPath();
     ctx.moveTo(cx,cy);
     ctx.lineTo(cx+maxR*Math.cos(ang), cy+maxR*Math.sin(ang));
-    ctx.strokeStyle = `hsla(${hue},75%,52%,${0.045+beatEnergy*0.045})`;
+    ctx.strokeStyle=`hsla(${h},75%,52%,${0.045+beatEnergy*0.045})`;
     ctx.lineWidth=0.9; ctx.stroke();
-
-    // Label — floats gently
-    const mid = ang+Math.PI/12;
-    const lr  = 148+16*Math.sin(t*0.75+i);
-    ctx.fillStyle    = `hsla(${hue},82%,64%,${0.42+beatEnergy*0.25})`;
-    ctx.font         = 'bold 8px Share Tech Mono,Courier New';
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
+    const mid=ang+Math.PI/12;
+    const lr=148+16*Math.sin(t*0.75+i);
+    ctx.fillStyle=`hsla(${h},82%,64%,${0.42+beatEnergy*0.25})`;
+    ctx.font='bold 8px Share Tech Mono,Courier New';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText(label, cx+lr*Math.cos(mid), cy+lr*Math.sin(mid));
   }
   ctx.restore();
 }
 
-/* Omega mark — center anchor, scales with beat, always visible */
-function renderOmega(cx, cy, beat) {
-  const scale = 1 + beatEnergy*0.55;
-  const alpha = 0.16 + 0.12*Math.sin(t*1.1) + beatEnergy*0.28;
+function renderOmega(cx, cy, beat, blend) {
+  const scale=1+beatEnergy*0.55;
+  const alpha=0.16+0.12*Math.sin(t*1.1)+beatEnergy*0.28;
+  // In suspended mode: omega pulses slowly at a violet frequency
+  const suspAlpha = 0.22 + 0.18*Math.sin(suspendT*0.6);
+  const fa = alpha*(1-blend) + suspAlpha*blend;
+  const omegaHue = blend > 0 ? 270 : -1; // -1 = teal default
   ctx.save();
   ctx.translate(cx,cy); ctx.scale(scale,scale);
-  ctx.font         = `bold ${18+beat*7}px Share Tech Mono,Courier New`;
-  ctx.fillStyle    = `rgba(0,255,180,${alpha})`;
-  ctx.textAlign    = 'center'; ctx.textBaseline='middle';
-  ctx.shadowBlur   = 14+beatEnergy*22;
-  ctx.shadowColor  = '#00ffb4';
+  ctx.font=`bold ${18+beat*7}px Share Tech Mono,Courier New`;
+  if (omegaHue >= 0) {
+    ctx.fillStyle=`hsla(${omegaHue},90%,72%,${fa})`;
+    ctx.shadowColor=`hsl(${omegaHue},100%,72%)`;
+  } else {
+    ctx.fillStyle=`rgba(0,255,180,${fa})`;
+    ctx.shadowColor='#00ffb4';
+  }
+  ctx.shadowBlur=14+beatEnergy*22+blend*18;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.fillText('Ω',0,0);
   ctx.shadowBlur=0; ctx.restore();
 }
 
-/* Radar sweep — single slow arm, adds spatial scanning feel.
-   Low alpha — context, not emphasis. */
-function renderRadar(cx, cy, maxR) {
-  const ang  = t*0.65 % (Math.PI*2);
-  const aLen = maxR*0.52;
+function renderRadar(cx, cy, maxR, blend) {
+  const ang=t*0.65*(1-blend*0.88)%(Math.PI*2);
+  const aLen=maxR*0.52;
   ctx.save();
   ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,aLen,ang-0.50,ang); ctx.closePath();
-  const rg = ctx.createRadialGradient(cx,cy,0,cx,cy,aLen);
-  rg.addColorStop(0,  'rgba(0,255,180,0)');
+  const rg=ctx.createRadialGradient(cx,cy,0,cx,cy,aLen);
+  rg.addColorStop(0,'rgba(0,255,180,0)');
   rg.addColorStop(0.7,`rgba(0,255,180,${0.022+beatEnergy*0.045})`);
-  rg.addColorStop(1,  'rgba(0,255,180,0)');
+  rg.addColorStop(1,'rgba(0,255,180,0)');
   ctx.fillStyle=rg; ctx.fill();
   ctx.beginPath(); ctx.moveTo(cx,cy);
-  ctx.lineTo(cx+aLen*Math.cos(ang), cy+aLen*Math.sin(ang));
+  ctx.lineTo(cx+aLen*Math.cos(ang),cy+aLen*Math.sin(ang));
   ctx.strokeStyle=`rgba(0,255,180,${0.14+beatEnergy*0.18})`;
   ctx.lineWidth=1.2; ctx.stroke();
   ctx.restore();
 }
 
-/* Spectrum strip — thin top bar, freq-colored.
-   Stays in canvas corners so it doesn't conflict with UI panels. */
 function renderSpectrumStrip(W, beat) {
-  if (!isStarted) return;
+  if (!isStarted || isPaused) return;
   const N=48, gap=2;
   const bw=(W*0.55-gap*(N-1))/N;
   const ox=W*0.225;
   for (let i=0;i<N;i++) {
-    const v  = freqData[Math.floor(i*(freqData.length/N))]/255;
-    const h  = 5+v*38*intensityMul;
-    const hue= 165+i*3.1;
+    const v=freqData[Math.floor(i*(freqData.length/N))]/255;
+    const h=5+v*38*intensityMul;
+    const hue=165+i*3.1;
     ctx.fillStyle=`hsla(${hue},100%,56%,${0.10+v*0.65})`;
     ctx.fillRect(ox+i*(bw+gap), 8+(38-h), bw, h);
   }
 }
 
-/* Scan lines — only on strong beat transients, never constant.
-   Max alpha 0.025 — felt rather than seen. */
+// Suspended-mode spectrum: shows decayed memory as a ghost strip
+function renderSuspendedStrip(W, blend) {
+  if (blend < 0.05 || !memFreq) return;
+  const N=48, gap=2;
+  const bw=(W*0.55-gap*(N-1))/N;
+  const ox=W*0.225;
+  for (let i=0;i<N;i++) {
+    const v=memFreq[Math.floor(i*(memFreq.length/N))]/255;
+    const h=5+v*38*intensityMul;
+    const hue=260+i*1.8;
+    ctx.fillStyle=`hsla(${hue},100%,62%,${(0.06+v*0.38)*blend})`;
+    ctx.fillRect(ox+i*(bw+gap), 8+(38-h), bw, h);
+  }
+}
+
 function renderScanLines(W, H, beat) {
-  if (beat < 0.20) return;
-  const n = 3+Math.floor(beat*5);
+  if (beat<0.20) return;
+  const n=3+Math.floor(beat*5);
   for (let i=0;i<n;i++) {
     const y=((t*180+i*(H/n))%(H+60))-30;
     ctx.fillStyle=`rgba(0,255,180,${0.013*beat})`;
@@ -632,14 +818,17 @@ function renderScanLines(W, H, beat) {
   }
 }
 
-/* HUD footer — single line, variable brightness with energy */
-function renderHUD(W, H) {
+function renderHUD(W, H, blend) {
   ctx.save();
   ctx.font='8px Share Tech Mono,Courier New';
-  ctx.fillStyle=`rgba(0,255,180,${0.10+beatEnergy*0.10})`;
+  const label = blend > 0.5 ? 'SUSPENDED' : MODES[visualMode];
+  const color = blend > 0.5
+    ? `hsla(270,90%,72%,${0.14+blend*0.14})`
+    : `rgba(0,255,180,${0.10+beatEnergy*0.10})`;
+  ctx.fillStyle=color;
   ctx.textAlign='left';
   ctx.fillText(
-    `LOOP_CYCLE · NLP:${nlpActive?'ACTIVE':'OFF'} · MODE:${MODES[visualMode]} · E:${(beatEnergy*100).toFixed(0)}% · P:${parts.length} · t:${t.toFixed(1)}`,
+    `LOOP_CYCLE · NLP:${nlpActive?'ACTIVE':'OFF'} · MODE:${label} · E:${(beatEnergy*100).toFixed(0)}% · t:${t.toFixed(1)}`,
     14, H-14
   );
   ctx.restore();
@@ -651,8 +840,19 @@ function draw() {
   t += 0.011;
 
   // Smooth mouse
-  mouse.x += (mouseTgt.x - mouse.x)*0.06;
-  mouse.y += (mouseTgt.y - mouse.y)*0.06;
+  mouse.x += (mouseTgt.x-mouse.x)*0.06;
+  mouse.y += (mouseTgt.y-mouse.y)*0.06;
+
+  // Smooth suspend blend (transitions in ~0.8s each way)
+  const blendTarget = isPaused ? 1 : 0;
+  suspendLerp += (blendTarget - suspendLerp) * 0.025;
+  const blend = suspendLerp;
+
+  // Advance suspended time counter (slower clock)
+  if (blend > 0.01) {
+    suspendT += 0.008 * blend;
+    decayMemory();
+  }
 
   canvas.width  = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -660,51 +860,49 @@ function draw() {
   const cx=W/2, cy=H/2;
   const maxR=Math.max(W,H)*1.20;
 
-  // Read audio
-  if (isStarted) {
+  if (isStarted && !isPaused) {
     analyser.getByteFrequencyData(freqData);
     analyser.getByteTimeDomainData(waveData);
   }
   processBeat();
   const beat = beatImpact;
 
-  // ── Background ──
-  // Persistence amount by mode (FLUID keeps trails, STATIC clears)
+  // Background — shifts to deeper indigo-black when suspended
   const bgAlpha = visualMode===0 ? 0.16 : visualMode===1 ? 1.0 : 0.40;
-  ctx.fillStyle = `rgba(0,2,6,${bgAlpha})`;
+  const bgR = Math.round(0*(1-blend) + 6*blend);
+  const bgG = Math.round(2*(1-blend) + 0*blend);
+  const bgB = Math.round(6*(1-blend) + 18*blend);
+  ctx.fillStyle = `rgba(${bgR},${bgG},${bgB},${bgAlpha})`;
   ctx.fillRect(0,0,W,H);
 
-  // ── Layer 0 — Glyph rain (background texture) ──
-  renderGlyphRain(W,H);
+  renderGlyphRain(W,H,blend);
+  renderSectorFields(cx,cy,maxR,beat,blend);
 
-  // ── Layer 1 — Sector field washes ──
-  renderSectorFields(cx,cy,maxR,beat);
-
-  // ── Layer 2 — Mouse parallax tilt (applied to hex + overlays only) ──
   const tiltX=(mouse.y-0.5)*0.045;
   const tiltY=(mouse.x-0.5)*0.045;
   ctx.save();
   ctx.translate(cx,cy); ctx.transform(1,tiltX,tiltY,1,0,0); ctx.translate(-cx,-cy);
 
-  renderRadar(cx,cy,maxR);
-  renderHexField(cx,cy,W,H,beat);
-  renderAudioOverlays(cx,cy,W,H,beat);
+  renderRadar(cx,cy,maxR,blend);
+  renderHexField(cx,cy,W,H,beat,blend);
+  renderAudioOverlays(cx,cy,W,H,beat,blend);
 
-  ctx.restore(); // end tilt
+  ctx.restore();
 
-  // ── Layer 3 — Sector labels & dividers (not tilted — stay legible) ──
-  renderSectorLabels(cx,cy,maxR,beat);
+  // Fluid surface on top of hex, below UI layers
+  renderFluidSurface(cx,cy,W,H,blend,suspendT);
+  renderDriftMotes(W,H,blend);
 
-  // ── Layer 4 — Foreground reactive elements ──
-  renderVortex(cx,cy,beat);
+  renderSectorLabels(cx,cy,maxR,beat,blend);
+  renderVortex(cx,cy,beat,blend);
   renderPulseRings(cx,cy);
   renderParticles();
-  renderOmega(cx,cy,beat);
+  renderOmega(cx,cy,beat,blend);
 
-  // ── HUD overlays (non-tilted, always on top) ──
   renderSpectrumStrip(W,beat);
+  renderSuspendedStrip(W,blend);
   renderScanLines(W,H,beat);
-  renderHUD(W,H);
+  renderHUD(W,H,blend);
 }
 
 draw();
