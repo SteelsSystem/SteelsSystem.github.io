@@ -1,1 +1,1019 @@
-{m}
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <title>Lex Forensica | HEX-NLP Manifold v17</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #000; overflow: hidden; font-family: 'Share Tech Mono','Courier New',monospace; }
+        canvas { display: block; position: absolute; inset: 0; }
+        .ui { position: relative; z-index: 10; pointer-events: none; }
+        .interact { pointer-events: auto; }
+        .glass {
+            background: rgba(0,4,12,0.80);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(0,255,180,0.10);
+            transition: border-color 1.2s ease, background 1.2s ease;
+        }
+        .glass.suspended { background: rgba(8,4,20,0.85); border-color: rgba(160,80,255,0.18); }
+        .glass.peak-mode  { background: rgba(20,8,4,0.85);  border-color: rgba(255,140,0,0.28); }
+        .glow-text { text-shadow: 0 0 14px rgba(0,255,180,0.55); transition: text-shadow 1.2s ease, color 1.2s ease; }
+        .glow-text.suspended { color: #c084fc; text-shadow: 0 0 14px rgba(160,80,255,0.55); }
+        .glow-text.peak-mode  { color: #ffa040; text-shadow: 0 0 18px rgba(255,140,0,0.65); }
+        .axiom-pulse { animation: axiomPulse 3.2s ease-in-out infinite; }
+        @keyframes axiomPulse { 0%,100%{opacity:0.30} 50%{opacity:0.85} }
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,255,180,0.25); }
+        .btn {
+            border: 1px solid rgba(0,255,180,0.35);
+            background: rgba(0,255,180,0.04);
+            color: #00ffb4;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 10px;
+            letter-spacing: 0.10em;
+            transition: all 0.22s;
+            text-transform: uppercase;
+        }
+        .btn:hover  { background: rgba(0,255,180,0.12); border-color: rgba(0,255,180,0.75); box-shadow: 0 0 14px rgba(0,255,180,0.18); }
+        .btn.active { background: rgba(0,255,180,0.18); border-color: #00ffb4; box-shadow: 0 0 18px rgba(0,255,180,0.30); }
+        .btn.suspended-btn { border-color: rgba(160,80,255,0.55)!important; color:#c084fc!important; background:rgba(160,80,255,0.08)!important; box-shadow:0 0 18px rgba(160,80,255,0.22)!important; }
+        .status-dot { width:6px; height:6px; border-radius:50%; background:#00ffb4; box-shadow:0 0 8px #00ffb4; display:inline-block; animation:blink 1.6s ease-in-out infinite; transition:background 1.2s,box-shadow 1.2s; }
+        .status-dot.suspended { background:#c084fc; box-shadow:0 0 8px #c084fc; animation:blinkSusp 2.8s ease-in-out infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.15} }
+        @keyframes blinkSusp { 0%,100%{opacity:0.7} 50%{opacity:0.15} }
+        .status-dot.idle { background:#223; box-shadow:none; animation:none; }
+        .status-dot.warn { background:#f90; box-shadow:0 0 8px #f90; }
+        .back-link { position:fixed; top:20px; left:20px; z-index:200; font-family:'Share Tech Mono',monospace; font-size:8px; letter-spacing:3px; color:rgba(0,229,255,0.25); text-decoration:none; text-transform:uppercase; transition:color 0.3s; pointer-events:auto; }
+        .back-link:hover { color:#00e5ff; }
+        .glass.static-mode { background:rgba(2,8,2,0.88)!important; border-color:rgba(0,200,100,0.22)!important; }
+        .glow-text.static-mode { color:#40ff90!important; text-shadow:0 0 14px rgba(0,255,120,0.50)!important; }
+        .status-dot.static { background:#40ff90; box-shadow:0 0 8px #40ff90; animation:blinkStatic 4s ease-in-out infinite; }
+        @keyframes blinkStatic { 0%,100%{opacity:0.9} 50%{opacity:0.35} }
+        #centreGlyph {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+            z-index: 20; pointer-events: none;
+            font-family: 'Share Tech Mono',monospace;
+            font-size: 13px; letter-spacing: 0.35em;
+            color: rgba(0,255,180,0.18);
+            text-shadow: 0 0 22px rgba(0,255,180,0.28);
+            transition: color 0.18s, text-shadow 0.18s, opacity 0.35s;
+            opacity: 0.55;
+        }
+        #centreGlyph.beat-flash {
+            color: rgba(255,255,255,0.88);
+            text-shadow: 0 0 32px rgba(255,220,120,0.80), 0 0 60px rgba(255,120,0,0.40);
+        }
+        #shareAudio {
+            position: fixed; top: 20px; right: 280px; z-index: 30;
+            border: 1px solid rgba(255,255,255,.14);
+            background: rgba(10,14,24,.55);
+            color: #d8e6ff;
+            padding: 10px 14px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 9px;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            transition: all 0.22s;
+        }
+        #shareAudio:hover { background: rgba(30,60,120,.75); border-color: rgba(120,180,255,.5); }
+        #modeSelector {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 30; display: flex; gap: 6px; pointer-events: auto;
+        }
+        .mode-pill {
+            font-family: 'Share Tech Mono',monospace;
+            font-size: 8px; letter-spacing: .12em;
+            padding: 6px 12px; cursor: pointer;
+            border: 1px solid rgba(0,255,180,.22);
+            background: rgba(0,4,12,.65);
+            color: rgba(0,255,180,.45);
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+        .mode-pill.active { border-color: #00ffb4; color: #00ffb4; background: rgba(0,255,180,.10); box-shadow: 0 0 12px rgba(0,255,180,.22); }
+        .mode-pill:hover { color: #00ffb4; border-color: rgba(0,255,180,.6); }
+    </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<a href="index.html" class="back-link">← Lex Forensica</a>
+<div id="limiterBar" style="position:fixed;top:0;left:0;width:100%;height:2px;z-index:50;pointer-events:none;">
+  <div id="limiterFill" style="height:100%;width:0%;background:linear-gradient(to right,#00ffb4,#ffa040,#ff4444);transition:width 0.04s linear;box-shadow:0 0 6px rgba(255,160,0,0.4);"></div>
+</div>
+
+<div id="centreGlyph">ENTER</div>
+<button id="shareAudio">⬡ Share System Sound</button>
+
+<div id="modeSelector">
+    <button class="mode-pill active" data-mode="FORENSIC">Forensic</button>
+    <button class="mode-pill" data-mode="RITUAL">Ritual</button>
+    <button class="mode-pill" data-mode="ASCEND">Ascend</button>
+    <button class="mode-pill" data-mode="IMPACT">Impact</button>
+    <button class="mode-pill" data-mode="STATIC">Static</button>
+</div>
+
+<div class="ui h-screen w-full flex flex-col items-end justify-between p-5">
+    <div class="glass interact p-4 rounded-lg w-56" id="glassPanel">
+        <div class="text-[9px] tracking-widest text-emerald-400 mb-2 opacity-50 uppercase" id="legendHeader">HEX-NLP · 12 Planes</div>
+        <div id="nlp-legend" class="grid grid-cols-2 gap-y-1 gap-x-2"></div>
+    </div>
+    <div class="glass interact p-5 rounded-lg w-64 flex flex-col gap-3" id="controlPanel">
+        <div class="text-center border-b border-emerald-500/20 pb-3">
+            <div class="glow-text text-emerald-300 text-base font-bold tracking-[0.3em]" id="titleText">LEX FORENSICA</div>
+            <div class="text-[8px] text-emerald-500/40 tracking-widest mt-0.5" id="versionText">PSYCHOLOGICAL MANIFOLD · v17</div>
+        </div>
+        <div class="text-[8px] text-emerald-400/55 leading-relaxed axiom-pulse border border-emerald-500/10 rounded p-2">
+            <div id="axiomDisplay">A0 · Pipeline integrity verified</div>
+        </div>
+        <label class="btn block text-center cursor-pointer">
+            <span id="fileLabel">↑ UPLOAD AUDIO SOURCE</span>
+            <input type="file" id="aud" class="hidden" accept="audio/*">
+        </label>
+        <button id="play" class="btn font-bold text-sm py-3 tracking-widest">INITIALIZE SYSTEM</button>
+        <div class="flex gap-2">
+            <button id="toggleNLP"  class="btn flex-1 active">NLP: ON</button>
+            <button id="toggleFluid" class="btn flex-1">DEEP</button>
+        </div>
+        <div class="flex gap-2">
+            <button id="toggleLimiter" class="btn flex-1 active">LIMITER: ON</button>
+            <button id="toggleStatic"  class="btn flex-1">STATIC</button>
+        </div>
+        <div class="flex flex-col gap-1">
+            <div class="text-[8px] text-emerald-500/40 tracking-widest">SIGNAL INTENSITY</div>
+            <input type="range" id="intensity" min="0.1" max="3" step="0.05" value="1"
+                style="accent-color:#00ffb4;width:100%;cursor:pointer;">
+        </div>
+        <div class="flex flex-col gap-1">
+            <div class="text-[8px] text-emerald-500/40 tracking-widest">LIMITER THRESHOLD</div>
+            <input type="range" id="limThresh" min="0.30" max="0.95" step="0.01" value="0.72"
+                style="accent-color:#ffa040;width:100%;cursor:pointer;">
+        </div>
+        <div class="flex items-center gap-2 pt-1 border-t border-emerald-500/10">
+            <span class="status-dot idle" id="statusDot"></span>
+            <span class="text-[8px] text-emerald-400/45 tracking-tight uppercase" id="status">System Idle · Waiting Target</span>
+        </div>
+        <div class="text-[7px] text-emerald-600/25 text-center tracking-widest">
+            Ω · DIGNITY > PROCESS > INSTITUTION · ZK-ACTIVE
+        </div>
+    </div>
+</div>
+
+<script>
+/* =============================================================
+   HEX-NLP MANIFOLD v17
+   v17 changes — peak limiter + static mindstate fix:
+   - applyPeakLimiter(): per-bin gain reduction before deriveState
+   - staticMode guard in applyPsychology (crystalline rest params)
+   - activateStaticMindstate / deactivateStaticMindstate functions
+   - draw() !staticMode gate; bgAlpha limiterDim prevents whitewash
+   - renderSpectrumStrip: static branch + live brightness cap
+   - STATIC mode pill, LIMITER/STATIC buttons, threshold slider
+   - AXIOMS_STATIC array, CSS static-mode classes
+   All v16.1 layers, theme, NLP taxonomy, suspended mode preserved.
+   ============================================================= */
+
+const NLP12 = [
+  { id:0,  label:'ASSERT⁺', hue:165 }, { id:1,  label:'ASSERT⁻', hue:180 },
+  { id:2,  label:'DIRECT⁺', hue:195 }, { id:3,  label:'DIRECT⁻', hue:210 },
+  { id:4,  label:'COMMIT⁺', hue:255 }, { id:5,  label:'COMMIT⁻', hue:275 },
+  { id:6,  label:'EXPR⁺',   hue:300 }, { id:7,  label:'EXPR⁻',   hue:325 },
+  { id:8,  label:'DECL⁺',   hue:15  }, { id:9,  label:'DECL⁻',   hue:35  },
+  { id:10, label:'META⁺',   hue:55  }, { id:11, label:'META⁻',   hue:75  },
+];
+
+const AXIOMS = [
+  'A0 · Pipeline integrity verified','A1 · Axiom validation active',
+  'A2 · LOOP_CYCLE verifikace','A3 · Zero-Knowledge šifrování ✓',
+  'A4 · Narativ chráněn · Ω','A5 · Forenzní přesnost: ON',
+  'A6 · Důstojnost > Proces','A7 · ECHR/CRPD/GDPR layer',
+  'A8 · Financial forensic active','A9 · Control Room synced',
+  'A10 · Visual network aligned','A11 · META signal detected',
+  'A12 · NLP_DRIFT: monitoring','A13 · LOOP_CYCLE →100%',
+];
+const AXIOMS_STATIC = [
+  'STATIC MINDSTATE · Signal frozen','Noise floor suppressed · NF=18',
+  'Spectrum crystallised · holding','Peak limiter active · GR locked',
+  'Zero drift · manifold stable','Whiteness bounded · post-limiter',
+  'Frozen hexfield · sector memory','Static coherence: optimal',
+  'Mindstate: crystalline rest','NLP12 sectors: ambient frozen',
+];
+const AXIOMS_SUSPENDED = [
+  'SUSPENDED · Signal at rest','LIQUID STATE · Memory decaying',
+  'Waveform echo · fading','Manifold holds last shape',
+  'Fluid morphology active','Thermal drift · violet band',
+  'Zero-pressure mode · Ω','Waiting for signal resume',
+  'Memory half-life: 8s','NLP sectors: ambient',
+];
+
+const BEAT_GLYPHS = ['ENTER','LOCK','TRACE','SYNC','VERIFY','ASSERT','PROOF','ALIGN'];
+let beatGlyphIdx = 0;
+const centreGlyphEl = document.getElementById('centreGlyph');
+
+const legendEl = document.getElementById('nlp-legend');
+NLP12.forEach(n => {
+  const d = document.createElement('div');
+  d.className = 'text-[8px] truncate';
+  d.style.color = `hsl(${n.hue},88%,60%)`;
+  d.innerHTML = `<span style="opacity:.35">[${n.id}]</span> ${n.label}`;
+  legendEl.appendChild(d);
+});
+
+let axiomIdx = 0;
+let axiomPool = AXIOMS;
+setInterval(() => {
+  axiomIdx = (axiomIdx + 1) % axiomPool.length;
+  document.getElementById('axiomDisplay').textContent = axiomPool[axiomIdx];
+}, 2800);
+
+let currentMode = 'FORENSIC';
+document.querySelectorAll('.mode-pill').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMode = btn.dataset.mode;
+    if(currentMode==='STATIC') activateStaticMindstate();
+    else deactivateStaticMindstate();
+  });
+});
+
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+const audio  = new Audio();
+
+let aCtx, analyser, freqData, waveData, prevFreqData;
+let displayStream;
+let isStarted    = false;
+let nlpActive    = true;
+let visualDepth  = 0;
+let intensityMul = 1.0;
+
+const audioState = { energy:0, bass:0, mids:0, highs:0, flux:0, beat:false, peak:false, calm:true };
+
+// ── PEAK LIMITER ──
+let limiterActive = true;
+let limiterThresh = 0.72;
+let limiterGain;
+const LIMITER_ATTACK  = 0.04;
+const LIMITER_RELEASE = 0.985;
+let gainReduction = 0;
+
+// ── STATIC MINDSTATE ──
+let staticMode = false;
+let staticFreq = null;
+let staticWave = null;
+const NOISE_FLOOR = 18;
+
+function applyPeakLimiter(freq){
+  if(!limiterActive||!limiterGain){gainReduction=0;return;}
+  if(limiterGain.length!==freq.length) limiterGain=new Float32Array(freq.length).fill(1.0);
+  let gr=0;
+  for(let i=0;i<freq.length;i++){
+    const v=freq[i]/255;
+    if(v>limiterThresh) limiterGain[i]=Math.min(limiterGain[i],limiterThresh/v);
+    limiterGain[i]=Math.min(1.0,limiterGain[i]+(1.0-limiterGain[i])*(1-LIMITER_RELEASE));
+    freq[i]=Math.round(freq[i]*limiterGain[i]);
+    gr+=(1-limiterGain[i]);
+  }
+  gainReduction=Math.min(1,gr/freq.length*12);
+  const bar=document.getElementById('limiterFill');
+  if(bar) bar.style.width=(gainReduction*100)+'%';
+}
+
+function activateStaticMindstate(){
+  staticMode=true;
+  axiomPool=AXIOMS_STATIC; axiomIdx=0;
+  const binCount=analyser?analyser.frequencyBinCount:512;
+  if(freqData&&freqData.length>0){
+    staticFreq=new Float32Array(freqData.length);
+    staticWave=new Float32Array(freqData.length);
+    for(let i=0;i<freqData.length;i++){
+      staticFreq[i]=freqData[i]>NOISE_FLOOR?freqData[i]:0;
+      staticWave[i]=waveData?waveData[i]:128;
+    }
+  } else {
+    staticFreq=new Float32Array(binCount);
+    staticWave=new Float32Array(binCount).fill(128);
+    for(let i=0;i<binCount;i++){
+      const v=Math.max(0,55*Math.exp(-i/90)+Math.random()*6);
+      staticFreq[i]=v>NOISE_FLOOR?v:0;
+    }
+  }
+  document.querySelectorAll('.glass').forEach(p=>p.classList.add('static-mode'));
+  const tt=document.getElementById('titleText');if(tt) tt.classList.add('static-mode');
+  const sd=document.getElementById('statusDot');if(sd) sd.className='status-dot static';
+  const st=document.getElementById('status');if(st) st.textContent='STATIC MINDSTATE · Spectrum crystallised';
+  const ts=document.getElementById('toggleStatic');if(ts) ts.classList.add('active');
+}
+
+function deactivateStaticMindstate(){
+  staticMode=false;
+  axiomPool=AXIOMS; axiomIdx=0;
+  document.querySelectorAll('.glass').forEach(p=>p.classList.remove('static-mode'));
+  const tt=document.getElementById('titleText');if(tt) tt.classList.remove('static-mode');
+  const ts=document.getElementById('toggleStatic');if(ts) ts.classList.remove('active');
+  if(!isPaused) setStatus('Signal streaming · NLP active');
+  else setStatus('SUSPENDED · Fluid mode active','suspended');
+}
+
+function deriveState(freq, prevFreq) {
+  const len = freq.length;
+  const bassEnd = Math.floor(len * 0.08);
+  const midEnd  = Math.floor(len * 0.35);
+  let bass=0, mids=0, highs=0, flux=0, total=0;
+  for (let i=0;i<len;i++) {
+    const v=freq[i]/255;
+    total+=v; flux+=Math.max(0,v-(prevFreq[i]||0));
+    if(i<bassEnd) bass+=v; else if(i<midEnd) mids+=v; else highs+=v;
+  }
+  bass/=bassEnd||1; mids/=Math.max(1,midEnd-bassEnd); highs/=Math.max(1,len-midEnd);
+  const energy=total/len; flux/=len;
+  return { energy, bass, mids, highs, flux,
+    beat: bass>0.22&&flux>0.03,
+    peak: energy>0.45||(bass>0.3&&flux>0.05),
+    calm: energy<0.08 };
+}
+
+const psychUI = {
+  bloom:0.2, targetBloom:0.2, shake:0, targetShake:0,
+  ringScale:1, targetRingScale:1, rotation:0, targetRotation:0,
+  aberration:0, targetAberration:0, fog:0.2, targetFog:0.2,
+  contrast:1, targetContrast:1, trail:0.9, targetTrail:0.9,
+  colorState:'idle',
+};
+
+function applyPsychology(s) {
+  if(staticMode){
+    psychUI.targetBloom=0.14; psychUI.targetShake=0; psychUI.targetRingScale=1.0;
+    psychUI.targetRotation+=0.0004; psychUI.targetAberration=0;
+    psychUI.targetFog=0.08; psychUI.targetContrast=0.94; psychUI.targetTrail=0.97;
+    psychUI.colorState='idle'; return;
+  }
+  if(!s) return;
+  psychUI.targetBloom     = s.peak ? 1.0 : 0.25+s.energy*0.55;
+  psychUI.targetShake     = s.beat ? 1.0 : s.flux*10.0;
+  psychUI.targetRingScale = 1.0+s.bass*0.45;
+  psychUI.targetRotation += 0.003+s.mids*0.025;
+  psychUI.targetAberration = s.highs>0.55 ? (s.highs-0.55)*3.5 : 0;
+  psychUI.targetFog        = 0.16+s.energy*0.45;
+  psychUI.targetContrast   = s.calm ? 0.92 : 1.0+s.flux*1.8;
+  psychUI.targetTrail      = s.peak ? 0.78 : 0.92-s.energy*0.12;
+  if      (s.peak)           psychUI.colorState='peak';
+  else if (s.energy>0.18)    psychUI.colorState='active';
+  else if (psychUI.colorState==='peak') psychUI.colorState='recovery';
+  else if (s.calm)           psychUI.colorState='idle';
+}
+
+function getStateColor(alpha) {
+  switch(psychUI.colorState){
+    case 'peak':     return `rgba(255,255,255,${alpha})`;
+    case 'active':   return `rgba(0,220,255,${alpha})`;
+    case 'recovery': return `rgba(80,40,200,${alpha})`;
+    default:         return `rgba(60,40,160,${alpha})`;
+  }
+}
+function getStateHue() {
+  switch(psychUI.colorState){
+    case 'peak':     return 40;
+    case 'active':   return 185;
+    case 'recovery': return 260;
+    default:         return 240;
+  }
+}
+
+function lerpUI() {
+  const L=(a,b,t)=>a+(b-a)*t;
+  psychUI.bloom      = L(psychUI.bloom,     psychUI.targetBloom,     0.08);
+  psychUI.shake      = L(psychUI.shake,     psychUI.targetShake,     0.12);
+  psychUI.ringScale  = L(psychUI.ringScale, psychUI.targetRingScale, 0.08);
+  psychUI.rotation   = L(psychUI.rotation,  psychUI.targetRotation,  0.08);
+  psychUI.aberration = L(psychUI.aberration,psychUI.targetAberration,0.08);
+  psychUI.fog        = L(psychUI.fog,       psychUI.targetFog,       0.06);
+  psychUI.contrast   = L(psychUI.contrast,  psychUI.targetContrast,  0.08);
+  psychUI.trail      = L(psychUI.trail,     psychUI.targetTrail,     0.06);
+  psychUI.targetShake*=0.9;
+}
+
+let isPaused=false, suspendBlend=0, suspendLerp=0;
+let memFreq, memWave;
+const memDecay=0.9985;
+let suspendT=0;
+
+function fluidNoise(x,y,st){
+  const a=Math.sin(x*0.018+st*0.28+Math.cos(y*0.022+st*0.19)*1.2)*0.5+0.5;
+  const b=Math.sin(y*0.021-st*0.21+Math.cos(x*0.016-st*0.14)*1.1)*0.5+0.5;
+  const c=Math.sin((x+y)*0.013+st*0.16)*0.5+0.5;
+  return a*0.45+b*0.35+c*0.20;
+}
+function fluidDisplace(hx,hy,st,strength){
+  return { dx:Math.sin(hx*0.019+hy*0.011+st*0.33)*strength, dy:Math.cos(hx*0.012-hy*0.017-st*0.27)*strength };
+}
+
+function setSuspendedUI(on){
+  document.querySelectorAll('.glass').forEach(p=>p.classList.toggle('suspended',on));
+  document.getElementById('titleText').classList.toggle('suspended',on);
+  document.getElementById('play').classList.toggle('suspended-btn',on);
+}
+function setStatus(msg,type='active'){
+  document.getElementById('status').textContent=msg;
+  const dot=document.getElementById('statusDot');
+  dot.className='status-dot'+(type==='idle'?' idle':type==='warn'?' warn':type==='suspended'?' suspended':'');
+}
+
+function initAudioFromElement(){
+  if(aCtx) return;
+  aCtx=new(window.AudioContext||window.webkitAudioContext)();
+  analyser=aCtx.createAnalyser();
+  analyser.fftSize=2048;
+  analyser.smoothingTimeConstant=0.80;
+  const src=aCtx.createMediaElementSource(audio);
+  src.connect(analyser); analyser.connect(aCtx.destination);
+  _allocBuffers(); isStarted=true;
+  setStatus('Manifold Active · NLP12 Engaged');
+}
+
+async function initAudioFromDisplay(){
+  try {
+    if(displayStream) displayStream.getTracks().forEach(t=>t.stop());
+    displayStream=await navigator.mediaDevices.getDisplayMedia({
+      video:{displaySurface:'browser'},
+      audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false},
+      preferCurrentTab:true, systemAudio:'include', selfBrowserSurface:'include'
+    });
+    const audioTracks=displayStream.getAudioTracks();
+    if(!audioTracks.length){
+      setStatus('No shared audio track · share tab audio','warn');
+      document.getElementById('shareAudio').textContent='⬡ Share System Sound';
+      return;
+    }
+    if(!aCtx) aCtx=new(window.AudioContext||window.webkitAudioContext)();
+    if(aCtx.state==='suspended') await aCtx.resume();
+    analyser=aCtx.createAnalyser();
+    analyser.fftSize=1024;
+    analyser.smoothingTimeConstant=0.85;
+    const audioOnlyStream=new MediaStream([audioTracks[0]]);
+    const src=aCtx.createMediaStreamSource(audioOnlyStream);
+    src.connect(analyser);
+    _allocBuffers(); isStarted=true; isPaused=false; suspendBlend=0;
+    axiomPool=AXIOMS; setSuspendedUI(false);
+    setStatus('System audio captured · reactive');
+    document.getElementById('shareAudio').textContent='⬡ Sharing…';
+    audioTracks[0].addEventListener('ended',()=>{
+      setStatus('Shared audio ended','warn');
+      document.getElementById('shareAudio').textContent='⬡ Share System Sound';
+    });
+  } catch(e){
+    setStatus('Audio capture denied','warn');
+    document.getElementById('shareAudio').textContent='⬡ Share System Sound';
+  }
+}
+
+function _allocBuffers(){
+  limiterGain=new Float32Array(analyser.frequencyBinCount).fill(1.0);
+  freqData=new Uint8Array(analyser.frequencyBinCount);
+  waveData=new Uint8Array(analyser.frequencyBinCount);
+  prevFreqData=new Float32Array(analyser.frequencyBinCount);
+  memFreq=new Float32Array(analyser.frequencyBinCount);
+  memWave=new Float32Array(analyser.frequencyBinCount);
+}
+function captureMemory(){ if(!freqData)return; for(let i=0;i<freqData.length;i++){memFreq[i]=freqData[i];memWave[i]=waveData[i];} }
+function decayMemory(){ for(let i=0;i<memFreq.length;i++){memFreq[i]*=memDecay;memWave[i]=128+(memWave[i]-128)*memDecay;} }
+
+document.getElementById('shareAudio').addEventListener('click',initAudioFromDisplay);
+
+document.getElementById('aud').onchange=e=>{
+  const f=e.target.files[0]; if(!f)return;
+  audio.src=URL.createObjectURL(f);
+  document.getElementById('fileLabel').textContent='♪ '+f.name.slice(0,22);
+  setStatus('SRC: '+f.name.slice(0,20));
+};
+document.getElementById('play').onclick=()=>{
+  initAudioFromElement();
+  if(aCtx.state==='suspended') aCtx.resume();
+  if(audio.paused){
+    audio.play(); isPaused=false; suspendBlend=0; axiomPool=AXIOMS;
+    setSuspendedUI(false);
+    document.getElementById('play').textContent='PAUSE SIGNAL';
+    setStatus('Signal streaming · NLP active');
+  } else {
+    audio.pause(); isPaused=true; suspendBlend=1; suspendT=0;
+    axiomPool=AXIOMS_SUSPENDED; axiomIdx=0;
+    captureMemory(); setSuspendedUI(true);
+    document.getElementById('play').textContent='RESUME SIGNAL';
+    setStatus('SUSPENDED · Fluid mode active','suspended');
+  }
+};
+document.getElementById('toggleNLP').onclick=function(){
+  nlpActive=!nlpActive;
+  this.textContent=nlpActive?'NLP: ON':'NLP: OFF';
+  this.classList.toggle('active',nlpActive);
+};
+document.getElementById('toggleFluid').onclick=function(){
+  visualDepth=(visualDepth+1)%2;
+  this.textContent=visualDepth===0?'DEEP':'FLUID';
+};
+document.getElementById('toggleLimiter').onclick=function(){
+  limiterActive=!limiterActive;
+  this.textContent=limiterActive?'LIMITER: ON':'LIMITER: OFF';
+  this.classList.toggle('active',limiterActive);
+  if(!limiterActive){const b=document.getElementById('limiterFill');if(b)b.style.width='0%';}
+};
+document.getElementById('toggleStatic').onclick=function(){
+  if(!staticMode){
+    document.querySelectorAll('.mode-pill').forEach(b=>b.classList.remove('active'));
+    const sp=document.querySelector('.mode-pill[data-mode="STATIC"]');
+    if(sp) sp.classList.add('active');
+    currentMode='STATIC'; activateStaticMindstate();
+  } else {
+    document.querySelectorAll('.mode-pill').forEach(b=>b.classList.remove('active'));
+    const fp=document.querySelector('.mode-pill[data-mode="FORENSIC"]');
+    if(fp) fp.classList.add('active');
+    currentMode='FORENSIC'; deactivateStaticMindstate();
+  }
+};
+document.getElementById('limThresh').oninput=function(){limiterThresh=parseFloat(this.value);};
+document.getElementById('intensity').oninput=function(){ intensityMul=parseFloat(this.value); };
+
+let t=0;
+const mouse={x:0.5,y:0.5}, mouseTgt={x:0.5,y:0.5};
+window.addEventListener('pointermove',e=>{ mouseTgt.x=e.clientX/window.innerWidth; mouseTgt.y=e.clientY/window.innerHeight; });
+
+let beatEnergy=0, beatHold=0, beatBaseline=0, beatImpact=0;
+let shockwaveCooldown=0;
+const SHOCKWAVE_GATE=2;
+let shockwaveCounter=0;
+
+const PART_MAX=320;
+const parts=[], rings=[], shockwaves=[];
+
+const seeds=Array.from({length:6},()=>({ ox:Math.random()*900, oy:Math.random()*600, freq:0.25+Math.random()*0.5, phase:Math.random()*Math.PI*2 }));
+const GLYPHS='ASSERT+ASSERT-DIRECT+DIRECT-COMMIT+COMMIT-EXPR+EXPR-DECL+DECL-META+META-ΩZK→≠≡∞';
+const RAIN_N=26;
+const rain=Array.from({length:RAIN_N},(_,i)=>({
+  x:0, y:-Math.random()*600, speed:0.45+Math.random()*1.1,
+  hue:NLP12[i%12].hue,
+  col:Array.from({length:10},()=>GLYPHS[Math.floor(Math.random()*GLYPHS.length)]),
+  alpha:0.025+Math.random()*0.045,
+}));
+const driftMotes=Array.from({length:55},()=>({
+  x:Math.random()*1400, y:Math.random()*900,
+  vy:-(0.08+Math.random()*0.22), vx:(Math.random()-0.5)*0.08,
+  r:0.6+Math.random()*2.2, hue:240+Math.random()*80,
+  alpha:0.12+Math.random()*0.25, phase:Math.random()*Math.PI*2,
+}));
+
+function idleVal(x,y){ let v=0; for(const s of seeds){const d=Math.hypot(x-s.ox,y-s.oy);v+=Math.sin(d*0.011-t*s.freq+s.phase)*0.5+0.5;} return Math.min(255,(v/seeds.length)*72+14); }
+function sectorOf(x,y,cx,cy){ const a=Math.atan2(y-cy,x-cx); return Math.floor(((a*180/Math.PI)+360)%360/30); }
+function readFreq(dist,W,H,buf){ const fi=Math.floor((dist/(Math.max(W,H)*0.72))*(buf.length/2))%(buf.length/2); return buf[fi]; }
+
+function processBeat(){
+  beatImpact=0;
+  if(!isStarted||isPaused) return;
+  let low=0; const N=Math.min(20,freqData.length);
+  for(let i=0;i<N;i++) low+=freqData[i]; low/=N;
+  beatBaseline=beatBaseline*0.93+low*0.07;
+  const delta=Math.max(0,low-beatBaseline);
+  beatImpact=delta>14?Math.min(1,delta/80):0;
+  if(beatImpact>0.08&&beatHold<=0){
+    beatHold=10;
+    if(rings.length<8) rings.push({r:12,a:0.55+beatImpact*0.35,w:1.2+beatImpact*5});
+    centreGlyphEl.textContent=BEAT_GLYPHS[beatGlyphIdx%BEAT_GLYPHS.length];
+    centreGlyphEl.classList.add('beat-flash');
+    setTimeout(()=>centreGlyphEl.classList.remove('beat-flash'),180);
+    beatGlyphIdx++;
+    shockwaveCounter++;
+    if(shockwaveCounter>=SHOCKWAVE_GATE&&audioState.bass>0.28){
+      shockwaveCounter=0;
+      shockwaves.push({r:8,maxR:Math.max(window.innerWidth,window.innerHeight)*0.72,a:0.55+beatImpact*0.35});
+    }
+  } else { beatHold--; }
+  beatEnergy=beatEnergy*0.92+beatImpact*0.28;
+}
+
+function spawnParticle(x,y,hue,power){
+  if(parts.length>=PART_MAX) return;
+  const spd=0.6+power*2.4, ang=Math.random()*Math.PI*2;
+  parts.push({x,y,vx:Math.cos(ang)*spd*(0.5+Math.random()),vy:Math.sin(ang)*spd*(0.5+Math.random()),life:30+Math.random()*40,max:70,r:0.6+Math.random()*1.8+power,hue});
+}
+
+function renderFilmGrain(W,H){
+  const intensity=0.014+psychUI.fog*0.006;
+  const N=Math.floor(W*H*0.00055);
+  ctx.save();
+  for(let i=0;i<N;i++){
+    const x=Math.random()*W, y=Math.random()*H, v=Math.random();
+    ctx.fillStyle=`rgba(${v>0.5?255:0},${v>0.5?255:0},${v>0.5?255:0},${intensity*v})`;
+    ctx.fillRect(x,y,1,1);
+  }
+  ctx.restore();
+}
+
+function renderOrientationGrid(W,H,cx,cy,blend){
+  if(blend>0.8) return;
+  ctx.save();
+  ctx.globalAlpha=0.028+psychUI.fog*0.015;
+  const hue=getStateHue();
+  ctx.strokeStyle=`hsl(${hue},70%,55%)`; ctx.lineWidth=0.5;
+  const step=80;
+  for(let x=0;x<W;x+=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=step){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  ctx.globalAlpha=0.06+psychUI.bloom*0.06;
+  ctx.strokeStyle=getStateColor(1); ctx.lineWidth=0.8;
+  ctx.beginPath();ctx.moveTo(cx-30,cy);ctx.lineTo(cx+30,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx,cy-30);ctx.lineTo(cx,cy+30);ctx.stroke();
+  ctx.restore();
+}
+
+function renderShockwaves(cx,cy){
+  for(const sw of shockwaves){
+    sw.r+=(sw.maxR-sw.r)*0.048; sw.a*=0.94;
+    if(sw.a<0.008) continue;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx,cy,sw.r,0,Math.PI*2);
+    const hue=getStateHue();
+    ctx.strokeStyle=`hsla(${hue},100%,72%,${sw.a})`; ctx.lineWidth=2.5;
+    ctx.shadowBlur=18; ctx.shadowColor=`hsl(${hue},100%,72%)`; ctx.stroke(); ctx.shadowBlur=0;
+    ctx.beginPath(); ctx.arc(cx,cy,sw.r*0.82,0,Math.PI*2);
+    ctx.strokeStyle=`hsla(${hue},100%,88%,${sw.a*0.35})`; ctx.lineWidth=1.0; ctx.stroke();
+    ctx.restore();
+  }
+  for(let i=shockwaves.length-1;i>=0;i--) if(shockwaves[i].a<0.008) shockwaves.splice(i,1);
+}
+
+function renderAberration(W,H){
+  if(psychUI.aberration<0.5) return;
+  const d=psychUI.aberration*3;
+  ctx.save(); ctx.globalCompositeOperation='screen'; ctx.globalAlpha=0.04*psychUI.aberration;
+  ctx.fillStyle='rgba(255,0,0,1)'; ctx.drawImage(canvas,d,0,W,H,0,0,W,H);
+  ctx.fillStyle='rgba(0,255,255,1)'; ctx.drawImage(canvas,-d,0,W,H,0,0,W,H);
+  ctx.restore();
+}
+
+function renderCentralRing(cx,cy,W,H,s){
+  const base=Math.min(W,H)*0.16;
+  const r1=base*psychUI.ringScale, r2=base*1.45*(1+s.energy*0.25), r3=base*2.1*(1+s.highs*0.18);
+  const hue=getStateHue();
+  const grad=ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(W,H)*0.6);
+  grad.addColorStop(0,`rgba(180,220,255,${0.03+psychUI.bloom*0.08})`);
+  grad.addColorStop(0.4,`hsla(${hue},100%,60%,${0.05+s.mids*0.16})`);
+  grad.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+  _drawRing(cx,cy,r1,getStateColor(0.18+psychUI.bloom*0.3),2.5,8,s.bass*0.25);
+  _drawRing(cx,cy,r2,`rgba(0,220,255,${0.12+s.highs*0.18})`,1.5,12,s.mids*0.2);
+  _drawRing(cx,cy,r3,`rgba(255,0,170,${0.08+s.flux*0.35})`,1.0,16,s.highs*0.18);
+  if(!freqData) return;
+  const bars=64, step=Math.floor(freqData.length/bars);
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(-psychUI.rotation*0.6);
+  for(let i=0;i<bars;i++){
+    const a=(i/bars)*Math.PI*2, v=freqData[i*step]/255;
+    const inner=base*1.25, outer=inner+20+v*130;
+    ctx.strokeStyle=`rgba(${200+v*55},${120+v*100},255,${0.07+v*0.4})`;
+    ctx.lineWidth=1+v*3; ctx.beginPath();
+    ctx.moveTo(Math.cos(a)*inner,Math.sin(a)*inner);
+    ctx.lineTo(Math.cos(a)*outer,Math.sin(a)*outer); ctx.stroke();
+  }
+  ctx.restore();
+}
+function _drawRing(cx,cy,r,color,width,spokes,warp){
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(psychUI.rotation); ctx.beginPath();
+  for(let i=0;i<=360;i++){
+    const a=i*Math.PI/180, mod=1+Math.sin(a*spokes+performance.now()*0.002)*warp;
+    const x=Math.cos(a)*r*mod, y=Math.sin(a)*r*mod;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.strokeStyle=color; ctx.lineWidth=width; ctx.stroke(); ctx.restore();
+}
+
+function renderScanLines(W,H,beat){
+  if(beat<0.55) return;
+  const n=1+Math.floor(beat*2);
+  for(let i=0;i<n;i++){
+    const y=((t*180+i*(H/n))%(H+60))-30;
+    ctx.fillStyle=`rgba(0,255,180,${0.013*beat})`;
+    ctx.fillRect(0,y,W,1.5);
+  }
+}
+
+function renderGlyphRain(W,H,blend){
+  const cw=W/RAIN_N;
+  ctx.font='7px Share Tech Mono,Courier New'; ctx.textAlign='center';
+  const speedMul=blend>0?(1-blend*0.72):1;
+  for(const col of rain){
+    col.x=(rain.indexOf(col)+0.5)*cw; col.y+=col.speed*speedMul;
+    if(col.y>H+180){col.y=-60-Math.random()*300;col.speed=0.4+Math.random()*1.2;}
+    col.col.forEach((ch,i)=>{
+      const a=Math.min(0.032, col.alpha*(1-i/col.col.length));
+      const hue=col.hue*(1-blend)+280*blend;
+      ctx.fillStyle=`hsla(${hue},80%,62%,${a*(1+blend*0.4)})`;
+      ctx.fillText(ch,col.x,col.y-i*10);
+    });
+  }
+}
+function renderSectorFields(cx,cy,maxR,beat,blend){
+  if(!nlpActive) return;
+  for(let i=0;i<12;i++){
+    const {hue}=NLP12[i], a0=i*(Math.PI/6)-Math.PI/12;
+    const h=hue*(1-blend)+((hue+120)%360)*blend, aBoost=blend*0.025;
+    const g=ctx.createRadialGradient(cx,cy,20,cx,cy,maxR*0.78);
+    g.addColorStop(0,`hsla(${h},100%,60%,${0.010+beat*0.018+aBoost})`);
+    g.addColorStop(0.5,`hsla(${h},100%,52%,${0.022+aBoost*0.5})`);
+    g.addColorStop(1,`hsla(${h},100%,45%,0)`);
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,maxR*0.78,a0,a0+Math.PI/6); ctx.closePath();
+    ctx.fillStyle=g; ctx.fill();
+  }
+}
+function renderFluidSurface(cx,cy,W,H,blend,st){
+  if(blend<0.02) return;
+  ctx.save();
+  for(let l=0;l<5;l++){
+    const fi=l/5;
+    const rx=W*0.28+W*0.18*Math.sin(st*0.14+fi*2.1);
+    const ry=H*0.22+H*0.14*Math.cos(st*0.17+fi*1.7);
+    const ox=cx+Math.sin(st*0.23+fi*2.8)*W*0.08;
+    const oy=cy+Math.cos(st*0.19-fi*2.2)*H*0.07;
+    const hue=260+l*18+st*4, a=blend*(0.025+l*0.008);
+    ctx.beginPath(); ctx.ellipse(ox,oy,rx,ry,st*0.05+fi*0.4,0,Math.PI*2);
+    const g=ctx.createRadialGradient(ox,oy,0,ox,oy,Math.max(rx,ry));
+    g.addColorStop(0,`hsla(${hue},100%,72%,${a*1.8})`);
+    g.addColorStop(0.5,`hsla(${hue+20},100%,60%,${a})`);
+    g.addColorStop(1,`hsla(${hue+40},100%,48%,0)`);
+    ctx.fillStyle=g; ctx.fill();
+  }
+  for(let r=0;r<6;r++){
+    const rr=(st*28+r*55)%Math.max(W,H), ra=blend*(0.06*(1-rr/Math.max(W,H)));
+    if(ra<0.005) continue;
+    ctx.beginPath(); ctx.arc(cx,cy,rr,0,Math.PI*2);
+    ctx.strokeStyle=`hsla(${270+r*14},90%,70%,${ra})`; ctx.lineWidth=0.8; ctx.stroke();
+  }
+  ctx.restore();
+}
+function renderDriftMotes(W,H,blend){
+  if(blend<0.05) return;
+  for(const m of driftMotes){
+    m.y+=m.vy*blend; m.x+=m.vx*blend+Math.sin(suspendT*0.4+m.phase)*0.12*blend;
+    if(m.y<-20) m.y=H+20;
+    ctx.beginPath(); ctx.arc(m.x%W,m.y,m.r,0,Math.PI*2);
+    ctx.fillStyle=`hsla(${m.hue},90%,72%,${m.alpha*blend})`;
+    ctx.shadowBlur=4*blend; ctx.shadowColor=`hsl(${m.hue},100%,70%)`; ctx.fill(); ctx.shadowBlur=0;
+  }
+}
+function renderHexField(cx,cy,W,H,beat,blend){
+  const R=36,gw=R*Math.sqrt(3),gh=R*1.5;
+  const nodes=[];
+  const fBuf=(isStarted&&!isPaused&&!staticMode)?freqData:staticMode?staticFreq:(memFreq||freqData);
+  const wBuf=(isStarted&&!isPaused&&!staticMode)?waveData:staticMode?staticWave:(memWave||waveData);
+  for(let row=-1;row*gh<H+R;row++){
+    const hy0=row*gh, shift=(((row%2)+2)%2)*(gw/2);
+    for(let col=-1;col*gw<W+gw;col++){
+      let hx=col*gw+shift, hy=hy0;
+      if(blend>0.01){const disp=fluidDisplace(hx,hy,suspendT,blend*12);hx+=disp.dx;hy+=disp.dy;}
+      const dist=Math.hypot(hx-cx,hy-cy);
+      const raw=(isStarted||staticMode)?readFreq(dist,W,H,fBuf):idleVal(hx,hy);
+      let p=Math.min(1,(raw*intensityMul)/255);
+      if(blend>0){const fn=fluidNoise(hx,hy,suspendT);p=p*(1-blend*0.6)+fn*blend*0.5;}
+      const sid=nlpActive?sectorOf(hx,hy,cx,cy):null;
+      let hue=sid!==null?NLP12[sid].hue:165+p*80;
+      if(currentMode==='RITUAL') hue=(hue+40)%360;
+      else if(currentMode==='ASCEND') hue=(hue+80)%360;
+      else if(currentMode==='IMPACT') hue=(hue+180)%360;
+      else if(currentMode==='STATIC') hue=(hue+120)%360;
+      const suspHue=(hue+120)%360;
+      hue=hue*(1-blend)+suspHue*blend;
+      const stateHue=getStateHue();
+      hue=hue*0.72+stateHue*0.28;
+      if(visualDepth===1) hue=(hue+t*28*p)%360;
+      const breath=visualDepth===0?Math.sin(t*1.6+dist*0.016)*0.08:0;
+      const suspBreath=blend*Math.sin(suspendT*0.8+dist*0.009)*0.18;
+      const hexR=R*(0.36+p*0.62+breath+suspBreath);
+      const light=38+p*26;
+      ctx.beginPath();
+      const rotOff=visualDepth===1?t*0.035:blend*suspendT*0.012;
+      for(let i=0;i<6;i++){const a=(Math.PI/3)*i+rotOff;ctx.lineTo(hx+hexR*Math.cos(a),hy+hexR*Math.sin(a));}
+      ctx.closePath();
+      if(p>0.38){ctx.fillStyle=`hsla(${hue},88%,${light}%,${p*0.16})`;ctx.fill();}
+      ctx.strokeStyle=`hsla(${hue},100%,${light}%,${0.10+p*0.88})`;ctx.lineWidth=0.5+p*4.2;ctx.stroke();
+      if(p>0.72){ctx.shadowBlur=10*p+beatEnergy*6;ctx.shadowColor=`hsl(${hue},100%,68%)`;ctx.stroke();ctx.shadowBlur=0;}
+      if(p>0.78&&Math.random()<0.08) nodes.push({x:hx,y:hy,h:hue});
+      if(p>0.91&&Math.random()<0.06&&!isPaused&&!staticMode) spawnParticle(hx,hy,hue,p);
+    }
+  }
+  for(let i=0;i<nodes.length;i++){
+    for(let j=i+1;j<nodes.length;j++){
+      const dx=nodes[i].x-nodes[j].x,dy=nodes[i].y-nodes[j].y,d=Math.hypot(dx,dy);
+      if(d<120){ctx.beginPath();ctx.moveTo(nodes[i].x,nodes[i].y);ctx.lineTo(nodes[j].x,nodes[j].y);ctx.strokeStyle=`hsla(${(nodes[i].h+nodes[j].h)*0.5},100%,65%,${0.14*(1-d/120)})`;ctx.lineWidth=0.7;ctx.stroke();}
+    }
+  }
+}
+function renderAudioOverlays(cx,cy,W,H,beat,blend){
+  const wBuf=(isStarted&&!isPaused&&!staticMode)?waveData:staticMode?staticWave:(memWave||waveData);
+  const fBuf=(isStarted&&!isPaused&&!staticMode)?freqData:staticMode?staticFreq:(memFreq||freqData);
+  if(!wBuf||!fBuf) return;
+  const alpha=1-blend*0.7;
+  ctx.beginPath();
+  const step=W/wBuf.length; ctx.moveTo(0,cy);
+  for(let i=0;i<wBuf.length;i++){
+    let v=(wBuf[i]/128-1)*52*intensityMul;
+    if(blend>0) v+=Math.sin(i*0.045+suspendT*0.8)*18*blend;
+    ctx.lineTo(i*step,cy+v);
+  }
+  const ribbonHue=165*(1-blend)+280*blend;
+  ctx.strokeStyle=`hsla(${ribbonHue},100%,65%,${(0.07+beat*0.14)*alpha})`;
+  ctx.lineWidth=1.0+beat*0.8+blend*0.5; ctx.stroke();
+  if(!isStarted&&!staticMode) return;
+  ctx.save();
+  for(let arm=0;arm<2;arm++){
+    ctx.beginPath();
+    for(let i=0;i<180;i++){
+      const fi=i/180, f=fBuf[(i*2)%fBuf.length]/255;
+      const spd=(0.32+arm*0.12)*(1-blend*0.75);
+      const ang=fi*8.4+t*spd+arm*Math.PI;
+      const rad=24+fi*Math.min(cx,cy)*0.60+f*22*intensityMul;
+      const x=cx+Math.cos(ang)*rad, y=cy+Math.sin(ang)*rad*0.74;
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    const spiralHue=(arm===0?165:285)*(1-blend)+(arm===0?280:320)*blend;
+    ctx.strokeStyle=`hsla(${spiralHue},100%,60%,${(0.10+beat*0.18)*alpha})`;
+    ctx.lineWidth=0.9+beat*1.0; ctx.shadowBlur=8+beat*8;
+    ctx.shadowColor=arm===0?'#00ffb4':'#7c5cff'; ctx.stroke(); ctx.shadowBlur=0;
+  }
+  const ringR=Math.min(cx,cy)*0.38;
+  ctx.beginPath();
+  for(let i=0;i<fBuf.length;i+=4){
+    const f=fBuf[i]/255, ang=(i/fBuf.length)*Math.PI*2-Math.PI/2;
+    const r=ringR+f*28*intensityMul;
+    const x=cx+Math.cos(ang)*r, y=cy+Math.sin(ang)*r;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+  const ringHue=165*(1-blend)+280*blend;
+  ctx.strokeStyle=`hsla(${ringHue},90%,62%,${(0.06+beatEnergy*0.10)*alpha})`; ctx.lineWidth=0.8; ctx.stroke();
+  ctx.restore();
+}
+function renderVortex(cx,cy,beat,blend){
+  for(let ri=0;ri<4;ri++){
+    const baseR=44+ri*26, dir=ri%2===0?1:-1;
+    const speedMul=1-blend*0.82;
+    const spd=(0.18+ri*0.05+beatEnergy*0.35)*dir*speedMul;
+    const phase=t*spd, segs=10+ri*4, gap=0.20+ri*0.04;
+    const alpha=(0.055+beatEnergy*0.18)*(1-ri*0.18);
+    const hue=(165+ri*22+t*5)%360, h=hue*(1-blend)+((hue+115)%360)*blend;
+    ctx.save(); ctx.strokeStyle=`hsla(${h},100%,62%,${alpha})`; ctx.lineWidth=1.3-ri*0.16;
+    ctx.shadowBlur=6+beatEnergy*8; ctx.shadowColor=`hsl(${h},100%,62%)`;
+    for(let s=0;s<segs;s++){const a0=(s/segs)*Math.PI*2+phase,a1=a0+(Math.PI*2/segs)*(1-gap);ctx.beginPath();ctx.arc(cx,cy,baseR,a0,a1);ctx.stroke();}
+    ctx.shadowBlur=0; ctx.restore();
+  }
+}
+function renderPulseRings(cx,cy){
+  for(const r of rings){r.r+=5.5;r.a*=0.962;const lw=Math.max(0.3,r.w*(1-r.r/500));ctx.beginPath();ctx.arc(cx,cy,r.r,0,Math.PI*2);ctx.strokeStyle=`rgba(0,255,180,${r.a})`;ctx.lineWidth=lw;ctx.stroke();}
+  for(let i=rings.length-1;i>=0;i--) if(rings[i].a<0.022||rings[i].r>480) rings.splice(i,1);
+}
+function renderParticles(){
+  for(const p of parts){p.x+=p.vx;p.y+=p.vy;p.vx*=0.974;p.vy*=0.974;p.life--;const a=Math.max(0,p.life/p.max);ctx.beginPath();ctx.arc(p.x,p.y,p.r*a,0,Math.PI*2);ctx.fillStyle=`hsla(${p.hue},100%,70%,${a*0.72})`;ctx.shadowBlur=6;ctx.shadowColor=`hsl(${p.hue},100%,68%)`;ctx.fill();ctx.shadowBlur=0;}
+  for(let i=parts.length-1;i>=0;i--) if(parts[i].life<=0) parts.splice(i,1);
+}
+function renderSectorLabels(cx,cy,maxR,beat,blend){
+  if(!nlpActive) return;
+  ctx.save();
+  for(let i=0;i<12;i++){
+    const {hue,label}=NLP12[i], ang=(Math.PI/6)*i;
+    const h=hue*(1-blend)+((hue+120)%360)*blend;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+maxR*Math.cos(ang),cy+maxR*Math.sin(ang));
+    ctx.strokeStyle=`hsla(${h},75%,52%,${0.045+beatEnergy*0.045})`;ctx.lineWidth=0.9;ctx.stroke();
+    const mid=ang+Math.PI/12, lr=148+16*Math.sin(t*0.75+i);
+    ctx.fillStyle=`hsla(${h},82%,64%,${0.42+beatEnergy*0.25})`;ctx.font='bold 8px Share Tech Mono,Courier New';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(label,cx+lr*Math.cos(mid),cy+lr*Math.sin(mid));
+  }
+  ctx.restore();
+}
+function renderOmega(cx,cy,beat,blend){
+  const scale=1+beatEnergy*0.55, alpha=0.16+0.12*Math.sin(t*1.1)+beatEnergy*0.28;
+  const suspAlpha=0.22+0.18*Math.sin(suspendT*0.6);
+  const fa=alpha*(1-blend)+suspAlpha*blend;
+  const hue=blend>0?270:getStateHue();
+  ctx.save();ctx.translate(cx,cy);ctx.scale(scale,scale);
+  ctx.font=`bold ${18+beat*7}px Share Tech Mono,Courier New`;
+  ctx.fillStyle=`hsla(${hue},90%,72%,${fa})`;
+  ctx.shadowColor=`hsl(${hue},100%,72%)`; ctx.shadowBlur=14+beatEnergy*22+blend*18;
+  ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('Ω',0,0);ctx.shadowBlur=0;ctx.restore();
+}
+function renderRadar(cx,cy,maxR,blend){
+  const ang=t*0.65*(1-blend*0.88)%(Math.PI*2), aLen=maxR*0.52;
+  ctx.save();ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,aLen,ang-0.50,ang);ctx.closePath();
+  const rg=ctx.createRadialGradient(cx,cy,0,cx,cy,aLen);
+  rg.addColorStop(0,'rgba(0,255,180,0)');
+  rg.addColorStop(0.7,`rgba(0,255,180,${0.022+beatEnergy*0.045})`);
+  rg.addColorStop(1,'rgba(0,255,180,0)');
+  ctx.fillStyle=rg;ctx.fill();
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+aLen*Math.cos(ang),cy+aLen*Math.sin(ang));
+  ctx.strokeStyle=`rgba(0,255,180,${0.14+beatEnergy*0.18})`;ctx.lineWidth=1.2;ctx.stroke();ctx.restore();
+}
+function renderSpectrumStrip(W,beat){
+  if(staticMode){
+    if(!staticFreq) return;
+    const N=48,gap=2,bw=(W*0.55-gap*(N-1))/N,ox=W*0.225;
+    for(let i=0;i<N;i++){
+      const v=staticFreq[Math.floor(i*(staticFreq.length/N))]/255;
+      const h=5+v*38*intensityMul, hue=145+i*1.5;
+      ctx.fillStyle=`hsla(${hue},85%,48%,${Math.min(0.50,0.07+v*0.36)})`;
+      ctx.fillRect(ox+i*(bw+gap),8+(38-h),bw,h);
+    }
+    return;
+  }
+  if(!isStarted||isPaused) return;
+  const N=48,gap=2,bw=(W*0.55-gap*(N-1))/N,ox=W*0.225;
+  for(let i=0;i<N;i++){
+    const v=freqData[Math.floor(i*(freqData.length/N))]/255;
+    const h=5+v*38*intensityMul, hue=165+i*3.1;
+    const alpha=limiterActive?Math.min(0.68,0.10+v*0.56):0.10+v*0.65;
+    ctx.fillStyle=`hsla(${hue},100%,54%,${alpha})`;ctx.fillRect(ox+i*(bw+gap),8+(38-h),bw,h);
+  }
+}
+function renderSuspendedStrip(W,blend){
+  if(staticMode||blend<0.05||!memFreq) return;
+  const N=48,gap=2,bw=(W*0.55-gap*(N-1))/N,ox=W*0.225;
+  for(let i=0;i<N;i++){
+    const v=memFreq[Math.floor(i*(memFreq.length/N))]/255;
+    const h=5+v*38*intensityMul, hue=260+i*1.8;
+    ctx.fillStyle=`hsla(${hue},100%,62%,${(0.06+v*0.38)*blend})`;ctx.fillRect(ox+i*(bw+gap),8+(38-h),bw,h);
+  }
+}
+function renderHUD(W,H,blend){
+  ctx.save();ctx.font='8px Share Tech Mono,Courier New';
+  const label=staticMode?'STATIC':blend>0.5?'SUSPENDED':currentMode;
+  const color=staticMode?`rgba(64,255,144,0.18)`:blend>0.5?`hsla(270,90%,72%,${0.14+blend*0.14})`:`rgba(0,255,180,${0.10+beatEnergy*0.10})`;
+  ctx.fillStyle=color;ctx.textAlign='left';
+  ctx.fillText(`LOOP_CYCLE · NLP:${nlpActive?'ACTIVE':'OFF'} · ${label} · LIM:${limiterActive?(gainReduction*100).toFixed(0)+'%GR':'OFF'} · E:${(beatEnergy*100).toFixed(0)}% · t:${t.toFixed(1)}`,14,H-14);
+  ctx.restore();
+}
+
+function draw(){
+  requestAnimationFrame(draw);
+  t+=0.011;
+  mouse.x+=(mouseTgt.x-mouse.x)*0.06;
+  mouse.y+=(mouseTgt.y-mouse.y)*0.06;
+  const blendTarget=isPaused?1:0;
+  suspendLerp+=(blendTarget-suspendLerp)*0.025;
+  const blend=suspendLerp;
+  if(blend>0.01){suspendT+=0.008*blend;decayMemory();}
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+  const W=canvas.width,H=canvas.height,cx=W/2,cy=H/2;
+  const maxR=Math.max(W,H)*1.20;
+  if(isStarted&&!isPaused&&!staticMode){
+    analyser.getByteFrequencyData(freqData);
+    analyser.getByteTimeDomainData(waveData);
+    applyPeakLimiter(freqData);
+    const s=deriveState(freqData,prevFreqData);
+    Object.assign(audioState,s);
+    applyPsychology(s);
+    for(let i=0;i<freqData.length;i++) prevFreqData[i]=freqData[i]/255;
+  } else if(staticMode){
+    applyPsychology(null);
+  }
+  processBeat();
+  const beat=beatImpact;
+  lerpUI();
+  const limiterDim=limiterActive?Math.max(0,gainReduction*0.18):0;
+  const bgAlpha=staticMode?0.28:(visualDepth===0?0.18:0.44)+limiterDim;
+  const stateHue=getStateHue();
+  const bgR=staticMode?0:Math.round((stateHue===40?18:0)*(1-blend)+6*blend);
+  const bgG=staticMode?3:Math.round(2*(1-blend)+0*blend);
+  const bgB=staticMode?1:Math.round((stateHue===240?18:6)*(1-blend)+18*blend);
+  ctx.fillStyle=`rgba(${bgR},${bgG},${bgB},${bgAlpha})`;
+  ctx.fillRect(0,0,W,H);
+  renderOrientationGrid(W,H,cx,cy,blend);
+  renderGlyphRain(W,H,blend);
+  renderSectorFields(cx,cy,maxR,beat,blend);
+  const tiltX=(mouse.y-0.5)*0.045,tiltY=(mouse.x-0.5)*0.045;
+  ctx.save();
+  ctx.translate(cx,cy);ctx.transform(1,tiltX,tiltY,1,0,0);ctx.translate(-cx,-cy);
+  renderRadar(cx,cy,maxR,blend);
+  renderHexField(cx,cy,W,H,beat,blend);
+  renderAudioOverlays(cx,cy,W,H,beat,blend);
+  ctx.restore();
+  if((isStarted&&!isPaused&&freqData)||staticMode) renderCentralRing(cx,cy,W,H,audioState);
+  renderShockwaves(cx,cy);
+  renderFluidSurface(cx,cy,W,H,blend,suspendT);
+  renderDriftMotes(W,H,blend);
+  renderSectorLabels(cx,cy,maxR,beat,blend);
+  renderVortex(cx,cy,beat,blend);
+  renderPulseRings(cx,cy);
+  renderParticles();
+  renderOmega(cx,cy,beat,blend);
+  renderSpectrumStrip(W,beat);
+  renderSuspendedStrip(W,blend);
+  renderScanLines(W,H,beat);
+  renderAberration(W,H);
+  renderFilmGrain(W,H);
+  renderHUD(W,H,blend);
+}
+
+draw();
+</script>
+</body>
+</html>
