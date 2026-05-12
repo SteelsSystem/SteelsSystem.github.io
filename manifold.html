@@ -175,6 +175,7 @@
    - Contrast cycles — brain reacts to change, not constant brightness
    - Share System Sound (getDisplayMedia) as primary audio source
    - Suspended mode fully preserved from v15
+   - Strict audio track validation & silence detector
    ============================================================= */
 
 // ── NLP 12-PLANE TAXONOMY ────────────────────────────────
@@ -244,6 +245,9 @@ const audio  = new Audio();
 
 let aCtx, analyser, freqData, waveData, prevFreqData;
 let displayStream; // for getDisplayMedia
+let displaySource;
+let zeroAudioFrames = 0; // silence detector counter
+
 let isStarted    = false;
 let nlpActive    = true;
 let visualDepth  = 0; // 0=FLUID, 1=DEEP
@@ -387,23 +391,56 @@ function initAudioFromElement() {
 
 async function initAudioFromDisplay() {
   try {
+    if (displayStream) displayStream.getTracks().forEach(t => t.stop());
+
     displayStream = await navigator.mediaDevices.getDisplayMedia({
-      video: true,
-      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+      video: { displaySurface: 'browser' },
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false
+      },
+      preferCurrentTab: true,
+      systemAudio: 'include',
+      windowAudio: 'system',
+      selfBrowserSurface: 'include'
     });
-    if (!aCtx) aCtx = new (window.AudioContext||window.webkitAudioContext)();
-    if (aCtx.state === 'suspended') aCtx.resume();
+
+    const audioTracks = displayStream.getAudioTracks();
+
+    if (!audioTracks.length) {
+      setStatus('No shared audio track · share tab audio', 'warn');
+      document.getElementById('shareAudio').textContent = '⬡ Share System Sound';
+      return;
+    }
+
+    if (!aCtx) aCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (aCtx.state === 'suspended') await aCtx.resume();
+
     analyser = aCtx.createAnalyser();
     analyser.fftSize = 1024;
     analyser.smoothingTimeConstant = 0.72;
-    const src = aCtx.createMediaStreamSource(displayStream);
-    src.connect(analyser);
+
+    const audioOnlyStream = new MediaStream([audioTracks[0]]);
+    displaySource = aCtx.createMediaStreamSource(audioOnlyStream);
+    displaySource.connect(analyser);
+
     _allocBuffers();
     isStarted = true;
-    setStatus('System Sound · NLP active');
+    isPaused = false;
+    suspendBlend = 0;
+    axiomPool = AXIOMS;
+    setSuspendedUI(false);
+    setStatus('System audio captured · reactive');
     document.getElementById('shareAudio').textContent = '⬡ Sharing…';
-  } catch(e) {
+
+    audioTracks[0].addEventListener('ended', () => {
+      setStatus('Shared audio ended', 'warn');
+      document.getElementById('shareAudio').textContent = '⬡ Share System Sound';
+    });
+  } catch (e) {
     setStatus('Audio capture denied', 'warn');
+    document.getElementById('shareAudio').textContent = '⬡ Share System Sound';
   }
 }
 
@@ -869,7 +906,7 @@ function renderPulseRings(cx,cy){
   for(let i=rings.length-1;i>=0;i--) if(rings[i].a<0.022||rings[i].r>480) rings.splice(i,1);
 }
 function renderParticles(){
-  for(const p of parts){p.x+=p.vx;p.y+=p.vy;p.vx*=0.974;p.vy*=0.974;p.life--;const a=Math.max(0,p.life/p.max);ctx.beginPath();ctx.arc(p.x,p.y,p.r*a,0,Math.PI*2);ctx.fillStyle=`hsla(${p.hue},100%,70%,${a*0.72})`;ctx.shadowBlur=6;ctx.shadowColor=`hsl(${p.hue},100%,68%)`;ctx.fill();ctx.shadowBlur=0;}
+  for(const p of parts){p.x+=p.vx;p.y+=p.vy;p.vx*=0.974;p.vy*=0.974;p.life--;const a=Math.max(0,p.lifep.max);ctx.beginPath();ctx.arc(p.x,p.y,p.r*a,0,Math.PI*2);ctx.fillStyle=`hsla(${p.hue},100%,70%,${a*0.72})`;ctx.shadowBlur=6;ctx.shadowColor=`hsl(${p.hue},100%,68%)`;ctx.fill();ctx.shadowBlur=0;}
   for(let i=parts.length-1;i>=0;i--) if(parts[i].life<=0) parts.splice(i,1);
 }
 function renderSectorLabels(cx,cy,maxR,beat,blend){
@@ -905,7 +942,7 @@ function renderRadar(cx,cy,maxR,blend){
   rg.addColorStop(0.7,`rgba(0,255,180,${0.022+beatEnergy*0.045})`);
   rg.addColorStop(1,'rgba(0,255,180,0)');
   ctx.fillStyle=rg;ctx.fill();
-  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+aLen*Math.cos(ang),cy+aLen*Math.sin(ang));
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+aLen*Math.cos(ang),cyaLen*Math.sin(ang));
   ctx.strokeStyle=`rgba(0,255,180,${0.14+beatEnergy*0.18})`;ctx.lineWidth=1.2;ctx.stroke();ctx.restore();
 }
 function renderSpectrumStrip(W,beat){
@@ -957,6 +994,18 @@ function draw() {
   if(isStarted&&!isPaused){
     analyser.getByteFrequencyData(freqData);
     analyser.getByteTimeDomainData(waveData);
+    
+    // Silence detector
+    let sum = 0;
+    for (let i = 0; i < freqData.length; i++) sum += freqData[i];
+    const avg = sum / freqData.length;
+    if (avg < 1.5) {
+      zeroAudioFrames++;
+      if (zeroAudioFrames > 45) setStatus('Shared stream is silent · check picker audio', 'warn');
+    } else {
+      zeroAudioFrames = 0;
+    }
+
     // Derive psychological state
     const s=deriveState(freqData,prevFreqData);
     Object.assign(audioState,s);
