@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>Lex Forensica | HEX-NLP Manifold v16</title>
+    <title>Lex Forensica | HEX-NLP Manifold v20</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
@@ -99,41 +98,7 @@
         }
         .mode-pill.active { border-color: #00ffb4; color: #00ffb4; background: rgba(0,255,180,.10); box-shadow: 0 0 12px rgba(0,255,180,.22); }
         .mode-pill:hover { color: #00ffb4; border-color: rgba(0,255,180,.6); }
-    
-@media (max-width: 768px){
-  .ui{padding:12px!important}
-  #glassPanel{width:min(46vw,180px)!important;padding:10px!important}
-  #controlPanel{width:min(58vw,220px)!important;padding:12px!important;gap:10px!important}
-  #shareAudio{top:12px;right:12px;font-size:8px;padding:8px 10px;border-radius:8px;max-width:42vw}
-  .back-link{top:12px;left:12px;font-size:7px;letter-spacing:2px}
-  #modeSelector{bottom:12px;left:50%;transform:translateX(-50%);gap:4px;flex-wrap:wrap;justify-content:center;max-width:94vw}
-  .mode-pill{font-size:7px;padding:8px 10px;min-height:36px}
-  #centreGlyph{font-size:10px;letter-spacing:.22em;opacity:.45}
-  #titleText{font-size:14px!important;letter-spacing:.18em!important}
-  #versionText,#legendHeader,#status,.text-8px{font-size:7px!important}
-  .btn{font-size:9px;padding:10px 10px;min-height:40px}
-  input[type="range"]{min-height:32px}
-}
-@media (max-width: 520px){
-  .ui{padding:10px!important;align-items:stretch!important}
-  #glassPanel{position:fixed;top:58px;left:10px;width:calc(44vw - 12px)!important;max-height:34vh;overflow:auto}
-  #controlPanel{position:fixed;top:58px;right:10px;width:calc(56vw - 12px)!important;max-height:56vh;overflow:auto}
-  #shareAudio{top:auto;bottom:78px;right:10px;left:auto;max-width:46vw;z-index:35}
-  .back-link{z-index:35}
-  #modeSelector{bottom:10px;left:10px;right:10px;transform:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;max-width:none}
-  .mode-pill{width:100%;font-size:7px;padding:10px 6px;min-height:40px}
-  #centreGlyph{font-size:9px;letter-spacing:.16em}
-  #limiterBar{height:3px}
-}
-@media (max-width: 380px){
-  #glassPanel{width:42vw!important}
-  #controlPanel{width:58vw!important;padding:10px!important}
-  .btn{font-size:8px;letter-spacing:.06em}
-  #titleText{font-size:12px!important}
-  #shareAudio{font-size:7px;padding:7px 8px}
-}
-
-</style>
+    </style>
 </head>
 <body>
 <canvas id="c"></canvas>
@@ -151,6 +116,7 @@
     <button class="mode-pill" data-mode="RITUAL">Ritual</button>
     <button class="mode-pill" data-mode="ASCEND">Ascend</button>
     <button class="mode-pill" data-mode="IMPACT">Impact</button>
+    <button class="mode-pill" data-mode="CREATIVE">Creative</button>
 </div>
 
 <div class="ui h-screen w-full flex flex-col items-end justify-between p-5">
@@ -165,7 +131,7 @@
     <div class="glass interact p-5 rounded-lg w-64 flex flex-col gap-3" id="controlPanel">
         <div class="text-center border-b border-emerald-500/20 pb-3">
             <div class="glow-text text-emerald-300 text-base font-bold tracking-[0.3em]" id="titleText">LEX FORENSICA</div>
-            <div class="text-[8px] text-emerald-500/40 tracking-widest mt-0.5" id="versionText">PSYCHOLOGICAL MANIFOLD · v16</div>
+            <div class="text-[8px] text-emerald-500/40 tracking-widest mt-0.5" id="versionText">PSYCHOLOGICAL MANIFOLD · v20</div>
         </div>
         <div class="text-[8px] text-emerald-400/55 leading-relaxed axiom-pulse border border-emerald-500/10 rounded p-2">
             <div id="axiomDisplay">A0 · Pipeline integrity verified</div>
@@ -196,7 +162,7 @@
 
 <script>
 /* =============================================================
-   HEX-NLP MANIFOLD v16
+   HEX-NLP MANIFOLD v20
    Psychological State Machine — pressure / focus / release / reward
    NEW v16:
    - audioState model: energy, bass, mids, highs, flux, beat, peak, calm
@@ -210,7 +176,6 @@
    - Contrast cycles — brain reacts to change, not constant brightness
    - Share System Sound (getDisplayMedia) as primary audio source
    - Suspended mode fully preserved from v15
-   - Strict audio track validation & silence detector
    ============================================================= */
 
 // ── NLP 12-PLANE TAXONOMY ────────────────────────────────
@@ -280,9 +245,6 @@ const audio  = new Audio();
 
 let aCtx, analyser, freqData, waveData, prevFreqData;
 let displayStream; // for getDisplayMedia
-let displaySource;
-let zeroAudioFrames = 0; // silence detector counter
-
 let isStarted    = false;
 let nlpActive    = true;
 let visualDepth  = 0; // 0=FLUID, 1=DEEP
@@ -426,56 +388,23 @@ function initAudioFromElement() {
 
 async function initAudioFromDisplay() {
   try {
-    if (displayStream) displayStream.getTracks().forEach(t => t.stop());
-
     displayStream = await navigator.mediaDevices.getDisplayMedia({
-      video: { displaySurface: 'browser' },
-      audio: {
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: false
-      },
-      preferCurrentTab: true,
-      systemAudio: 'include',
-      windowAudio: 'system',
-      selfBrowserSurface: 'include'
+      video: true,
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
     });
-
-    const audioTracks = displayStream.getAudioTracks();
-
-    if (!audioTracks.length) {
-      setStatus('No shared audio track · share tab audio', 'warn');
-      document.getElementById('shareAudio').textContent = '⬡ Share System Sound';
-      return;
-    }
-
-    if (!aCtx) aCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (aCtx.state === 'suspended') await aCtx.resume();
-
+    if (!aCtx) aCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if (aCtx.state === 'suspended') aCtx.resume();
     analyser = aCtx.createAnalyser();
     analyser.fftSize = 1024;
     analyser.smoothingTimeConstant = 0.72;
-
-    const audioOnlyStream = new MediaStream([audioTracks[0]]);
-    displaySource = aCtx.createMediaStreamSource(audioOnlyStream);
-    displaySource.connect(analyser);
-
+    const src = aCtx.createMediaStreamSource(displayStream);
+    src.connect(analyser);
     _allocBuffers();
     isStarted = true;
-    isPaused = false;
-    suspendBlend = 0;
-    axiomPool = AXIOMS;
-    setSuspendedUI(false);
-    setStatus('System audio captured · reactive');
+    setStatus('System Sound · NLP active');
     document.getElementById('shareAudio').textContent = '⬡ Sharing…';
-
-    audioTracks[0].addEventListener('ended', () => {
-      setStatus('Shared audio ended', 'warn');
-      document.getElementById('shareAudio').textContent = '⬡ Share System Sound';
-    });
-  } catch (e) {
+  } catch(e) {
     setStatus('Audio capture denied', 'warn');
-    document.getElementById('shareAudio').textContent = '⬡ Share System Sound';
   }
 }
 
@@ -828,6 +757,260 @@ function renderDriftMotes(W,H,blend) {
     ctx.shadowBlur=4*blend; ctx.shadowColor=`hsl(${m.hue},100%,70%)`; ctx.fill(); ctx.shadowBlur=0;
   }
 }
+
+function creativeBias(x,y,cx,cy,t){
+  const dx=x-cx, dy=y-cy;
+  const ang=Math.atan2(dy,dx);
+  const r=Math.hypot(dx,dy);
+  const yin=(Math.sin(ang*2+t*0.9)+1)*0.5;
+  const yang=(Math.cos(ang*2-r*0.01-t*0.7)+1)*0.5;
+  const tension=Math.abs(yin-yang);
+  return {yin,yang,tension,flow:(yin*0.55+yang*0.45)};
+}
+function modeHueTransform(hue, mode, bias, energy){
+  if(mode==='RITUAL') return (hue+40)%360;
+  if(mode==='ASCEND') return (hue+80)%360;
+  if(mode==='IMPACT') return (hue+180)%360;
+  if(mode==='CREATIVE'){
+    const split = bias.yin > bias.yang ? -28 : 34;
+    return (hue + split + bias.tension*46 + energy*18)%360;
+  }
+  return hue;
+}
+
+
+function renderProbabilitySimplex(cx,cy,beat){
+  if(currentMode!=='CREATIVE') return;
+  const r=88+beat*24;
+  const pts=[
+    [cx,cy-r],
+    [cx-r*0.86,cy+r*0.5],
+    [cx+r*0.86,cy+r*0.5]
+  ];
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0],pts[0][1]);
+  ctx.lineTo(pts[1][0],pts[1][1]);
+  ctx.lineTo(pts[2][0],pts[2][1]);
+  ctx.closePath();
+  ctx.strokeStyle=`hsla(${(getStateHue()+150)%360},100%,76%,${0.14+beat*0.08})`;
+  ctx.lineWidth=1.4;
+  ctx.stroke();
+  for(let i=0;i<3;i++){
+    ctx.beginPath();
+    ctx.arc(pts[i][0],pts[i][1],4+beat*3,0,Math.PI*2);
+    ctx.fillStyle=`hsla(${(210+i*55+t*10)%360},100%,74%,${0.45})`;
+    ctx.fill();
+  }
+  for(let i=0;i<16;i++){
+    const a=(Math.sin(t*0.7+i)*0.5+0.5), b=(Math.cos(t*0.9+i*0.7)*0.5+0.5);
+    const s=a+b+0.0001, u=a/s*0.75, v=b/s*0.75, w=1-u-v;
+    const x=pts[0][0]*w + pts[1][0]*u + pts[2][0]*v;
+    const y=pts[0][1]*w + pts[1][1]*u + pts[2][1]*v;
+    ctx.beginPath();
+    ctx.arc(x,y,1.5,0,Math.PI*2);
+    ctx.fillStyle='rgba(200,230,255,0.22)';
+    ctx.fill();
+  }
+  ctx.restore();
+}
+function renderHoneycombFlow(cx,cy,maxR,beat){
+  ctx.save();
+  for(let i=0;i<7;i++){
+    const rr=maxR*(0.14+i*0.055);
+    const hue=(getStateHue()+i*9+40)%360;
+    ctx.beginPath();
+    for(let j=0;j<6;j++){
+      const a=Math.PI/3*j + t*0.06 + i*0.05;
+      const x=cx+Math.cos(a)*rr;
+      const y=cy+Math.sin(a)*rr;
+      j===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle=`hsla(${hue},100%,68%,${0.045+beat*0.04})`;
+    ctx.lineWidth=0.9;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+function renderGraphRelays(cx,cy,maxR,beat){
+  ctx.save();
+  const nodes=[];
+  for(let ring=0; ring<3; ring++){
+    const count=6+ring*6;
+    const rr=maxR*(0.18+ring*0.10)+Math.sin(t+ring)*8;
+    for(let i=0;i<count;i++){
+      const a=i/count*Math.PI*2 + t*(0.08+ring*0.03);
+      nodes.push({x:cx+Math.cos(a)*rr,y:cy+Math.sin(a)*rr*0.82,h:(getStateHue()+ring*35+i*3)%360});
+    }
+  }
+  for(let i=0;i<nodes.length;i++){
+    const a=nodes[i], b=nodes[(i+1)%nodes.length];
+    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
+    ctx.strokeStyle=`hsla(${a.h},100%,66%,${0.04+beat*0.04})`;
+    ctx.lineWidth=0.8; ctx.stroke();
+    if(i%5===0){
+      const c=nodes[(i+7)%nodes.length];
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(c.x,c.y);
+      ctx.strokeStyle=`hsla(${(a.h+c.h)*0.5},100%,70%,${0.025+beat*0.03})`;
+      ctx.stroke();
+    }
+  }
+  nodes.forEach(n=>{ ctx.beginPath(); ctx.arc(n.x,n.y,1.8+beat*1.2,0,Math.PI*2); ctx.fillStyle=`hsla(${n.h},100%,72%,0.45)`; ctx.fill(); });
+  ctx.restore();
+}
+function renderRotationalFrames(cx,cy,maxR,beat){
+  ctx.save();
+  for(let k=0;k<3;k++){
+    const rr=maxR*(0.24+k*0.08);
+    ctx.beginPath();
+    for(let i=0;i<6;i++){
+      const a=Math.PI/3*i + t*(0.12+k*0.06);
+      const x=cx+Math.cos(a)*rr;
+      const y=cy+Math.sin(a)*rr*0.9;
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle=`hsla(${(getStateHue()+200+k*24)%360},100%,74%,${0.05+beat*0.03})`;
+    ctx.lineWidth=1.0+k*0.2;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+function renderEntropyField(W,H,beat){
+  ctx.save();
+  const cols=14, rows=8;
+  for(let y=0;y<rows;y++) for(let x=0;x<cols;x++){
+    const px=(x+0.5)/cols*W, py=(y+0.5)/rows*H;
+    const entropy=(Math.sin(px*0.01+t*0.9)+Math.cos(py*0.012-t*0.7)+2)/4;
+    const hue=(getStateHue()+entropy*120)%360;
+    ctx.fillStyle=`hsla(${hue},100%,70%,${0.015+entropy*0.025+beat*0.01})`;
+    ctx.fillRect(px-6,py-1.2,12,2.4);
+  }
+  ctx.restore();
+}
+
+function renderHaloLattice(cx,cy,maxR,beat){
+  ctx.save();
+  for(let i=0;i<5;i++){
+    const rr=maxR*(0.16+i*0.08)+Math.sin(t*0.8+i)*12*beatEnergy;
+    ctx.beginPath();
+    ctx.arc(cx,cy,rr,0,Math.PI*2);
+    const hue=(getStateHue()+i*18+t*4)%360;
+    ctx.strokeStyle=`hsla(${hue},100%,70%,${0.025+beat*0.035})`;
+    ctx.lineWidth=0.7+i*0.12;
+    ctx.setLineDash([8+i*2,14+i*4]);
+    ctx.lineDashOffset=-t*18*(i+1);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+function renderOrbitSigils(cx,cy,beat){
+  ctx.save();
+  ctx.font='10px Share Tech Mono, Courier New';
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  const glyphs=['◉','◌','✦','✧','△','▽','◈','◎'];
+  for(let i=0;i<glyphs.length;i++){
+    const a=t*0.35+i*Math.PI*2/glyphs.length;
+    const r=120+Math.sin(t+i)*18+beat*20;
+    const x=cx+Math.cos(a)*r;
+    const y=cy+Math.sin(a)*r*0.72;
+    const hue=(currentMode==='CREATIVE'?320:180)+i*11;
+    ctx.fillStyle=`hsla(${hue%360},100%,72%,${0.14+beat*0.08})`;
+    ctx.shadowBlur=10;
+    ctx.shadowColor=`hsl(${hue%360},100%,68%)`;
+    ctx.fillText(glyphs[i],x,y);
+  }
+  ctx.shadowBlur=0;
+  ctx.restore();
+}
+function renderRibbonKnots(cx,cy,W,H,beat){
+  ctx.save();
+  for(let k=0;k<3;k++){
+    ctx.beginPath();
+    for(let i=0;i<90;i++){
+      const u=i/89;
+      const x=u*W;
+      const y=cy + Math.sin(u*10+t*(0.7+k*0.22))* (24+k*18+beat*20) + Math.cos(u*6-t*0.5)*(10+k*6);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    const hue=(getStateHue()+k*34+120)%360;
+    ctx.strokeStyle=`hsla(${hue},100%,62%,${0.05+beat*0.05})`;
+    ctx.lineWidth=1.0+k*0.35;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+function renderCrownBursts(cx,cy,beat){
+  if(beat<0.04) return;
+  ctx.save();
+  for(let i=0;i<18;i++){
+    const a=-Math.PI/2 + (i/17-0.5)*1.8;
+    const inner=58+beat*20;
+    const outer=inner+24+Math.sin(t*8+i)*8;
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(a)*inner, cy+Math.sin(a)*inner);
+    ctx.lineTo(cx+Math.cos(a)*outer, cy+Math.sin(a)*outer);
+    const hue=(40+i*3+getStateHue()*0.2)%360;
+    ctx.strokeStyle=`hsla(${hue},100%,74%,${0.12+beat*0.16})`;
+    ctx.lineWidth=1.2;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+function renderCornerTraces(W,H,beat){
+  ctx.save();
+  const corners=[[18,18,1,1],[W-18,18,-1,1],[18,H-18,1,-1],[W-18,H-18,-1,-1]];
+  corners.forEach((c,idx)=>{
+    const [x,y,sx,sy]=c;
+    const hue=(getStateHue()+idx*40)%360;
+    ctx.strokeStyle=`hsla(${hue},100%,68%,${0.08+beat*0.06})`;
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(x,y); ctx.lineTo(x+sx*42,y); ctx.lineTo(x+sx*42,y+sy*14); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x,y); ctx.lineTo(x,y+sy*42); ctx.lineTo(x+sx*14,y+sy*42); ctx.stroke();
+  });
+  ctx.restore();
+}
+
+function renderCreativePetals(cx,cy,maxR,beat){
+  if(currentMode!=='CREATIVE') return;
+  ctx.save();
+  for(let i=0;i<9;i++){
+    const a=t*0.28+i*Math.PI*2/9;
+    const rr=maxR*(0.10+i*0.028+beat*0.015);
+    const x=cx+Math.cos(a)*rr;
+    const y=cy+Math.sin(a)*rr*0.72;
+    const hue=(320+i*17+t*9)%360;
+    const g=ctx.createRadialGradient(x,y,0,x,y,rr*0.42);
+    g.addColorStop(0,`hsla(${hue},100%,70%,${0.045+beat*0.03})`);
+    g.addColorStop(1,`hsla(${(hue+50)%360},100%,50%,0)`);
+    ctx.fillStyle=g;
+    ctx.beginPath();
+    ctx.ellipse(x,y,rr*0.42,rr*0.16,a,0,Math.PI*2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+function renderYinYangCore(cx,cy,beat){
+  if(currentMode!=='CREATIVE') return;
+  const r=36+beat*14;
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.rotate(t*0.22);
+  ctx.globalAlpha=0.75;
+  ctx.beginPath(); ctx.arc(0,0,r,Math.PI/2,Math.PI*1.5); ctx.fillStyle='rgba(210,40,90,0.16)'; ctx.fill();
+  ctx.beginPath(); ctx.arc(0,0,r,-Math.PI/2,Math.PI/2); ctx.fillStyle='rgba(40,220,180,0.16)'; ctx.fill();
+  ctx.beginPath(); ctx.arc(0,-r/2,r/2,0,Math.PI*2); ctx.fillStyle='rgba(40,220,180,0.24)'; ctx.fill();
+  ctx.beginPath(); ctx.arc(0,r/2,r/2,0,Math.PI*2); ctx.fillStyle='rgba(210,40,90,0.24)'; ctx.fill();
+  ctx.beginPath(); ctx.arc(0,-r/2,r/8,0,Math.PI*2); ctx.fillStyle='rgba(210,40,90,0.85)'; ctx.fill();
+  ctx.beginPath(); ctx.arc(0,r/2,r/8,0,Math.PI*2); ctx.fillStyle='rgba(40,220,180,0.85)'; ctx.fill();
+  ctx.restore();
+}
+
 function renderHexField(cx,cy,W,H,beat,blend) {
   const R=36,gw=R*Math.sqrt(3),gh=R*1.5;
   const nodes=[];
@@ -941,7 +1124,7 @@ function renderPulseRings(cx,cy){
   for(let i=rings.length-1;i>=0;i--) if(rings[i].a<0.022||rings[i].r>480) rings.splice(i,1);
 }
 function renderParticles(){
-  for(const p of parts){p.x+=p.vx;p.y+=p.vy;p.vx*=0.974;p.vy*=0.974;p.life--;const a=Math.max(0,p.lifep.max);ctx.beginPath();ctx.arc(p.x,p.y,p.r*a,0,Math.PI*2);ctx.fillStyle=`hsla(${p.hue},100%,70%,${a*0.72})`;ctx.shadowBlur=6;ctx.shadowColor=`hsl(${p.hue},100%,68%)`;ctx.fill();ctx.shadowBlur=0;}
+  for(const p of parts){p.x+=p.vx;p.y+=p.vy;p.vx*=0.974;p.vy*=0.974;p.life--;const a=Math.max(0,p.life/p.max);ctx.beginPath();ctx.arc(p.x,p.y,p.r*a,0,Math.PI*2);ctx.fillStyle=`hsla(${p.hue},100%,70%,${a*0.72})`;ctx.shadowBlur=6;ctx.shadowColor=`hsl(${p.hue},100%,68%)`;ctx.fill();ctx.shadowBlur=0;}
   for(let i=parts.length-1;i>=0;i--) if(parts[i].life<=0) parts.splice(i,1);
 }
 function renderSectorLabels(cx,cy,maxR,beat,blend){
@@ -977,7 +1160,7 @@ function renderRadar(cx,cy,maxR,blend){
   rg.addColorStop(0.7,`rgba(0,255,180,${0.022+beatEnergy*0.045})`);
   rg.addColorStop(1,'rgba(0,255,180,0)');
   ctx.fillStyle=rg;ctx.fill();
-  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+aLen*Math.cos(ang),cyaLen*Math.sin(ang));
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+aLen*Math.cos(ang),cy+aLen*Math.sin(ang));
   ctx.strokeStyle=`rgba(0,255,180,${0.14+beatEnergy*0.18})`;ctx.lineWidth=1.2;ctx.stroke();ctx.restore();
 }
 function renderSpectrumStrip(W,beat){
@@ -1029,18 +1212,6 @@ function draw() {
   if(isStarted&&!isPaused){
     analyser.getByteFrequencyData(freqData);
     analyser.getByteTimeDomainData(waveData);
-    
-    // Silence detector
-    let sum = 0;
-    for (let i = 0; i < freqData.length; i++) sum += freqData[i];
-    const avg = sum / freqData.length;
-    if (avg < 1.5) {
-      zeroAudioFrames++;
-      if (zeroAudioFrames > 45) setStatus('Shared stream is silent · check picker audio', 'warn');
-    } else {
-      zeroAudioFrames = 0;
-    }
-
     // Derive psychological state
     const s=deriveState(freqData,prevFreqData);
     Object.assign(audioState,s);
@@ -1063,6 +1234,9 @@ function draw() {
 
   // Orientation grid (stable anchor)
   renderOrientationGrid(W,H,cx,cy,blend);
+  renderCornerTraces(W,H,beat);
+  renderEntropyField(W,H,beat);
+  renderRibbonKnots(cx,cy,W,H,beat);
 
   renderGlyphRain(W,H,blend);
   renderSectorFields(cx,cy,maxR,beat,blend);
@@ -1086,9 +1260,18 @@ function draw() {
   renderFluidSurface(cx,cy,W,H,blend,suspendT);
   renderDriftMotes(W,H,blend);
   renderSectorLabels(cx,cy,maxR,beat,blend);
+  renderHoneycombFlow(cx,cy,maxR,beat);
+  renderRotationalFrames(cx,cy,maxR,beat);
+  renderHaloLattice(cx,cy,maxR,beat);
+  renderCreativePetals(cx,cy,maxR,beat);
+  renderProbabilitySimplex(cx,cy,beat);
+  renderGraphRelays(cx,cy,maxR,beat);
+  renderOrbitSigils(cx,cy,beat);
+  renderCrownBursts(cx,cy,beat);
   renderVortex(cx,cy,beat,blend);
   renderPulseRings(cx,cy);
   renderParticles();
+  renderYinYangCore(cx,cy,beat);
   renderOmega(cx,cy,beat,blend);
   renderSpectrumStrip(W,beat);
   renderSuspendedStrip(W,blend);
