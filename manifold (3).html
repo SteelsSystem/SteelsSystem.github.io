@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Axiom | Hexagonal Forensic Manifold</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Inter:wght@400;600&display=swap');
+
+        :root {
+            --bg: #050507;
+            --surface: #0a0a0f;
+            --accent: #00e5ff;
+            --accent-dim: rgba(0, 229, 255, 0.2);
+            --border: rgba(255, 255, 255, 0.08);
+            --text-muted: #888891;
+            --gold: #ffcc33;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: #e4e4e7;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .ui-layer {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+        }
+
+        .interactable { pointer-events: auto; }
+
+        .glass {
+            background: rgba(10, 10, 15, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-sync { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); }
+
+        .terminal {
+            height: 200px;
+            overflow-y: auto;
+            font-size: 0.7rem;
+            line-height: 1.4;
+            color: var(--text-muted);
+        }
+
+        .node {
+            position: relative;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            overflow: hidden;
+            border-radius: 6px;
+            background: radial-gradient(circle at 0% 0%, rgba(0, 229, 255, 0.05), transparent 55%);
+        }
+        .node:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+            background: radial-gradient(circle at 10% 0%, rgba(0, 229, 255, 0.14), transparent 60%);
+            box-shadow: 0 0 18px rgba(0, 229, 255, 0.18);
+        }
+        .node-hex {
+            width: 16px;
+            height: 14px;
+            background: linear-gradient(135deg, #00e5ff, #7b2fff);
+            clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+            opacity: 0.7;
+            flex-shrink: 0;
+        }
+        .node:hover .node-hex {
+            opacity: 1;
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.9);
+        }
+        .axiom-panel {
+            position: relative;
+            overflow: hidden;
+        }
+        .axiom-panel::before {
+            content: '';
+            position: absolute;
+            inset: -40%;
+            background:
+                radial-gradient(circle at 10% 0%, rgba(0, 229, 255, 0.12), transparent 60%),
+                radial-gradient(circle at 80% 100%, rgba(123, 47, 255, 0.12), transparent 60%);
+            opacity: 0.45;
+            mix-blend-mode: screen;
+            pointer-events: none;
+        }
+
+        .pill {
+            font-size: 9px;
+            padding: 0.15rem 0.45rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.12);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .pill:hover {
+            border-color: rgba(0,229,255,0.6);
+            color: var(--accent);
+        }
+        .pill-active {
+            border-color: var(--accent);
+            background: rgba(0,229,255,0.15);
+            color: var(--accent);
+        }
+
+        .scanline {
+            width: 100%;
+            height: 2px;
+            background: rgba(0, 229, 255, 0.05);
+            position: absolute;
+            z-index: 5;
+            animation: scan 8s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--border); }
+    </style>
+</head>
+<body>
+    <div class="scanline"></div>
+    <canvas id="manifoldCanvas"></canvas>
+
+    <div class="ui-layer">
+        <!-- Header -->
+        <header class="flex justify-between items-start mb-8">
+            <div class="interactable">
+                <h1 class="text-2xl font-bold tracking-tighter mono text-white">AXIOM_01</h1>
+                <p class="text-xs text-muted-foreground mono opacity-60">
+                    HEX-NLP · 12 Planes // Forensic Manifold Engine
+                </p>
+            </div>
+            <div class="interactable glass p-4 flex flex-col gap-2 min-w-[260px]">
+                <div class="flex justify-between items-center">
+                    <span class="text-[10px] mono uppercase">System State</span>
+                    <div class="status-badge badge-sync" id="syncStatus">Idle</div>
+                </div>
+                <div class="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+                    <div id="syncProgress" class="h-full bg-[#00e5ff] transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between text-[9px] mono text-muted">
+                    <span id="alignLabel">ALIGNMENT: 0.0000</span>
+                    <span id="latencyLabel">LATENCY: &mdash;</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Body -->
+        <main class="flex-grow flex gap-6 overflow-hidden">
+            <!-- Sidebar Controls -->
+            <aside class="w-80 flex flex-col gap-4">
+                <!-- Axiom Nodes -->
+                <div class="interactable glass p-4 axiom-panel">
+                    <h3 class="text-xs mono uppercase mb-3 border-b border-white/10 pb-2">Axiom Nodes</h3>
+                    <div class="flex flex-col gap-2" id="axiomList"></div>
+                </div>
+
+                <!-- Audio + NLP + Creativity Panel -->
+                <div class="interactable glass p-4">
+                    <h3 class="text-xs mono uppercase mb-3 border-b border-white/10 pb-2">
+                        Forensic Audio & HEX-NLP
+                    </h3>
+                    <label class="block text-[10px] mono mb-1 opacity-70">↑ Upload audio</label>
+                    <input
+                        id="audioFile"
+                        type="file"
+                        accept="audio/*"
+                        class="w-full text-[10px] mono bg-black/40 border border-white/10 rounded px-2 py-1 mb-2"
+                    />
+                    <button
+                        id="btnInitAudio"
+                        class="w-full text-[10px] mono uppercase border border-white/20 bg-white/5 hover:bg-white/10 transition px-2 py-1 rounded mb-2"
+                    >
+                        INIT FORENSIC ENGINE
+                    </button>
+                    <div id="audioStatus" class="text-[10px] mono text-muted mb-3">
+                        No source loaded.
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[10px] mono uppercase text-muted">HEX-NLP · 12 Planes</span>
+                            <span class="text-[9px] mono opacity-60" id="currentPlaneLabel">[0] ASSERT⁺</span>
+                        </div>
+                        <div id="nlpPlaneList" class="flex flex-wrap gap-1"></div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[10px] mono uppercase text-muted">Creativity Modes</span>
+                            <span class="text-[9px] mono opacity-60" id="currentModeLabel">FLUID</span>
+                        </div>
+                        <div id="creativityModes" class="flex flex-wrap gap-1"></div>
+                    </div>
+                </div>
+
+                <!-- Execution Log -->
+                <div class="interactable glass p-4 flex-grow flex flex-col">
+                    <h3 class="text-xs mono uppercase mb-3 border-b border-white/10 pb-2">Execution Log</h3>
+                    <div id="terminalOutput" class="terminal mono">
+                        [INIT] Starting PC2 Forensic Execution...<br>
+                        [LOG] Loading Hexagonal Manifold...<br>
+                        [LOG] Topology verified.<br>
+                        [OK] Forensic engine idle.<br>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Center Detail -->
+            <div class="flex-grow relative">
+                <div class="absolute bottom-4 left-1/2 -translate-x-1/2 interactable glass px-6 py-3 flex gap-8">
+                    <div class="text-center">
+                        <div class="text-[10px] mono text-muted uppercase">Entropy</div>
+                        <div class="text-lg mono" id="valEntropy">0.000</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-[10px] mono text-muted uppercase">Rot. Invariant</div>
+                        <div class="text-lg mono" id="valRot">True</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-[10px] mono text-muted uppercase">Path Confidence</div>
+                        <div class="text-lg mono" id="valPath">0%</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="mt-8 flex justify-between items-center text-[10px] mono opacity-50">
+            <div>LEX FORENSICA // TOPOLOGICAL AUDIO ANALYSIS MODULE</div>
+            <div>BUILD 2024.Q4 // NO PHANTOM BRANCHES DETECTED</div>
+        </footer>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('manifoldCanvas');
+        const ctx = canvas.getContext('2d');
+        const terminal = document.getElementById('terminalOutput');
+
+        let width, height, centerX, centerY;
+        let time = 0;
+
+        // Audio / forensic engine
+        let audioCtx = null;
+        let analyser = null;
+        let dataArray = null;
+        let waveData = null;
+        let audioElement = null;
+        let audioActive = false;
+
+        // 3 bands / 6 inputs
+        const bands3 = {
+            low:  { energy: 0, peak: 0 },
+            mid:  { energy: 0, peak: 0 },
+            high: { energy: 0, peak: 0 }
+        };
+
+        let syncHexStreaks = [];
+
+
+        let spectralEntropy = 0;
+        let energyNorm = 0;
+        let entropyNorm = 0;
+
+        // HEX-NLP planes & creativity modes
+        const NLP12 = [
+            { id: 0, label: 'ASSERT⁺' },
+            { id: 1, label: 'ASSERT⁻' },
+            { id: 2, label: 'DIRECT⁺' },
+            { id: 3, label: 'DIRECT⁻' },
+            { id: 4, label: 'COMMIT⁺' },
+            { id: 5, label: 'COMMIT⁻' },
+            { id: 6, label: 'EXPR⁺' },
+            { id: 7, label: 'EXPR⁻' },
+            { id: 8, label: 'DECL⁺' },
+            { id: 9, label: 'DECL⁻' },
+            { id: 10, label: 'META⁺' },
+            { id: 11, label: 'META⁻' }
+        ];
+
+        const CREATIVE_MODES = ['LINEAR', 'FLUID', 'DEEP', 'CHAOS', 'FORENSIC'];
+        let currentPlane = 0;
+        let currentMode = 1; // FLUID
+
+        const axioms = [
+            { id: 'A0', name: 'Integrity Verification', status: 'Active' },
+            { id: 'A1', name: 'Manifold Mapping', status: 'Standby' },
+            { id: 'A2', name: 'Invariant Locking', status: 'Standby' },
+            { id: 'A3', name: 'Entropy Compression', status: 'Standby' },
+            { id: 'A4', name: 'Absolute Determinism', status: 'Active' },
+            { id: 'F0', name: 'Spectral Forensics', status: 'Idle' },
+            { id: 'F1', name: 'Phase Coherence Scan', status: 'Idle' }
+        ];
+
+        function drawHex(x, y, size, color, alpha = 1, fill = false) {
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+                const angle = (Math.PI / 3) * i + (Math.PI / 6);
+                const px = x + size * Math.cos(angle);
+                const py = y + size * Math.sin(angle);
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            if (fill) {
+                ctx.fillStyle = color;
+                ctx.globalAlpha = alpha;
+                ctx.fill();
+            } else {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1;
+                ctx.globalAlpha = alpha;
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            centerX = width / 2;
+            centerY = height / 2;
+        }
+
+        function createAxiomList() {
+            const list = document.getElementById('axiomList');
+            axioms.forEach(a => {
+                const div = document.createElement('div');
+                div.className = "interactable node border border-white/10 p-2 text-[10px] mono flex justify-between items-center gap-2";
+                div.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="node-hex"></span>
+                        <span>${a.id} // ${a.name}</span>
+                    </div>
+                    <span class="opacity-50">${a.status}</span>
+                `;
+                div.onclick = () => {
+                    logToTerminal(`[CMD] Invoking ${a.name}...`);
+                    div.style.borderColor = "#00e5ff";
+                    setTimeout(() => div.style.borderColor = "rgba(255,255,255,0.1)", 1000);
+                };
+                list.appendChild(div);
+            });
+        }
+
+        function buildNLPPlanes() {
+            const container = document.getElementById('nlpPlaneList');
+            container.innerHTML = '';
+            NLP12.forEach(plane => {
+                const pill = document.createElement('button');
+                pill.className = 'pill mono text-[9px]';
+                pill.textContent = `[${plane.id}] ${plane.label}`;
+                if (plane.id === currentPlane) pill.classList.add('pill-active');
+                pill.onclick = () => {
+                    currentPlane = plane.id;
+                    document.getElementById('currentPlaneLabel').textContent = `[${plane.id}] ${plane.label}`;
+                    Array.from(container.children).forEach(ch => ch.classList.remove('pill-active'));
+                    pill.classList.add('pill-active');
+                    logToTerminal(`[NLP] Plane set to [${plane.id}] ${plane.label}`);
+                };
+                container.appendChild(pill);
+            });
+        }
+
+        function buildCreativityModes() {
+            const container = document.getElementById('creativityModes');
+            container.innerHTML = '';
+            CREATIVE_MODES.forEach((mode, idx) => {
+                const pill = document.createElement('button');
+                pill.className = 'pill mono text-[9px]';
+                pill.textContent = mode;
+                if (idx === currentMode) pill.classList.add('pill-active');
+                pill.onclick = () => {
+                    currentMode = idx;
+                    document.getElementById('currentModeLabel').textContent = mode;
+                    Array.from(container.children).forEach(ch => ch.classList.remove('pill-active'));
+                    pill.classList.add('pill-active');
+                    logToTerminal(`[MODE] Creativity mode set to ${mode}`);
+                };
+                container.appendChild(pill);
+            });
+        }
+
+        function logToTerminal(msg) {
+            const entry = document.createElement('div');
+            entry.innerHTML = msg;
+            terminal.appendChild(entry);
+            terminal.scrollTop = terminal.scrollHeight;
+            if (terminal.childNodes.length > 40) terminal.removeChild(terminal.firstChild);
+        }
+
+        function compute3Bands(freqData) {
+            const len = freqData.length;
+            const third = Math.floor(len / 3);
+            const out = [];
+
+            for (let b = 0; b < 3; b++) {
+                const start = b * third;
+                const end = (b === 2) ? len : (b + 1) * third;
+
+                let sum = 0;
+                let maxVal = 0;
+
+                for (let i = start; i < end; i++) {
+                    const v = freqData[i];
+                    sum += v;
+                    if (v > maxVal) maxVal = v;
+                }
+
+                const energy = sum / (end - start);
+                const peak = maxVal;
+                out.push({ energy, peak });
+            }
+
+            return out;
+        }
+
+        function setupAnalyserForAudio(file) {
+            if (!file) {
+                logToTerminal("[ERR] No audio file provided.");
+                return;
+            }
+
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            if (audioElement) {
+                audioElement.pause();
+                audioElement.src = "";
+            }
+
+            const url = URL.createObjectURL(file);
+            audioElement = new Audio();
+            audioElement.src = url;
+            audioElement.loop = true;
+            audioElement.crossOrigin = "anonymous";
+
+            audioElement.addEventListener('canplay', () => {
+                if (analyser) {
+                    analyser.disconnect();
+                }
+
+                const source = audioCtx.createMediaElementSource(audioElement);
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 2048;
+                const bufferLength = analyser.frequencyBinCount;
+                dataArray = new Uint8Array(bufferLength);
+                waveData = new Uint8Array(bufferLength);
+
+                source.connect(analyser);
+                analyser.connect(audioCtx.destination);
+
+                audioElement.play().then(() => {
+                    audioActive = true;
+                    document.getElementById('audioStatus').innerText = "Forensic engine running (loop).";
+                    document.getElementById('syncStatus').innerText = "Synced";
+                    logToTerminal("[AUDIO] Source loaded, forensic engine engaged.");
+                }).catch(err => {
+                    logToTerminal("[ERR] Audio playback blocked by browser.");
+                    document.getElementById('audioStatus').innerText = "Playback blocked. Click again.";
+                });
+            });
+
+            audioElement.addEventListener('error', () => {
+                logToTerminal("[ERR] Unable to load audio source.");
+                document.getElementById('audioStatus').innerText = "Error loading audio.";
+            });
+        }
+
+        function updateAudioMetrics() {
+            if (!analyser || !dataArray) return;
+
+            analyser.getByteFrequencyData(dataArray);
+            if (waveData) analyser.getByteTimeDomainData(waveData);
+
+            const [low, mid, high] = compute3Bands(dataArray);
+            bands3.low = low;
+            bands3.mid = mid;
+            bands3.high = high;
+
+            const combinedEnergy = (low.energy + mid.energy + high.energy) / 3;
+            energyNorm = Math.min(1, combinedEnergy / 180);
+
+            let entropy = 0;
+            let total = 0;
+            const step = 4;
+            for (let i = 0; i < dataArray.length; i += step) {
+                total += dataArray[i];
+            }
+            for (let i = 0; i < dataArray.length; i += step) {
+                const v = dataArray[i];
+                if (v <= 0) continue;
+                const p = v / total;
+                entropy -= p * Math.log2(p);
+            }
+            spectralEntropy = entropy || 0;
+            entropyNorm = Math.min(1, spectralEntropy / 8);
+
+            document.getElementById('valEntropy').innerText = spectralEntropy.toFixed(3);
+            document.getElementById('valPath').innerText = Math.round(energyNorm * 100) + "%";
+
+            const syncProgress = document.getElementById('syncProgress');
+            syncProgress.style.width = (50 + energyNorm * 50).toFixed(1) + "%";
+
+            document.getElementById('alignLabel').innerText =
+                "ALIGNMENT: " + (0.8 + entropyNorm * 0.19).toFixed(4);
+            document.getElementById('latencyLabel').innerText =
+                "LATENCY: " + (8 + (1 - energyNorm) * 12).toFixed(0) + "ms";
+
+            if (Math.random() < 0.02) {
+                logToTerminal(
+                    "[ANALYSIS] L:" + low.energy.toFixed(1) +
+                    " M:" + mid.energy.toFixed(1) +
+                    " H:" + high.energy.toFixed(1) +
+                    " · ent " + spectralEntropy.toFixed(3)
+                );
+            }
+        }
+
+        function drawWaveformRibbon() {
+            if (!waveData) return;
+            const midY = centerY;
+            const len = waveData.length;
+            const step = width / len;
+
+            ctx.beginPath();
+            ctx.moveTo(0, midY);
+            for (let i = 0; i < len; i++) {
+                const v = waveData[i] - 128;
+                const y = midY + (v * 0.6);
+                ctx.lineTo(i * step, y);
+            }
+            const alpha = 0.08 + energyNorm * 0.2;
+            ctx.strokeStyle = `rgba(0,255,180,${alpha})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+
+        function drawGrid() {
+            const size = 40;
+            const h = size * Math.sqrt(3);
+
+            const lowNorm = Math.min(1, bands3.low.energy / 180);
+            const midNorm = Math.min(1, bands3.mid.energy / 180);
+            const highNorm = Math.min(1, bands3.high.energy / 180);
+
+            const modeFactor = 1 + currentMode * 0.25; // více chaosu ve vyšších modech
+            const magnet = (currentMode === 1 || currentMode === 2)
+                ? (0.25 + energyNorm * 0.45)
+                : 0;
+
+            ctx.save();
+            ctx.translate(centerX, centerY);
+
+            const rows = 12;
+            const cols = 12;
+
+            for (let r = -rows; r < rows; r++) {
+                for (let c = -cols; c < cols; c++) {
+                    const x = c * (size * 1.5);
+                    const y = r * h + (Math.abs(c) % 2 === 1 ? h / 2 : 0);
+
+                    const dist = Math.sqrt(x * x + y * y);
+                    const maxDist = size * 10;
+                    if (dist > maxDist) continue;
+
+                    const wave = Math.sin(
+                        dist * 0.02 * modeFactor * (1 + magnet * 0.6) - time * 2 * (1 + lowNorm * 1.5)
+                    ) * 0.5 + 0.5;
+
+                    let opacity = (1 - (dist / maxDist)) * 0.2 * wave;
+                    opacity *= (0.4 + energyNorm) * (1 + magnet * 0.6);
+
+                    const hiMix = highNorm;
+                    const rCol = Math.round(0 + hiMix * 255);
+                    const gCol = Math.round(229 + hiMix * (204 - 229));
+                    const bCol = Math.round(255 + hiMix * (51 - 255));
+                    const color = `rgb(${rCol},${gCol},${bCol})`;
+
+                    drawHex(x, y, size - 2, color, opacity);
+                }
+            }
+            ctx.restore();
+        }
+
+        function drawCentralManifold() {
+            const baseSize = 150;
+            const lowNorm = Math.min(1, bands3.low.energy / 180);
+            const midNorm = Math.min(1, bands3.mid.energy / 180);
+            const highNorm = Math.min(1, bands3.high.energy / 180);
+
+            const magnet = (currentMode === 1 || currentMode === 2)
+                ? (0.3 + energyNorm * 0.5)
+                : 0;
+
+            const modeSpin = 0.15 + currentMode * 0.08 + magnet * 0.2;
+            const audioPulse = 10 + lowNorm * 40 * (1 + magnet * 0.5);
+            const pulse = Math.sin(time * (1 + lowNorm * 2)) * audioPulse;
+
+            const layers = 5;
+            for (let i = 0; i < layers; i++) {
+                const s = baseSize - (i * 25) * (1 - magnet * 0.4) + pulse;
+                const rot = time * (i % 2 === 0 ? 1 : -1) * (modeSpin + midNorm * 0.4);
+
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(rot);
+
+                let color;
+                if (i === 0) {
+                    const mix = Math.min(1, (highNorm * 0.7 + energyNorm * 0.3));
+                    const r = Math.round(0 + mix * (255 - 0));
+                    const g = Math.round(229 + mix * (204 - 229));
+                    const b = Math.round(255 + mix * (51 - 255));
+                    color = `rgb(${r},${g},${b})`;
+                } else {
+                    color = 'rgba(123, 47, 255, 0.4)';
+                }
+
+                const alpha = 0.6 - (i * 0.1) + energyNorm * 0.2;
+                drawHex(0, 0, s, color, Math.max(0.05, alpha));
+
+                if (i === 1) {
+                    const highPeakNorm = Math.min(1, bands3.high.peak / 255);
+                    for (let j = 0; j < 6; j++) {
+                        const angle = (Math.PI / 3) * j + (Math.PI / 6);
+                        const px = s * Math.cos(angle);
+                        const py = s * Math.sin(angle);
+                        ctx.beginPath();
+                        ctx.arc(px, py, 2 + highPeakNorm * 4, 0, Math.PI * 2);
+                        ctx.fillStyle = '#00e5ff';
+                        ctx.globalAlpha = 0.7 + highPeakNorm * 0.3;
+                        ctx.fill();
+                    }
+                }
+                ctx.restore();
+            }
+        }
+
+        function updateSyncHexStreaks() {
+            const nlpActive = currentMode !== 0; // LINEAR off, ostatní jako NLP ON
+            if (nlpActive && syncHexStreaks.length < 80 && Math.random() < energyNorm * 0.35) {
+                const baseAngle = Math.random() * Math.PI * 2;
+                const step = Math.PI / 3;
+                const snapped = Math.round(baseAngle / step) * step;
+                const jitter = (Math.random() - 0.5) * 0.18;
+                const angle = snapped + jitter;
+                const innerR = 80;
+                const len = 40 + Math.min(80, bands3.high.energy * 0.4);
+                syncHexStreaks.push({ angle, r: innerR, len, life: 0 });
+            }
+
+            const maxR = Math.max(width, height) * 0.75;
+            const speedBase = 4 + energyNorm * 18;
+
+            for (let i = syncHexStreaks.length - 1; i >= 0; i--) {
+                const s = syncHexStreaks[i];
+                s.r += speedBase;
+                s.life += 0.02;
+                if (s.r - s.len > maxR || s.life > 1.6) {
+                    syncHexStreaks.splice(i, 1);
+                }
+            }
+        }
+
+        function drawSyncHexStreaks() {
+            if (!syncHexStreaks.length) return;
+            ctx.save();
+            ctx.lineWidth = 1;
+            syncHexStreaks.forEach(s => {
+                const ax = Math.cos(s.angle);
+                const ay = Math.sin(s.angle);
+                const x1 = centerX + ax * s.r;
+                const y1 = centerY + ay * s.r;
+                const x2 = centerX + ax * (s.r + s.len);
+                const y2 = centerY + ay * (s.r + s.len);
+                const grad = ctx.createLinearGradient(x1, y1, x2, y2);
+                grad.addColorStop(0, 'rgba(0,229,255,0.0)');
+                grad.addColorStop(0.35, 'rgba(0,229,255,0.45)');
+                grad.addColorStop(1, 'rgba(255,204,51,0.0)');
+                ctx.strokeStyle = grad;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            });
+            ctx.restore();
+        }
+
+
+        function fractalField(dx, dy, t) {
+            let nx = dx * 0.005;
+            let ny = dy * 0.005;
+            let v = 0;
+            let amp = 0.6;
+            let scale = 1.0;
+            for (let o = 0; o < 3; o++) {
+                v += Math.sin(nx * 3.2 * scale + t * 0.9 * scale) *
+                     Math.cos(ny * 2.4 * scale - t * 1.3 * scale) * amp;
+                nx *= 1.9;
+                ny *= 1.7;
+                amp *= 0.5;
+                scale *= 1.3;
+            }
+            return v * 0.5 + 0.5; // -> [0,1]
+        }
+
+        function drawFractalVeil() {
+            const maxR = Math.min(width, height) * 0.55;
+            const stepsR = 14;
+            const stepsA = 80;
+            const ent = entropyNorm;
+            const hi = Math.min(1, bands3.high.energy / 180);
+
+            ctx.save();
+            ctx.lineWidth = 0.4;
+
+            for (let i = 0; i < stepsA; i++) {
+                const angle = (i / stepsA) * Math.PI * 2;
+                const ax = Math.cos(angle);
+                const ay = Math.sin(angle);
+
+                for (let j = 3; j < stepsR; j++) {
+                    const r = (j / stepsR) * maxR;
+                    const x = centerX + ax * r;
+                    const y = centerY + ay * r;
+                    const f = fractalField(x - centerX, y - centerY, time);
+
+                    const threshold = 0.72 + (1 - ent) * 0.15;
+                    if (f > threshold) {
+                        const r2 = r + 4 + hi * 6;
+                        const x2 = centerX + ax * r2;
+                        const y2 = centerY + ay * r2;
+                        const alpha = 0.04 + f * 0.12 + ent * 0.15;
+                        ctx.strokeStyle = `rgba(0,229,255,${alpha})`;
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            ctx.restore();
+        }
+
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            time += 0.02;
+
+            if (audioActive) {
+                updateAudioMetrics();
+            }
+
+            drawGrid();
+            drawFractalVeil();
+            drawCentralManifold();
+            drawSyncHexStreaks();
+            drawWaveformRibbon();
+
+            requestAnimationFrame(animate);
+        }
+
+        function init() {
+            resize();
+            createAxiomList();
+            buildNLPPlanes();
+            buildCreativityModes();
+            animate();
+
+            setInterval(() => {
+                const logs = [
+                    "[SYNC] Alignment probe sampled.",
+                    "[EXEC] Processing branch PC2_7x82.",
+                    "[MEM] Hexagonal cache optimized.",
+                    "[A9] Control Room synced.",
+                    "[TOPOLOGY] Curvature invariant maintained."
+                ];
+                logToTerminal(logs[Math.floor(Math.random() * logs.length)]);
+            }, 4000);
+
+            const audioInput = document.getElementById('audioFile');
+            const btnInit = document.getElementById('btnInitAudio');
+
+            btnInit.addEventListener('click', async () => {
+                const file = audioInput.files && audioInput.files[0];
+                if (!file) {
+                    logToTerminal("[WARN] No audio file selected.");
+                    document.getElementById('audioStatus').innerText = "Select audio file first.";
+                    return;
+                }
+
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    await audioCtx.resume();
+                }
+
+                setupAnalyserForAudio(file);
+            });
+
+            window.addEventListener('resize', resize);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>            updateSyncHexStreaks();
+
