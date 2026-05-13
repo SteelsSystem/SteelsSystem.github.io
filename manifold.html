@@ -1,649 +1,1148 @@
+$ cat > ~/axiom/hex-visualizer-v2.html << 'HTMLEOF'
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Axiom | Hexagonal Forensic Manifold</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Inter:wght@400;600&display=swap');
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HEX Spectrum Visualizer</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;height:100vh;font-family:'JetBrains Mono',monospace;color:#e4e4e7}
+canvas{display:block;position:absolute;inset:0;z-index:1}
 
-        :root {
-            --bg: #050507;
-            --surface: #0a0a0f;
-            --accent: #00e5ff;
-            --accent-dim: rgba(0, 229, 255, 0.2);
-            --border: rgba(255, 255, 255, 0.08);
-            --text-muted: #888891;
-            --gold: #ffcc33;
-        }
+/* ── STATUS BAR ── */
+#statusBar{position:fixed;top:0;left:0;width:100%;height:2px;z-index:50;pointer-events:none}
+#statusFill{height:100%;width:0;background:linear-gradient(to right,#00ffb4,#7b2fff,#ff4444);
+            transition:width .06s linear;box-shadow:0 0 6px rgba(0,255,180,.5)}
 
-        body {
-            background-color: var(--bg);
-            color: #e4e4e7;
-            font-family: 'Inter', sans-serif;
-            overflow: hidden;
-            height: 100vh;
-            margin: 0;
-        }
+/* ── SIDE PANEL ── */
+#panel{position:fixed;top:0;right:0;height:100vh;width:260px;z-index:20;
+       background:rgba(0,4,12,.82);border-left:1px solid rgba(0,255,180,.10);
+       backdrop-filter:blur(18px);display:flex;flex-direction:column;
+       overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;
+       scrollbar-color:rgba(0,255,180,.18) transparent;
+       transition:transform .35s cubic-bezier(.16,1,.3,1)}
+#panel.hidden{transform:translateX(100%)}
 
-        .mono { font-family: 'JetBrains Mono', monospace; }
+#panelToggle{position:fixed;top:50%;right:0;transform:translateY(-50%);z-index:30;
+             background:rgba(0,4,12,.75);border:1px solid rgba(0,255,180,.2);
+             border-right:none;color:rgba(0,255,180,.5);font-family:inherit;
+             font-size:9px;writing-mode:vertical-rl;padding:12px 6px;
+             cursor:pointer;letter-spacing:.15em;transition:all .2s;
+             border-radius:4px 0 0 4px;backdrop-filter:blur(8px)}
+#panelToggle:hover{color:#00ffb4;border-color:rgba(0,255,180,.6);
+                   box-shadow:-4px 0 14px rgba(0,255,180,.18)}
 
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
-        }
+.section{border-bottom:1px solid rgba(0,255,180,.08);padding:14px 16px}
+.sec-title{font-size:8px;letter-spacing:.2em;text-transform:uppercase;
+           color:rgba(0,255,180,.4);margin-bottom:10px;display:flex;
+           align-items:center;gap:6px}
+.sec-title::before{content:'';display:block;width:3px;height:3px;
+                   background:#00ffb4;border-radius:50%;
+                   box-shadow:0 0 6px #00ffb4}
 
-        .ui-layer {
-            position: relative;
-            z-index: 10;
-            pointer-events: none;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            padding: 2rem;
-        }
+/* ── BUTTONS ── */
+.btn{background:rgba(0,255,180,.04);border:1px solid rgba(0,255,180,.22);
+     color:rgba(0,255,180,.5);padding:6px 10px;font-family:inherit;
+     font-size:8px;letter-spacing:.12em;text-transform:uppercase;
+     cursor:pointer;border-radius:2px;transition:all .2s;width:100%;
+     text-align:left;margin-bottom:4px}
+.btn:hover{background:rgba(0,255,180,.10);border-color:rgba(0,255,180,.6);color:#00ffb4}
+.btn.active{background:rgba(0,255,180,.14);border-color:#00ffb4;color:#00ffb4;
+            box-shadow:0 0 10px rgba(0,255,180,.2)}
+.btn.peak-btn{border-color:rgba(255,160,40,.4);color:rgba(255,160,40,.6)}
+.btn.peak-btn.active{background:rgba(255,140,0,.14);border-color:#ffa040;
+                     color:#ffa040;box-shadow:0 0 10px rgba(255,140,0,.25)}
+.btn.susp-btn{border-color:rgba(160,80,255,.4);color:rgba(160,80,255,.6)}
+.btn.susp-btn.active{background:rgba(160,80,255,.12);border-color:#c084fc;
+                     color:#c084fc;box-shadow:0 0 10px rgba(160,80,255,.22)}
+.btn-row{display:flex;gap:4px}
+.btn-row .btn{flex:1}
 
-        .interactable { pointer-events: auto; }
+/* ── FILE ── */
+#fileLabel{display:block;background:rgba(0,255,180,.03);border:1px dashed rgba(0,255,180,.25);
+           color:rgba(0,255,180,.45);padding:10px;font-size:8px;letter-spacing:.12em;
+           text-transform:uppercase;cursor:pointer;border-radius:2px;
+           transition:all .2s;text-align:center;margin-bottom:6px}
+#fileLabel:hover{background:rgba(0,255,180,.08);border-color:rgba(0,255,180,.6);color:#00ffb4}
 
-        .glass {
-            background: rgba(10, 10, 15, 0.75);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-        }
+/* ── SLIDERS ── */
+.slider-row{display:flex;align-items:center;justify-content:space-between;
+            margin-bottom:8px;gap:8px}
+.slider-label{font-size:8px;letter-spacing:.10em;color:rgba(255,255,255,.35);
+              text-transform:uppercase;white-space:nowrap;flex-shrink:0;width:90px}
+.slider-val{font-size:8px;color:rgba(0,255,180,.5);width:28px;text-align:right;flex-shrink:0}
+input[type=range]{-webkit-appearance:none;flex:1;background:rgba(255,255,255,.10);
+                  height:2px;border-radius:2px;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:9px;height:9px;
+  background:#00ffb4;border-radius:50%;cursor:pointer;
+  box-shadow:0 0 6px rgba(0,255,180,.6)}
 
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
+/* ── NLP PILLS ── */
+#nlpGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
+.nlp-pill{font-size:7px;letter-spacing:.08em;padding:4px 6px;border-radius:2px;
+          border:1px solid rgba(255,255,255,.10);cursor:pointer;transition:all .2s;
+          text-align:center;background:rgba(0,0,0,.3);color:rgba(255,255,255,.35)}
+.nlp-pill.active{border-color:currentColor;opacity:1}
+.nlp-pill:hover{opacity:.85}
 
-        .badge-sync { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); }
+/* ── MODE PILLS ── */
+#modeRow{display:flex;flex-wrap:wrap;gap:3px}
+.mode-pill{font-size:7px;letter-spacing:.10em;padding:4px 8px;border-radius:2px;
+           border:1px solid rgba(0,255,180,.2);background:rgba(0,0,0,.3);
+           color:rgba(0,255,180,.4);cursor:pointer;transition:all .2s;text-transform:uppercase}
+.mode-pill:hover{border-color:rgba(0,255,180,.6);color:#00ffb4}
+.mode-pill.active{border-color:#00ffb4;color:#00ffb4;background:rgba(0,255,180,.10);
+                  box-shadow:0 0 8px rgba(0,255,180,.18)}
 
-        .terminal {
-            height: 100%;
-            overflow-y: auto;
-            font-size: 0.7rem;
-            line-height: 1.4;
-            color: var(--text-muted);
-            scrollbar-width: thin;
-            scrollbar-color: var(--border) transparent;
-        }
+/* ── STATUS CHIP ── */
+#statusChip{display:flex;align-items:center;gap:6px;padding:8px 10px;
+            border-radius:2px;border:1px solid rgba(255,255,255,.08);
+            background:rgba(0,0,0,.3);font-size:8px;letter-spacing:.08em;
+            color:rgba(255,255,255,.35);margin-bottom:0}
+.dot{width:5px;height:5px;border-radius:50%;background:#333;flex-shrink:0;transition:all .4s}
+.dot.live{background:#00ffb4;box-shadow:0 0 8px #00ffb4;animation:blink 1.6s infinite}
+.dot.warn{background:#f90;box-shadow:0 0 8px #f90}
+.dot.err{background:#f44;box-shadow:0 0 8px #f44}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
 
-        .node {
-            position: relative;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            overflow: hidden;
-            border-radius: 6px;
-            background: radial-gradient(circle at 0% 0%, rgba(0, 229, 255, 0.05), transparent 55%);
-        }
-        .node:hover {
-            color: var(--accent);
-            border-color: var(--accent);
-            background: radial-gradient(circle at 10% 0%, rgba(0, 229, 255, 0.14), transparent 60%);
-            box-shadow: 0 0 18px rgba(0, 229, 255, 0.18);
-        }
-        .node-hex {
-            width: 14px;
-            height: 12px;
-            background: linear-gradient(135deg, #00e5ff, #7b2fff);
-            clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
-            opacity: 0.7;
-            flex-shrink: 0;
-        }
-        .node:hover .node-hex {
-            opacity: 1;
-            box-shadow: 0 0 10px rgba(0, 229, 255, 0.9);
-        }
+/* ── AXIOM TICKER ── */
+#axiomTicker{font-size:7px;letter-spacing:.10em;color:rgba(0,255,180,.28);
+             padding:8px 10px;border:1px solid rgba(0,255,180,.06);
+             border-radius:2px;min-height:28px;transition:color .4s}
+#axiomTicker.peak{color:rgba(255,160,40,.55)}
+#axiomTicker.susp{color:rgba(160,80,255,.45)}
 
-        .pill {
-            font-size: 9px;
-            padding: 0.15rem 0.45rem;
-            border-radius: 999px;
-            border: 1px solid rgba(255,255,255,0.12);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-        }
-        .pill:hover {
-            border-color: rgba(0,229,255,0.6);
-            color: var(--accent);
-        }
-        .pill-active {
-            border-color: var(--accent);
-            background: rgba(0,229,255,0.15);
-            color: var(--accent);
-        }
+/* ── METRICS ── */
+#metricsRow{display:flex;justify-content:space-between;gap:4px}
+.metric{flex:1;text-align:center;padding:6px 4px;
+        background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:2px}
+.metric-val{font-size:11px;font-weight:700;color:rgba(0,255,180,.7);
+            display:block;line-height:1}
+.metric-lbl{font-size:6px;letter-spacing:.12em;color:rgba(255,255,255,.25);
+            text-transform:uppercase;margin-top:3px;display:block}
 
-        .scanline {
-            width: 100%;
-            height: 2px;
-            background: rgba(0, 229, 255, 0.05);
-            position: absolute;
-            z-index: 5;
-            animation: scan 8s linear infinite;
-            pointer-events: none;
-        }
+/* ── TOP STATUS ── */
+#topBar{position:fixed;top:0;left:0;width:calc(100% - 260px);z-index:15;
+        display:flex;align-items:center;justify-content:space-between;
+        padding:10px 16px;pointer-events:none}
+#topTitle{font-size:9px;letter-spacing:.22em;color:rgba(0,255,180,.22);text-transform:uppercase}
+#topMode{font-size:8px;letter-spacing:.18em;color:rgba(0,255,180,.18);text-transform:uppercase}
 
-        @keyframes scan {
-            0% { top: 0; }
-            100% { top: 100%; }
-        }
-
-        input[type="range"] {
-            -webkit-appearance: none;
-            background: rgba(255,255,255,0.1);
-            height: 2px;
-            border-radius: 2px;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 10px;
-            height: 10px;
-            background: var(--accent);
-            border-radius: 50%;
-            cursor: pointer;
-        }
-
-    </style>
+/* ── CENTRE GLYPH ── */
+#centreGlyph{position:fixed;top:50%;left:calc(50% - 130px);transform:translate(-50%,-50%);
+             z-index:8;pointer-events:none;font-size:12px;letter-spacing:.35em;
+             color:rgba(0,255,180,.16);text-shadow:0 0 22px rgba(0,255,180,.25);
+             transition:color .18s,text-shadow .18s,opacity .3s}
+#centreGlyph.flash{color:rgba(255,255,255,.9);
+                   text-shadow:0 0 32px rgba(255,220,120,.85),0 0 60px rgba(255,120,0,.4)}
+</style>
 </head>
 <body>
-    <div class="scanline"></div>
-    <canvas id="manifoldCanvas"></canvas>
+<div id="statusBar"><div id="statusFill"></div></div>
+<canvas id="c"></canvas>
 
-    <div class="ui-layer">
-        <header class="flex justify-between items-start mb-6">
-            <div class="interactable">
-                <h1 class="text-2xl font-bold tracking-tighter mono text-white">AXIOM_01</h1>
-                <p class="text-xs text-muted-foreground mono opacity-60">
-                    HEX-NLP · 12 Planes // Forensic Manifold Engine
-                </p>
-            </div>
-            <div class="interactable glass p-4 flex flex-col gap-2 min-w-[260px]">
-                <div class="flex justify-between items-center">
-                    <span class="text-[10px] mono uppercase">System State</span>
-                    <div class="status-badge badge-sync" id="syncStatus">Idle</div>
-                </div>
-                <div class="w-full bg-white/5 h-1 rounded-full overflow-hidden">
-                    <div id="syncProgress" class="h-full bg-[#00e5ff] transition-all duration-500" style="width: 0%"></div>
-                </div>
-                <div class="flex justify-between text-[9px] mono text-muted">
-                    <span id="alignLabel">ALIGNMENT: 0.0000</span>
-                    <span id="latencyLabel">LATENCY: &mdash;</span>
-                </div>
-            </div>
-        </header>
+<div id="topBar">
+  <div id="topTitle">HEX SPECTRUM · FORENSIC MANIFOLD</div>
+  <div id="topMode">MODE: FORENSIC</div>
+</div>
+<div id="centreGlyph">ENTER</div>
 
-        <main class="flex-grow flex gap-6 overflow-hidden">
-            <!-- Sidebar Controls -->
-            <aside class="w-80 flex flex-col gap-4">
-                <!-- Axiom Nodes -->
-                <div class="interactable glass p-4">
-                    <h3 class="text-xs mono uppercase mb-3 border-b border-white/10 pb-2">Axiom Nodes</h3>
-                    <div class="flex flex-col gap-2" id="axiomList"></div>
-                </div>
+<!-- PANEL TOGGLE -->
+<button id="panelToggle">CONTROLS</button>
 
-                <!-- Forensic Audio & NLP -->
-                <div class="interactable glass p-4 flex flex-col overflow-y-auto">
-                    <h3 class="text-xs mono uppercase mb-3 border-b border-white/10 pb-2">
-                        Forensic Audio & HEX-NLP
-                    </h3>
+<!-- SIDE PANEL -->
+<div id="panel">
 
-                    <label class="block text-[10px] mono mb-1 opacity-70">↑ Upload audio</label>
-                    <input
-                        id="audioFile"
-                        type="file"
-                        accept="audio/*"
-                        class="w-full text-[10px] mono bg-black/40 border border-white/10 rounded px-2 py-1 mb-2"
-                    />
-                    <button
-                        id="btnInitAudio"
-                        class="w-full text-[10px] mono uppercase border border-white/20 bg-white/5 hover:bg-white/10 transition px-2 py-1 rounded mb-2"
-                    >
-                        INIT FORENSIC ENGINE
-                    </button>
-                    <div id="audioStatus" class="text-[10px] mono text-muted mb-3">
-                        No source loaded.
-                    </div>
-
-                    <!-- HEX-NLP Planes -->
-                    <div class="mb-3">
-                        <div class="flex items-center justify-between mb-1">
-                            <span class="text-[10px] mono uppercase text-muted">HEX-NLP · 12 Planes</span>
-                            <span class="text-[9px] mono opacity-60" id="currentPlaneLabel">[0] ASSERT⁺</span>
-                        </div>
-                        <div id="nlpPlaneList" class="flex flex-wrap gap-1"></div>
-                    </div>
-
-                    <!-- Creativity Modes -->
-                    <div class="mb-3">
-                        <div class="flex items-center justify-between mb-1">
-                            <span class="text-[10px] mono uppercase text-muted">Modes</span>
-                            <span class="text-[9px] mono opacity-60" id="currentModeLabel">FLUID</span>
-                        </div>
-                        <div id="creativityModes" class="flex flex-wrap gap-1"></div>
-                    </div>
-
-                    <!-- Visual Settings -->
-                    <div class="mt-1 pt-3 border-t border-white/10">
-                        <div class="text-[10px] mono uppercase text-muted mb-2">Visual Filters</div>
-                        <div class="flex flex-col gap-2">
-                            <label class="flex items-center justify-between text-[9px] mono gap-2">
-                                <span class="opacity-70">Gain</span>
-                                <input id="vsGain" type="range" min="0.3" max="2.5" value="1.0" step="0.1" class="w-24">
-                            </label>
-                            <label class="flex items-center justify-between text-[9px] mono gap-2">
-                                <span class="opacity-70">Fractal Spd</span>
-                                <input id="vsFractalSpeed" type="range" min="0.1" max="4.0" value="1.0" step="0.1" class="w-24">
-                            </label>
-                            <label class="flex items-center justify-between text-[9px] mono gap-2">
-                                <span class="opacity-70">Density</span>
-                                <input id="vsFractalDensity" type="range" min="0.50" max="0.95" value="0.72" step="0.01" class="w-24">
-                            </label>
-                            <label class="flex items-center justify-between text-[9px] mono gap-2">
-                                <span class="opacity-70">Spin</span>
-                                <input id="vsManifoldSpin" type="range" min="0.1" max="3.0" value="1.0" step="0.1" class="w-24">
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Execution Log -->
-                <div class="interactable glass p-4 flex-grow flex flex-col min-h-[120px]">
-                    <h3 class="text-xs mono uppercase mb-3 border-b border-white/10 pb-2">Execution Log</h3>
-                    <div id="terminalOutput" class="terminal mono">
-                        [INIT] Starting PC2 Forensic Execution...<br>
-                        [LOG] Loading Hexagonal Manifold...<br>
-                        [LOG] Topology verified.<br>
-                        [OK] Forensic engine idle.<br>
-                    </div>
-                </div>
-            </aside>
-
-            <!-- Center Detail Area -->
-            <div class="flex-grow relative">
-                <div class="absolute bottom-4 left-1/2 -translate-x-1/2 interactable glass px-6 py-3 flex gap-8 whitespace-nowrap">
-                    <div class="text-center">
-                        <div class="text-[10px] mono text-muted uppercase">Entropy</div>
-                        <div class="text-lg mono" id="valEntropy">0.000</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-[10px] mono text-muted uppercase">Invariant</div>
-                        <div class="text-lg mono" id="valRot">True</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-[10px] mono text-muted uppercase">Confidence</div>
-                        <div class="text-lg mono" id="valPath">0%</div>
-                    </div>
-                </div>
-            </div>
-        </main>
-
-        <!-- Footer -->
-        <footer class="mt-6 flex justify-between items-center text-[10px] mono opacity-50">
-            <div>LEX FORENSICA // TOPOLOGICAL AUDIO ANALYSIS MODULE</div>
-            <div>BUILD 2026.Q2 // NO PHANTOM BRANCHES DETECTED</div>
-        </footer>
+  <!-- STATUS -->
+  <div class="section">
+    <div class="sec-title">System</div>
+    <div id="statusChip"><div class="dot" id="dot"></div><span id="statusTxt">Idle · Waiting source</span></div>
+    <div style="height:6px"></div>
+    <div id="axiomTicker">A0 · Pipeline integrity verified</div>
+    <div style="height:8px"></div>
+    <div id="metricsRow">
+      <div class="metric"><span class="metric-val" id="mBass">0</span><span class="metric-lbl">Bass</span></div>
+      <div class="metric"><span class="metric-val" id="mMids">0</span><span class="metric-lbl">Mids</span></div>
+      <div class="metric"><span class="metric-val" id="mHigh">0</span><span class="metric-lbl">High</span></div>
+      <div class="metric"><span class="metric-val" id="mEntr">0.0</span><span class="metric-lbl">Entr</span></div>
     </div>
+  </div>
 
-    <script>
-        const canvas = document.getElementById('manifoldCanvas');
-        const ctx = canvas.getContext('2d');
-        const terminal = document.getElementById('terminalOutput');
+  <!-- AUDIO SOURCE -->
+  <div class="section">
+    <div class="sec-title">Audio Source</div>
+    <label id="fileLabel">⬆ Upload audio file
+      <input type="file" id="aud" accept="audio/*" style="display:none">
+    </label>
+    <button class="btn" id="btnPlay">INITIALIZE ENGINE</button>
+    <button class="btn" id="btnSystem">⬡ SHARE SYSTEM SOUND</button>
+  </div>
 
-        let width, height, centerX, centerY;
-        let time = 0;
+  <!-- MODE -->
+  <div class="section">
+    <div class="sec-title">Mindstate Mode</div>
+    <div id="modeRow"></div>
+  </div>
 
-        // Visual Settings State
-        const VS = {
-            gain: 1.0,
-            fractalSpeed: 1.0,
-            fractalDensity: 0.72,
-            manifoldSpin: 1.0,
-            gridWave: 1.0,
-            streakDensity: 1.0,
-            waveAlpha: 1.0,
-            fractal: true,
-            streaks: true,
-            wave: true
-        };
+  <!-- VISUAL LAYERS -->
+  <div class="section">
+    <div class="sec-title">Visual Layers</div>
+    <div class="btn-row">
+      <button class="btn active" id="tWave">WAVE</button>
+      <button class="btn active" id="tSpiral">SPIRAL</button>
+      <button class="btn active" id="tSparks">SPARKS</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn active" id="tRing">RING</button>
+      <button class="btn active" id="tSectors">SECTORS</button>
+      <button class="btn active" id="tVortex">VORTEX</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn active" id="tGrain">GRAIN</button>
+      <button class="btn active" id="tAberr">ABERR</button>
+      <button class="btn active" id="tRain">GLYPH RAIN</button>
+    </div>
+    <div style="height:4px"></div>
+    <button class="btn peak-btn" id="tLimiter">PEAK LIMITER: ON</button>
+    <button class="btn susp-btn" id="tStatic">STATIC MINDSTATE: OFF</button>
+  </div>
 
-        // Audio Engine Variables
-        let audioCtx = null;
-        let analyser = null;
-        let dataArray = null;
-        let waveData = null;
-        let audioElement = null;
-        let audioActive = false;
-        let energyNorm = 0;
-        let entropyNorm = 0;
-        let spectralEntropy = 0;
+  <!-- VISUAL PARAMS -->
+  <div class="section">
+    <div class="sec-title">Parameters</div>
+    <div class="slider-row">
+      <span class="slider-label">Signal Gain</span>
+      <input type="range" id="sGain" min="0.3" max="3.0" step="0.05" value="1.2">
+      <span class="slider-val" id="vGain">1.2</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Hex Size</span>
+      <input type="range" id="sHexR" min="18" max="68" step="2" value="36">
+      <span class="slider-val" id="vHexR">36</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Spin Speed</span>
+      <input type="range" id="sSpin" min="0" max="3.0" step="0.05" value="0.8">
+      <span class="slider-val" id="vSpin">0.8</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Bloom</span>
+      <input type="range" id="sBloom" min="0" max="2.0" step="0.05" value="0.7">
+      <span class="slider-val" id="vBloom">0.7</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Trail</span>
+      <input type="range" id="sTrail" min="0.05" max="0.98" step="0.01" value="0.22">
+      <span class="slider-val" id="vTrail">0.22</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Hue Shift</span>
+      <input type="range" id="sHue" min="-180" max="180" step="1" value="0">
+      <span class="slider-val" id="vHue">0</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Saturation</span>
+      <input type="range" id="sSat" min="20" max="120" step="2" value="88">
+      <span class="slider-val" id="vSat">88</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Limiter Thr</span>
+      <input type="range" id="sLim" min="0.30" max="0.95" step="0.01" value="0.72">
+      <span class="slider-val" id="vLim">0.72</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Psycho Mix</span>
+      <input type="range" id="sPsycho" min="0" max="1.0" step="0.01" value="1.0">
+      <span class="slider-val" id="vPsycho">1.0</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Wave Amp</span>
+      <input type="range" id="sWaveAmp" min="0.1" max="2.0" step="0.05" value="1.0">
+      <span class="slider-val" id="vWaveAmp">1.0</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Spiral Arms</span>
+      <input type="range" id="sArms" min="1" max="6" step="1" value="3">
+      <span class="slider-val" id="vArms">3</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Spark Rate</span>
+      <input type="range" id="sSparkR" min="0.01" max="0.18" step="0.005" value="0.045">
+      <span class="slider-val" id="vSparkR">0.045</span>
+    </div>
+  </div>
 
-        const bands3 = {
-            low:  { energy: 0, peak: 0 },
-            mid:  { energy: 0, peak: 0 },
-            high: { energy: 0, peak: 0 }
-        };
+  <!-- HEX-NLP 12 PLANES -->
+  <div class="section">
+    <div class="sec-title">HEX-NLP · 12 Planes</div>
+    <div id="nlpGrid"></div>
+    <div style="height:6px"></div>
+    <button class="btn active" id="tNlp">NLP COLOUR MAP: ON</button>
+  </div>
 
-        let syncHexStreaks = [];
+  <!-- PSYCHO COLOUR STATE -->
+  <div class="section">
+    <div class="sec-title">Psycho Colour State</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px" id="psychoStates"></div>
+  </div>
 
-        // Data Models
-        const NLP12 = [
-            { id: 0, label: 'ASSERT⁺' }, { id: 1, label: 'ASSERT⁻' },
-            { id: 2, label: 'DIRECT⁺' }, { id: 3, label: 'DIRECT⁻' },
-            { id: 4, label: 'COMMIT⁺' }, { id: 5, label: 'COMMIT⁻' },
-            { id: 6, label: 'EXPR⁺' }, { id: 7, label: 'EXPR⁻' },
-            { id: 8, label: 'DECL⁺' }, { id: 9, label: 'DECL⁻' },
-            { id: 10, label: 'META⁺' }, { id: 11, label: 'META⁻' }
-        ];
+  <!-- MATH GENERATOR -->
+  <div class="section">
+    <div class="sec-title">Math Generator (no audio)</div>
+    <div id="mathRow" style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px"></div>
+    <div class="slider-row">
+      <span class="slider-label">Math Freq</span>
+      <input type="range" id="sMathFreq" min="0.1" max="8.0" step="0.1" value="1.0">
+      <span class="slider-val" id="vMathFreq">1.0</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Math Amp</span>
+      <input type="range" id="sMathAmp" min="0.1" max="2.0" step="0.05" value="1.0">
+      <span class="slider-val" id="vMathAmp">1.0</span>
+    </div>
+  </div>
 
-        const CREATIVE_MODES = ['LINEAR', 'FLUID', 'DEEP', 'CHAOS', 'FORENSIC'];
-        let currentPlane = 0;
-        let currentMode = 1;
+  <div style="height:20px"></div>
+</div><!-- /panel -->
 
-        const axioms = [
-            { id: 'A0', name: 'Integrity Verification', status: 'Active' },
-            { id: 'A1', name: 'Manifold Mapping', status: 'Standby' },
-            { id: 'A4', name: 'Absolute Determinism', status: 'Active' },
-            { id: 'F0', name: 'Spectral Forensics', status: 'Idle' }
-        ];
+<script>
+// ═══════════════════════════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════════════════════════
+const NLP12 = [
+  {id:0,  label:'ASSERT⁺', hue:165},
+  {id:1,  label:'ASSERT⁻', hue:180},
+  {id:2,  label:'DIRECT⁺', hue:195},
+  {id:3,  label:'DIRECT⁻', hue:210},
+  {id:4,  label:'COMMIT⁺', hue:255},
+  {id:5,  label:'COMMIT⁻', hue:275},
+  {id:6,  label:'EXPR⁺',   hue:300},
+  {id:7,  label:'EXPR⁻',   hue:325},
+  {id:8,  label:'DECL⁺',   hue:15},
+  {id:9,  label:'DECL⁻',   hue:35},
+  {id:10, label:'META⁺',   hue:55},
+  {id:11, label:'META⁻',   hue:75}
+];
 
+const AXIOMS = [
+  'A0 · Pipeline integrity verified','A1 · Axiom validation active',
+  'A2 · LOOPCYCLE verifikace','A3 · Zero-Knowledge šifrování',
+  'A4 · Narativ chráněn','A5 · Forenzní přesnost ON',
+  'A6 · Důstojnost › Proces','A7 · ECHR·CRPD·GDPR layer',
+  'A8 · Financial forensic active','A9 · Control Room synced',
+  'A10 · Visual network aligned','A11 · META signal detected',
+  'A12 · NLP·DRIFT monitoring','A13 · LOOPCYCLE 100%'
+];
+const AXIOMS_STATIC = [
+  'STATIC MINDSTATE · Signal frozen','Noise floor suppressed NF-18',
+  'Spectrum crystallised holding','Peak limiter active — GR locked',
+  'Zero drift manifold stable','Whiteness bounded post-limiter',
+  'Frozen hexfield sector memory','Static coherence optimal',
+  'Mindstate crystalline rest','NLP12 sectors ambient frozen'
+];
+const BEAT_GLYPHS = ['ENTER','LOCK','TRACE','SYNC','VERIFY','ASSERT','PROOF','ALIGN'];
 
-        function drawHex(x, y, size, color, alpha = 1, fill = false) {
-            ctx.save();
-            ctx.globalAlpha = alpha;
-            ctx.beginPath();
-            for (let i = 0; i < 6; i++) {
-                const angle = (Math.PI / 3) * i + (Math.PI / 6);
-                const px = x + size * Math.cos(angle);
-                const py = y + size * Math.sin(angle);
-                if (i === 0) ctx.moveTo(px, py);
-                else ctx.lineTo(px, py);
-            }
-            ctx.closePath();
-            if (fill) {
-                ctx.fillStyle = color;
-                ctx.fill();
-            } else {
-                ctx.strokeStyle = color;
-                ctx.lineWidth = 1;
-                ctx.stroke();
-            }
-            ctx.restore();
-        }
+const MODES = ['FORENSIC','RITUAL','ASCEND','IMPACT','STATIC','AMBIENT'];
 
-        function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-            centerX = width / 2;
-            centerY = height / 2;
-        }
+const PSYCHO_STATES = [
+  {id:'idle',     label:'IDLE',     color:'rgba(60,40,160,.7)'},
+  {id:'active',   label:'ACTIVE',   color:'rgba(0,220,255,.8)'},
+  {id:'recovery', label:'RECOVERY', color:'rgba(80,40,200,.8)'},
+  {id:'peak',     label:'PEAK',     color:'rgba(255,200,60,.9)'},
+  {id:'suspended',label:'SUSPEND',  color:'rgba(160,80,255,.8)'},
+  {id:'static',   label:'STATIC',   color:'rgba(64,255,144,.7)'}
+];
 
-        function logToTerminal(msg) {
-            const entry = document.createElement('div');
-            entry.innerHTML = `<span class="text-white opacity-40 mr-2">[${new Date().toLocaleTimeString([], {hour12:false})}]</span> ${msg}`;
-            terminal.appendChild(entry);
-            terminal.scrollTop = terminal.scrollHeight;
-            if (terminal.childNodes.length > 50) terminal.removeChild(terminal.firstChild);
-        }
+const MATH_MODES = ['SINE','LISSAJOUS','FOURIER','LORENZ','SPIRAL','NOISE'];
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════════════════
+const VS = {
+  gain:1.2, hexR:36, spin:0.8, bloom:0.7, trail:0.22,
+  hueShift:0, sat:88, limThresh:0.72, psychoMix:1.0,
+  waveAmp:1.0, arms:3, sparkRate:0.045,
+  mathFreq:1.0, mathAmp:1.0
+};
+const SHOW = {
+  wave:true, spiral:true, sparks:true, ring:true,
+  sectors:true, vortex:true, grain:true, aberr:true,
+  rain:true, nlp:true, limiter:true
+};
+let staticMode   = false;
+let currentMode  = 'FORENSIC';
+let currentMath  = 'SINE';
+let psychoState  = 'idle';
+let activePlanes = new Set([0,1,2,3,4,5,6,7,8,9,10,11]);
 
-        function setupAudioListeners() {
-            const btnInit = document.getElementById('btnInitAudio');
-            const fileInput = document.getElementById('audioFile');
+// Psycho engine
+const PSY = {
+  bloom:0.2, tBloom:0.2, shake:0, tShake:0,
+  ringScale:1, tRingScale:1, aberr:0, tAberr:0,
+  fog:0.2, tFog:0.2, trail:0.9, tTrail:0.9,
+  hueRot:0, tHueRot:0
+};
 
-            btnInit.onclick = () => {
-                if (fileInput.files[0]) {
-                    setupAnalyserForAudio(fileInput.files[0]);
-                } else {
-                    logToTerminal("[ERR] Upload a file first.");
-                }
-            };
+// ═══════════════════════════════════════════════════════════════════════════════
+// CANVAS
+// ═══════════════════════════════════════════════════════════════════════════════
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+let W,H,cx,cy;
+function resize(){ W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; cx=W/2; cy=H/2; }
+window.addEventListener('resize',resize); resize();
 
-            // Range inputs
-            document.getElementById('vsGain').oninput = (e) => VS.gain = parseFloat(e.target.value);
-            document.getElementById('vsFractalSpeed').oninput = (e) => VS.fractalSpeed = parseFloat(e.target.value);
-            document.getElementById('vsFractalDensity').oninput = (e) => VS.fractalDensity = parseFloat(e.target.value);
-            document.getElementById('vsManifoldSpin').oninput = (e) => VS.manifoldSpin = parseFloat(e.target.value);
-        }
+// ═══════════════════════════════════════════════════════════════════════════════
+// AUDIO
+// ═══════════════════════════════════════════════════════════════════════════════
+let aCtx,analyser,freqData,waveData,srcNode,audioEl,displayStream;
+let isStarted=false, isPaused=false;
+const LIMITER_RELEASE = 0.985;
+let limGain = null;
 
-        function setupAnalyserForAudio(file) {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioElement) { audioElement.pause(); audioElement.src = ""; }
+function teardown(){
+  if(audioEl){ audioEl.pause(); audioEl.src=''; audioEl.load(); }
+  if(srcNode){ try{srcNode.disconnect()}catch(e){} srcNode=null; }
+  if(analyser){ try{analyser.disconnect()}catch(e){} analyser=null; }
+  audioEl=null; isStarted=false; isPaused=false; freqData=waveData=limGain=null;
+}
 
-            const url = URL.createObjectURL(file);
-            audioElement = new Audio();
-            audioElement.src = url;
-            audioElement.loop = true;
-            audioElement.crossOrigin = "anonymous";
+function allocBufs(){
+  freqData = new Uint8Array(analyser.frequencyBinCount);
+  waveData = new Uint8Array(analyser.frequencyBinCount);
+  limGain  = new Float32Array(analyser.frequencyBinCount).fill(1.0);
+}
 
-            audioElement.addEventListener('canplay', () => {
-                if (analyser) analyser.disconnect();
-                const source = audioCtx.createMediaElementSource(audioElement);
-                analyser = audioCtx.createAnalyser();
-                analyser.fftSize = 1024;
-                dataArray = new Uint8Array(analyser.frequencyBinCount);
-                waveData = new Uint8Array(analyser.frequencyBinCount);
-                source.connect(analyser);
-                analyser.connect(audioCtx.destination);
-                audioElement.play();
-                audioActive = true;
-                document.getElementById('syncStatus').innerText = "Synced";
-                document.getElementById('audioStatus').innerText = "FORENSIC STREAM ACTIVE";
-                logToTerminal("[AUDIO] Manifold injection successful.");
-            });
-        }
+function applyLimiter(freq){
+  if(!SHOW.limiter||!limGain) return;
+  if(limGain.length!==freq.length) limGain=new Float32Array(freq.length).fill(1.0);
+  let gr=0;
+  for(let i=0;i<freq.length;i++){
+    const v=freq[i]/255;
+    if(v>VS.limThresh) limGain[i]=Math.min(limGain[i],VS.limThresh/v);
+    limGain[i]=Math.min(1.0,limGain[i]+(1-limGain[i])*(1-LIMITER_RELEASE));
+    freq[i]=Math.round(freq[i]*limGain[i]);
+    gr=Math.max(gr,1-limGain[i]);
+  }
+  document.getElementById('statusFill').style.width=(gr*100)+'%';
+}
 
+function initFromFile(file){
+  if(!aCtx||aCtx.state==='closed')
+    aCtx=new(window.AudioContext||window.webkitAudioContext)();
+  teardown();
+  const url=URL.createObjectURL(file);
+  audioEl=new Audio();
+  audioEl.crossOrigin='anonymous'; audioEl.loop=true;
+  audioEl.onerror=()=>setStatus('Decode error','err');
+  audioEl.addEventListener('canplay',()=>{
+    if(isStarted) return; isStarted=true;
+    analyser=aCtx.createAnalyser(); analyser.fftSize=2048; analyser.smoothingTimeConstant=0.80;
+    srcNode=aCtx.createMediaElementSource(audioEl);
+    srcNode.connect(analyser); analyser.connect(aCtx.destination);
+    allocBufs();
+    aCtx.resume().then(()=>audioEl.play().then(()=>{
+      setStatus('Stream live · NLP active','live');
+      document.getElementById('btnPlay').textContent='PAUSE SIGNAL';
+    }).catch(e=>setStatus('Playback blocked','warn')));
+  },{once:true});
+  audioEl.src=url; audioEl.load();
+  setStatus('Decoding…','');
+}
 
-        function updateMetrics() {
-            if (!analyser) return;
-            analyser.getByteFrequencyData(dataArray);
-            analyser.getByteTimeDomainData(waveData);
+async function initFromSystem(){
+  try{
+    if(displayStream) displayStream.getTracks().forEach(t=>t.stop());
+    displayStream=await navigator.mediaDevices.getDisplayMedia({
+      video:{displaySurface:'browser'},
+      audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false},
+      selfBrowserSurface:'include', systemAudio:'include'
+    });
+    const tracks=displayStream.getAudioTracks();
+    if(!tracks.length){ setStatus('No shared audio track','warn'); return; }
+    if(!aCtx||aCtx.state==='closed') aCtx=new(window.AudioContext||window.webkitAudioContext)();
+    if(aCtx.state==='suspended') await aCtx.resume();
+    analyser=aCtx.createAnalyser(); analyser.fftSize=1024; analyser.smoothingTimeConstant=0.85;
+    const ms=new MediaStream([tracks[0]]);
+    srcNode=aCtx.createMediaStreamSource(ms); srcNode.connect(analyser); allocBufs();
+    isStarted=true; isPaused=false;
+    setStatus('System audio · reactive','live');
+    tracks[0].addEventListener('ended',()=>setStatus('Shared audio ended','warn'));
+  }catch(e){ setStatus('Capture denied','err'); }
+}
 
-            // 3 Band Analysis
-            let lSum = 0, mSum = 0, hSum = 0;
-            const third = Math.floor(dataArray.length / 3);
-            for(let i=0; i<third; i++) lSum += dataArray[i];
-            for(let i=third; i<third*2; i++) mSum += dataArray[i];
-            for(let i=third*2; i<dataArray.length; i++) hSum += dataArray[i];
+// ═══════════════════════════════════════════════════════════════════════════════
+// METRICS
+// ═══════════════════════════════════════════════════════════════════════════════
+let energyNorm=0,bassNorm=0,midsNorm=0,highsNorm=0,fluxNorm=0;
+let beatImpact=0,beatEnergy=0,beatHold=0,beatBaseline=0;
+let gainReduction=0;
+const sectorBright=new Float32Array(12);
+let prevFreq=null;
 
-            bands3.low.energy = lSum / third;
-            bands3.mid.energy = mSum / third;
-            bands3.high.energy = hSum / (dataArray.length - third*2);
+let entropy=0;
 
-            energyNorm = Math.min(1, (bands3.low.energy * 0.5 + bands3.mid.energy * 0.3 + bands3.high.energy * 0.2) / 150);
-            
-            // Entropy Calculation
-            let ent = 0;
-            let total = dataArray.reduce((a,b) => a+b, 0);
-            if (total > 0) {
-                dataArray.forEach(v => {
-                    if (v > 0) {
-                        let p = v / total;
-                        ent -= p * Math.log2(p);
-                    }
-                });
-            }
-            spectralEntropy = ent;
-            entropyNorm = Math.min(1, ent / 8);
+function updateMetrics(){
+  if(!analyser||!isStarted||isPaused){
+    // idle drift
+    energyNorm*=0.97; bassNorm*=0.97; midsNorm*=0.97; highsNorm*=0.97;
+    beatImpact=0;
+    for(let i=0;i<12;i++) sectorBright[i]*=0.97;
+    return;
+  }
+  analyser.getByteFrequencyData(freqData);
+  analyser.getByteTimeDomainData(waveData);
+  applyLimiter(freqData);
 
-            document.getElementById('valEntropy').innerText = ent.toFixed(3);
-            document.getElementById('valPath').innerText = Math.round(energyNorm * 100) + "%";
-            document.getElementById('alignLabel').innerText = "ALIGNMENT: " + (0.85 + entropyNorm * 0.14).toFixed(4);
-            document.getElementById('syncProgress').style.width = (40 + energyNorm * 60) + "%";
-        }
+  if(!prevFreq) prevFreq=new Float32Array(freqData.length);
+  const len=freqData.length;
+  const bEnd=Math.floor(len*0.07), mEnd=Math.floor(len*0.33);
+  let bS=0,mS=0,hS=0,fl=0,tot=0;
+  for(let i=0;i<bEnd;i++) bS+=freqData[i];
+  for(let i=bEnd;i<mEnd;i++) mS+=freqData[i];
+  for(let i=mEnd;i<len;i++) hS+=freqData[i];
+  for(let i=0;i<len;i++){ fl+=Math.max(0,freqData[i]-prevFreq[i]); tot+=freqData[i]; }
 
+  bassNorm  =Math.min(1,bS/bEnd/180)*VS.gain;
+  midsNorm  =Math.min(1,mS/(mEnd-bEnd)/160)*VS.gain;
+  highsNorm =Math.min(1,hS/(len-mEnd)/130)*VS.gain;
+  fluxNorm  =Math.min(1,fl/len/80)*VS.gain;
+  energyNorm=Math.min(1,bassNorm*0.5+midsNorm*0.3+highsNorm*0.2);
 
-        function updateStreaks() {
-            if (!audioActive) return;
-            // Spawn streaks based on high energy
-            if (bands3.high.energy > 40 && syncHexStreaks.length < 50) {
-                const angle = Math.random() * Math.PI * 2;
-                syncHexStreaks.push({
-                    x: 0, y: 0,
-                    vx: Math.cos(angle) * (2 + Math.random() * 5),
-                    vy: Math.sin(angle) * (2 + Math.random() * 5),
-                    life: 1.0,
-                    size: 2 + Math.random() * 4,
-                    color: Math.random() > 0.5 ? '#00e5ff' : '#7b2fff'
-                });
-            }
+  // entropy
+  let ent=0;
+  if(tot>0) for(let i=0;i<len;i++){ if(freqData[i]>0){const p=freqData[i]/tot; ent-=p*Math.log2(p);} }
+  entropy=ent;
 
-            syncHexStreaks.forEach((s, i) => {
-                s.x += s.vx * (1 + energyNorm);
-                s.y += s.vy * (1 + energyNorm);
-                s.life -= 0.015;
-                if (s.life <= 0) syncHexStreaks.splice(i, 1);
-            });
-        }
+  // per sector brightness
+  const step=Math.floor(len/12);
+  for(let i=0;i<12;i++){
+    if(!activePlanes.has(i)){ sectorBright[i]*=0.94; continue; }
+    let s=0; const st=i*step, en=st+step;
+    for(let j=st;j<en;j++) s+=freqData[j];
+    const raw=Math.min(1,s/step/200)*VS.gain;
+    sectorBright[i]+=(raw-sectorBright[i])*0.15;
+  }
 
-        function drawVisuals() {
-            ctx.clearRect(0, 0, width, height);
+  // beat
+  let low=0;
+  for(let i=0;i<Math.min(20,freqData.length);i++) low+=freqData[i];
+  low/=Math.min(20,freqData.length);
+  beatBaseline=beatBaseline*0.93+low*0.07;
+  const delta=Math.max(0,low-beatBaseline);
+  beatImpact=delta>14?Math.min(1,delta/80):0;
+  if(beatImpact>0.08){ beatHold=10; beatEnergy=Math.min(1,beatEnergy+beatImpact*0.4); flashGlyph(); }
+  else if(beatHold>0) beatHold--;
+  beatEnergy*=0.93;
 
-            // 1. Grid
-            const size = 50;
-            const h = size * Math.sqrt(3);
-            const rows = 10, cols = 10;
-            ctx.save();
-            ctx.translate(centerX, centerY);
-            for (let r = -rows; r <= rows; r++) {
-                for (let c = -cols; c <= cols; c++) {
-                    const x = c * (size * 1.5);
-                    const y = r * h + (Math.abs(c) % 2 === 1 ? h / 2 : 0);
-                    const dist = Math.sqrt(x*x + y*y);
-                    const opacity = Math.max(0, (1 - dist / (size * 8)) * 0.15 * (0.5 + energyNorm));
-                    if (opacity > 0) drawHex(x, y, size - 2, '#00e5ff', opacity * VS.gain);
-                }
-            }
-            ctx.restore();
+  for(let i=0;i<len;i++) prevFreq[i]=freqData[i];
 
-            // 2. Streaks
-            ctx.save();
-            ctx.translate(centerX, centerY);
-            syncHexStreaks.forEach(s => {
-                drawHex(s.x, s.y, s.size, s.color, s.life * 0.8, true);
-                // Tail
-                ctx.beginPath();
-                ctx.moveTo(s.x, s.y);
-                ctx.lineTo(s.x - s.vx * 10, s.y - s.vy * 10);
-                ctx.strokeStyle = s.color;
-                ctx.globalAlpha = s.life * 0.3;
-                ctx.stroke();
-            });
-            ctx.restore();
+  // UI metrics
+  document.getElementById('mBass').textContent=Math.round(bassNorm*100)+'%';
+  document.getElementById('mMids').textContent=Math.round(midsNorm*100)+'%';
+  document.getElementById('mHigh').textContent=Math.round(highsNorm*100)+'%';
+  document.getElementById('mEntr').textContent=entropy.toFixed(1);
+}
 
-            // 3. Central Manifold
-            const baseSize = 180 + energyNorm * 60;
-            const rot = time * 0.5 * VS.manifoldSpin;
-            ctx.save();
-            ctx.translate(centerX, centerY);
-            
-            // Multiple layers
-            for (let i = 0; i < 4; i++) {
-                const s = baseSize - i * 30;
-                ctx.rotate(rot * (i % 2 === 0 ? 1 : -1));
-                const alpha = (0.6 - i * 0.15) * (0.5 + energyNorm * 0.5);
-                drawHex(0, 0, s, i === 0 ? '#00e5ff' : '#7b2fff', alpha * VS.gain);
-                
-                // Add "data nodes" on vertices
-                if (i === 1 && energyNorm > 0.3) {
-                    for(let j=0; j<6; j++) {
-                        const a = (Math.PI/3)*j + (Math.PI/6);
-                        ctx.beginPath();
-                        ctx.arc(s*Math.cos(a), s*Math.sin(a), 3, 0, Math.PI*2);
-                        ctx.fillStyle = '#fff';
-                        ctx.fill();
-                    }
-                }
-            }
-            ctx.restore();
+// ═══════════════════════════════════════════════════════════════════════════════
+// MATH GENERATOR (no audio)
+// ═══════════════════════════════════════════════════════════════════════════════
+function mathBright(sector, time){
+  const f=VS.mathFreq, A=VS.mathAmp;
+  switch(currentMath){
+    case 'SINE':
+      return Math.max(0, Math.sin(time*f + sector*Math.PI/6)*0.5+0.5)*A;
+    case 'LISSAJOUS':{
+      const x=Math.sin(time*f*3+sector), y=Math.sin(time*f*2);
+      return Math.max(0,(Math.cos(x*y*Math.PI)+1)*0.5)*A;
+    }
+    case 'FOURIER':{
+      let v=0;
+      for(let k=1;k<=5;k++) v+=Math.sin(time*f*k+sector*k*0.52)/k;
+      return Math.max(0,v/2.5+0.5)*A;
+    }
+    case 'LORENZ':{
+      // simplified chaotic map per sector
+      const s=sector*0.618+time*f*0.13;
+      return Math.max(0,Math.sin(s)*Math.cos(s*1.31)*0.5+0.5)*A;
+    }
+    case 'SPIRAL':{
+      const r=((sector/12)+time*f*0.05)%1;
+      return Math.max(0,Math.sin(r*Math.PI*2*4)*0.5+0.5)*A;
+    }
+    case 'NOISE':{
+      // simple smooth noise per sector+time
+      const n=Math.sin(sector*127.1+time*f)*43758.5453;
+      return Math.max(0,(n-Math.floor(n))*A);
+    }
+    default: return 0;
+  }
+}
 
-            // 4. Waveform (Bottom)
-            if (audioActive && waveData) {
-                ctx.beginPath();
-                const sliceWidth = width / waveData.length;
-                let x = 0;
-                for (let i = 0; i < waveData.length; i++) {
-                    const v = waveData[i] / 128.0;
-                    const y = v * height / 2;
-                    if (i === 0) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
-                    x += sliceWidth;
-                }
-                ctx.strokeStyle = 'rgba(0, 229, 255, 0.1)';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            }
-        }
+// ═══════════════════════════════════════════════════════════════════════════════
+// PSYCHO ENGINE
+// ═══════════════════════════════════════════════════════════════════════════════
+function applyPsycho(){
+  const pm=VS.psychoMix;
+  if(staticMode){
+    PSY.tBloom=0.14; PSY.tShake=0; PSY.tRingScale=1; PSY.tAberr=0;
+    PSY.tFog=0.08; PSY.tTrail=0.97; PSY.tHueRot=120;
+    psychoState='static'; return;
+  }
+  if(isPaused){ psychoState='suspended'; PSY.tHueRot=120; return; }
+  if(!isStarted){ psychoState='idle'; return; }
 
-        function animate() {
-            time += 0.01;
-            updateMetrics();
-            updateStreaks();
-            drawVisuals();
-            requestAnimationFrame(animate);
-        }
+  PSY.tBloom  = beatImpact>0.5?1.0 : 0.25+energyNorm*0.55;
+  PSY.tShake  = beatImpact>0.5?1.0 : fluxNorm*10;
+  PSY.tRingScale = 1.0+bassNorm*0.45;
+  PSY.tAberr  = highsNorm>0.55?(highsNorm-0.55)*3.5:0;
+  PSY.tFog    = 0.16+energyNorm*0.45;
+  PSY.tTrail  = beatImpact>0.3?0.78:0.92-energyNorm*0.12;
+  const e=energyNorm, fl=fluxNorm;
+  if(beatImpact>0.5)                         psychoState='peak';
+  else if(e>0.18)                            psychoState='active';
+  else if(psychoState==='peak')              psychoState='recovery';
+  else if(e<0.08)                            psychoState='idle';
+  PSY.tHueRot = psychoState==='peak'?40:psychoState==='active'?0:psychoState==='recovery'?-40:0;
+}
 
+function lerpPSY(){
+  const L=(a,b,t)=>a+(b-a)*t;
+  PSY.bloom     =L(PSY.bloom,    PSY.tBloom,    0.08);
+  PSY.shake     =L(PSY.shake,    PSY.tShake,    0.12);
+  PSY.ringScale =L(PSY.ringScale,PSY.tRingScale,0.08);
+  PSY.aberr     =L(PSY.aberr,    PSY.tAberr,    0.08);
+  PSY.fog       =L(PSY.fog,      PSY.tFog,      0.06);
+  PSY.trail     =L(PSY.trail,    PSY.tTrail,    0.06);
+  PSY.hueRot    =L(PSY.hueRot,  PSY.tHueRot,   0.04);
+  PSY.tShake*=0.9;
+}
 
-        window.onload = () => {
-            resize();
-            window.addEventListener('resize', resize);
-            
-            // Create Axiom Nodes
-            const list = document.getElementById('axiomList');
-            axioms.forEach(a => {
-                const div = document.createElement('div');
-                div.className = "interactable node border border-white/10 p-2 text-[10px] mono flex justify-between items-center";
-                div.innerHTML = `<div class="flex items-center gap-2"><div class="node-hex"></div><span>${a.id} // ${a.name}</span></div><span class="opacity-40">${a.status}</span>`;
-                list.appendChild(div);
-            });
+function getHue(baseHue){
+  let h = baseHue + VS.hueShift + PSY.hueRot;
+  if(currentMode==='RITUAL')  h+=40;
+  if(currentMode==='ASCEND')  h+=80;
+  if(currentMode==='IMPACT')  h+=180;
+  if(currentMode==='STATIC')  h+=120;
+  if(currentMode==='AMBIENT') h-=20;
+  return ((h%360)+360)%360;
+}
 
-            // Create NLP Planes
-            const nlpCont = document.getElementById('nlpPlaneList');
-            NLP12.forEach(p => {
-                const b = document.createElement('button');
-                b.className = `pill mono ${p.id === currentPlane ? 'pill-active' : ''}`;
-                b.innerText = p.label;
-                b.onclick = () => {
-                    currentPlane = p.id;
-                    document.getElementById('currentPlaneLabel').innerText = `[${p.id}] ${p.label}`;
-                    Array.from(nlpCont.children).forEach(c => c.classList.remove('pill-active'));
-                    b.classList.add('pill-active');
-                    logToTerminal(`[NLP] Shifted to plane ${p.label}`);
-                };
-                nlpCont.appendChild(b);
-            });
+function stateHue(){
+  switch(psychoState){
+    case 'peak':      return 40;
+    case 'active':    return 185;
+    case 'recovery':  return 260;
+    case 'suspended': return 270;
+    case 'static':    return 145;
+    default:          return 240;
+  }
+}
 
-            // Creativity Modes
-            const modeCont = document.getElementById('creativityModes');
-            CREATIVE_MODES.forEach((m, i) => {
-                const b = document.createElement('button');
-                b.className = `pill mono ${i === currentMode ? 'pill-active' : ''}`;
-                b.innerText = m;
-                b.onclick = () => {
-                    currentMode = i;
-                    document.getElementById('currentModeLabel').innerText = m;
-                    Array.from(modeCont.children).forEach(c => c.classList.remove('pill-active'));
-                    b.classList.add('pill-active');
-                    logToTerminal(`[MODE] Logic state: ${m}`);
-                };
-                modeCont.appendChild(b);
-            });
+// ═══════════════════════════════════════════════════════════════════════════════
+// PARTICLES
+// ═══════════════════════════════════════════════════════════════════════════════
+const parts=[];
+const PMAX=320;
+function spawnParticle(x,y,hue,power){
+  if(parts.length>=PMAX) return;
+  const spd=0.5+power*2.2, ang=Math.random()*Math.PI*2;
+  parts.push({x,y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,
+              life:20+Math.random()*35,max:55,hue,r:0.6+Math.random()*1.8*power});
+}
 
-            setupAudioListeners();
-            animate();
-            logToTerminal("[SYSTEM] Axiom Manifold initialized and ready.");
-        };
-    </script>
+// ═══════════════════════════════════════════════════════════════════════════════
+// GLYPH RAIN
+// ═══════════════════════════════════════════════════════════════════════════════
+const GLYPHS='ASSERT⁺DIRECT⁻COMMIT⁺EXPR⁻DECL⁺META⁻ZK';
+const RAIN_N=22;
+const rain=Array.from({length:RAIN_N},(_,i)=>({
+  x:0,y:-Math.random()*600,speed:0.45+Math.random()*1.1,
+  hue:NLP12[i%12].hue,
+  col:Array.from({length:10},()=>GLYPHS[Math.floor(Math.random()*GLYPHS.length)]),
+  alpha:0.025+Math.random()*0.04
+}));
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DRAW HELPERS
+// ═══════════════════════════════════════════════════════════════════════════════
+function hexPath(x,y,r,rot=0){
+  ctx.beginPath();
+  for(let i=0;i<6;i++){
+    const a=Math.PI/3*i+Math.PI/6+rot;
+    i===0?ctx.moveTo(x+r*Math.cos(a),y+r*Math.sin(a)):ctx.lineTo(x+r*Math.cos(a),y+r*Math.sin(a));
+  }
+  ctx.closePath();
+}
+function sectorOf(x,y){ return Math.floor((((Math.atan2(y-cy,x-cx)*180/Math.PI)+360)%360)/30); }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RENDER LAYERS
+// ═══════════════════════════════════════════════════════════════════════════════
+function drawHexField(t){
+  const R=VS.hexR, gw=R*Math.sqrt(3), gh=R*1.5;
+  const maxDist=Math.sqrt(cx*cx+cy*cy)*1.05;
+  for(let row=-1;row*gh<H+R;row++){
+    const hy0=row*gh, shift=(row%2===0?0:gw/2);
+    for(let col=-1;col*gw<W+R;col++){
+      const hx=col*gw+shift, hy=hy0;
+      const dist=Math.hypot(hx-cx,hy-cy);
+      const sid=sectorOf(hx,hy);
+      let bright = isStarted&&!isPaused ? sectorBright[sid] : mathBright(sid,t);
+      if(!activePlanes.has(sid)){ bright*=0.12; }
+      const fade=Math.max(0,1-dist/maxDist);
+      const base=0.04+fade*0.06;
+      const react=bright*(0.55+fade*0.35)*VS.bloom;
+      const alpha=Math.min(1,base+react);
+      if(alpha<0.012) continue;
+      const hue=getHue(NLP12[sid].hue);
+      const light=28+bright*38;
+      const rot=t*0.003*VS.spin*(dist/maxDist)+sid*0.12;
+      hexPath(hx,hy,R-1.5,rot);
+      ctx.strokeStyle=`hsla(${hue},${VS.sat}%,${light}%,${alpha})`;
+      ctx.lineWidth=0.5+bright*3.5;
+      ctx.stroke();
+      if(bright>0.38){
+        hexPath(hx,hy,R-1.5,rot);
+        ctx.fillStyle=`hsla(${hue},100%,${light+10}%,${(bright-0.38)*0.16*VS.bloom})`;
+        ctx.fill();
+        hexPath(hx,hy,(R-1.5)*0.52,-rot*1.4);
+        ctx.strokeStyle=`hsla(${hue},100%,80%,${(bright-0.38)*0.4*VS.bloom})`;
+        ctx.lineWidth=0.5; ctx.stroke();
+      }
+      if(SHOW.sparks&&bright>0.62&&Math.random()<VS.sparkRate&&parts.length<PMAX)
+        spawnParticle(hx,hy,hue,bright);
+    }
+  }
+}
+
+function drawSectors(t){
+  if(!SHOW.sectors||!SHOW.nlp) return;
+  const maxR=Math.max(W,H)*0.62;
+  for(let i=0;i<12;i++){
+    if(!activePlanes.has(i)) continue;
+    const bright=isStarted&&!isPaused?sectorBright[i]:mathBright(i,t)*0.4;
+    if(bright<0.04) continue;
+    const hue=getHue(NLP12[i].hue);
+    const a0=i*Math.PI/6-Math.PI/12, a1=a0+Math.PI/6;
+    const g=ctx.createRadialGradient(cx,cy,20,cx,cy,maxR*0.78);
+    g.addColorStop(0,`hsla(${hue},100%,60%,${0.01+bright*0.022})`);
+    g.addColorStop(0.5,`hsla(${hue},100%,52%,${bright*0.018})`);
+    g.addColorStop(1,`hsla(${hue},100%,45%,0)`);
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,maxR*0.78,a0,a1); ctx.closePath();
+    ctx.fillStyle=g; ctx.fill();
+  }
+}
+
+function drawRing(t){
+  if(!SHOW.ring||!freqData) return;
+  const R=VS.hexR*5*PSY.ringScale;
+  ctx.save(); ctx.translate(cx,cy);
+  const hue=stateHue();
+  for(let i=0;i<3;i++){
+    const s=R-i*30, rot=t*0.5*VS.spin*(i%2===0?1:-1);
+    ctx.rotate(rot);
+    const alpha=(0.6-i*0.15)*(0.5+energyNorm*0.5)*VS.bloom;
+    ctx.beginPath();
+    for(let j=0;j<6;j++){
+      const a=Math.PI/3*j+Math.PI/6;
+      j===0?ctx.moveTo(s*Math.cos(a),s*Math.sin(a)):ctx.lineTo(s*Math.cos(a),s*Math.sin(a));
+    }
+    ctx.closePath();
+    ctx.strokeStyle=`hsla(${hue+(i*20)},90%,${50+i*8}%,${alpha})`;
+    ctx.lineWidth=1+energyNorm*2; ctx.stroke();
+  }
+  // freq bar ring
+  const bars=64, step=Math.floor(freqData.length/bars);
+  ctx.rotate(-t*0.3*VS.spin);
+  for(let i=0;i<bars;i++){
+    const v=freqData[i*step]/255, a=i/bars*Math.PI*2;
+    const inner=R*0.8, outer=inner+v*50*VS.gain;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a)*inner,Math.sin(a)*inner);
+    ctx.lineTo(Math.cos(a)*outer,Math.sin(a)*outer);
+    ctx.strokeStyle=`hsla(${hue+i*2},90%,65%,${0.06+v*0.35})`;
+    ctx.lineWidth=1+v*2; ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawWave(t){
+  if(!SHOW.wave) return;
+  const buf = waveData || (() => {
+    // math wave fallback
+    const arr=new Uint8Array(512);
+    for(let i=0;i<512;i++) arr[i]=128+Math.sin(i*0.05+t*VS.mathFreq)*60*VS.mathAmp;
+    return arr;
+  })();
+  let maxB=0,domSid=0;
+  for(let i=0;i<12;i++) if(sectorBright[i]>maxB){maxB=sectorBright[i];domSid=i;}
+  const hue=getHue(NLP12[domSid].hue);
+  const hue2=getHue(NLP12[(domSid+4)%12].hue);
+  const sw=W/buf.length;
+
+  // bottom wave
+  ctx.beginPath();
+  for(let i=0;i<buf.length;i++){
+    const v=(buf[i]/128.0-1)*(H*0.18*VS.waveAmp)*(0.5+energyNorm*0.8);
+    i===0?ctx.moveTo(0,cy+v):ctx.lineTo(i*sw,cy+v);
+  }
+  ctx.strokeStyle=`hsla(${hue},100%,65%,${0.07+energyNorm*0.25})`;
+  ctx.lineWidth=1+energyNorm*2;
+  ctx.shadowBlur=8+energyNorm*16; ctx.shadowColor=`hsl(${hue},100%,60%)`;
+  ctx.stroke(); ctx.shadowBlur=0;
+
+  // mirror
+  ctx.beginPath();
+  for(let i=0;i<buf.length;i++){
+    const v=(buf[i]/128.0-1)*(H*0.10*VS.waveAmp)*(0.3+bassNorm*0.7);
+    i===0?ctx.moveTo(0,cy-v*0.55):ctx.lineTo(i*sw,cy-v*0.55);
+  }
+  ctx.strokeStyle=`hsla(${hue2},100%,55%,${0.04+midsNorm*0.14})`;
+  ctx.lineWidth=0.7+midsNorm; ctx.stroke();
+}
+
+function drawSpiral(t){
+  if(!SHOW.spiral) return;
+  const nArms=VS.arms;
+  for(let arm=0;arm<nArms;arm++){
+    const sid=Math.floor(arm/nArms*12), hue=getHue(NLP12[sid].hue);
+    ctx.beginPath();
+    for(let i=0;i<200;i++){
+      const fi=i/200;
+      const fv=freqData?freqData[Math.floor(fi*freqData.length*0.5)]/255:mathBright(sid,t+fi*3)*0.8;
+      const ang=fi*8.4+t*(0.3+arm*0.1)*VS.spin+arm*Math.PI*2/nArms;
+      const rad=24+fi*Math.min(cx,cy)*0.55+fv*24*VS.gain;
+      const x=cx+Math.cos(ang)*rad, y=cy+Math.sin(ang)*rad*0.76;
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle=`hsla(${hue},100%,62%,${0.08+bassNorm*0.16})`;
+    ctx.lineWidth=0.8+energyNorm*1.4;
+    ctx.shadowBlur=5+energyNorm*8; ctx.shadowColor=`hsl(${hue},100%,60%)`;
+    ctx.stroke(); ctx.shadowBlur=0;
+  }
+  // circular ring
+  const ringR=Math.min(cx,cy)*0.38;
+  ctx.beginPath();
+  const buf2=freqData||new Uint8Array(512).fill(0).map((_,i)=>128+Math.sin(i*0.1+t)*60);
+  for(let i=0;i<buf2.length;i+=4){
+    const f=buf2[i]/255, ang=i/buf2.length*Math.PI*2-Math.PI/2;
+    const r=ringR+f*28*VS.gain;
+    i===0?ctx.moveTo(cx+Math.cos(ang)*r,cy+Math.sin(ang)*r):ctx.lineTo(cx+Math.cos(ang)*r,cy+Math.sin(ang)*r);
+  }
+  ctx.closePath();
+  const dh=getHue(stateHue());
+  ctx.strokeStyle=`hsla(${dh},90%,62%,${0.06+energyNorm*0.12})`;
+  ctx.lineWidth=0.8; ctx.stroke();
+}
+
+function drawVortex(t){
+  if(!SHOW.vortex) return;
+  for(let ri=0;ri<4;ri++){
+    const hue=getHue(165+ri*22+t*3), dir=ri%2===0?1:-1;
+    const spd=0.18*dir*(1+energyNorm*0.35)*VS.spin;
+    const phase=t*spd, segs=10+ri*4;
+    const alpha=0.045+beatEnergy*0.12*(1-ri*0.18);
+    ctx.save();
+    ctx.strokeStyle=`hsla(${hue},100%,62%,${alpha})`;
+    ctx.lineWidth=1.3-ri*0.16;
+    ctx.shadowBlur=4+beatEnergy*8; ctx.shadowColor=`hsl(${hue},100%,62%)`;
+    for(let s=0;s<segs;s++){
+      const a0=s/segs*Math.PI*2+phase, a1=a0+Math.PI*2/segs*0.78;
+      ctx.beginPath();
+      ctx.arc(cx,cy,44+ri*26,a0,a1);
+      ctx.stroke();
+    }
+    ctx.shadowBlur=0; ctx.restore();
+  }
+}
+
+function drawParticles(){
+  if(!SHOW.sparks) return;
+  for(let i=parts.length-1;i>=0;i--){
+    const p=parts[i];
+    p.x+=p.vx; p.y+=p.vy; p.vx*=0.974; p.vy*=0.974; p.life--;
+    const a=Math.max(0,p.life/p.max);
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r*a,0,Math.PI*2);
+    ctx.fillStyle=`hsla(${p.hue},100%,72%,${a*0.82})`;
+    ctx.shadowBlur=5; ctx.shadowColor=`hsl(${p.hue},100%,68%)`; ctx.fill(); ctx.shadowBlur=0;
+    if(p.life<=0) parts.splice(i,1);
+  }
+}
+
+function drawGlyphRain(){
+  if(!SHOW.rain) return;
+  const cw=W/RAIN_N;
+  ctx.font='7px JetBrains Mono,monospace'; ctx.textAlign='center';
+  rain.forEach((col,ci)=>{
+    col.x=(ci+0.5)*cw; col.y+=col.speed;
+    if(col.y>H+180) col.y=-60-Math.random()*300;
+    col.col.forEach((ch,i)=>{
+      const a=Math.min(0.032, col.alpha*(1-i/col.col.length));
+      ctx.fillStyle=`hsla(${getHue(col.hue)},80%,62%,${a})`;
+      ctx.fillText(ch, col.x, col.y-i*10);
+    });
+  });
+}
+
+function drawAberration(){
+  if(!SHOW.aberr||PSY.aberr<0.5) return;
+  const d=PSY.aberr*3;
+  ctx.save();
+  ctx.globalCompositeOperation='screen';
+  ctx.globalAlpha=0.04+PSY.aberr*0.04;
+  ctx.drawImage(canvas,d,0,W,H,0,0,W,H);
+  ctx.drawImage(canvas,-d,0,W,H,0,0,W,H);
+  ctx.restore();
+}
+
+function drawFilmGrain(){
+  if(!SHOW.grain) return;
+  const N=Math.floor(W*H*0.00045);
+  ctx.save();
+  for(let i=0;i<N;i++){
+    const x=Math.random()*W, y=Math.random()*H, v=Math.random();
+    ctx.fillStyle=`rgba(${v>.5?255:0},${v>.5?255:0},${v>.5?255:0},${0.012+PSY.fog*0.006})`;
+    ctx.fillRect(x,y,1,1);
+  }
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GLYPH + AXIOM TICKER
+// ═══════════════════════════════════════════════════════════════════════════════
+let beatGlyphIdx=0;
+function flashGlyph(){
+  const el=document.getElementById('centreGlyph');
+  el.textContent=BEAT_GLYPHS[beatGlyphIdx%BEAT_GLYPHS.length];
+  beatGlyphIdx++;
+  el.classList.add('flash');
+  setTimeout(()=>el.classList.remove('flash'),160);
+}
+
+let axiomIdx=0, axiomPool=AXIOMS;
+setInterval(()=>{
+  axiomIdx=(axiomIdx+1)%axiomPool.length;
+  const el=document.getElementById('axiomTicker');
+  el.textContent=axiomPool[axiomIdx];
+  el.className='';
+  if(staticMode) el.classList.add('static-style');
+  if(isPaused)   el.classList.add('susp');
+  if(psychoState==='peak') el.classList.add('peak');
+},2800);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PSYCHO STATE HIGHLIGHT
+// ═══════════════════════════════════════════════════════════════════════════════
+function updatePsychoUI(){
+  document.querySelectorAll('.psycho-btn').forEach(b=>{
+    b.style.opacity = b.dataset.state===psychoState ? '1' : '0.3';
+    b.style.boxShadow = b.dataset.state===psychoState
+      ? `0 0 12px ${b.dataset.color}` : 'none';
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STATUS HELPERS
+// ═══════════════════════════════════════════════════════════════════════════════
+function setStatus(msg,type){
+  document.getElementById('statusTxt').textContent=msg;
+  const dot=document.getElementById('dot');
+  dot.className='dot';
+  if(type==='live') dot.classList.add('live');
+  else if(type==='warn') dot.classList.add('warn');
+  else if(type==='err')  dot.classList.add('err');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN LOOP
+// ═══════════════════════════════════════════════════════════════════════════════
+let t=0;
+function draw(){
+  requestAnimationFrame(draw);
+  t+=0.012;
+
+  W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; cx=W/2; cy=H/2;
+
+  updateMetrics();
+  applyPsycho(); lerpPSY();
+  updatePsychoUI();
+
+  // BG
+  const trailAlpha=VS.trail*(staticMode?1.4:isPaused?1.3:1);
+  ctx.fillStyle=`rgba(0,0,0,${Math.min(0.95,trailAlpha)})`;
+  ctx.fillRect(0,0,W,H);
+
+  drawGlyphRain();
+  drawSectors(t);
+  drawHexField(t);
+  drawSpiral(t);
+  drawWave(t);
+  drawRing(t);
+  drawVortex(t);
+  drawParticles();
+  drawAberration();
+  drawFilmGrain();
+}
+draw();
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BUILD UI
+// ═══════════════════════════════════════════════════════════════════════════════
+// Slider helper
+function bindSlider(id,key,valId,parse=parseFloat){
+  const el=document.getElementById(id);
+  el.oninput=()=>{ VS[key]=parse(el.value); document.getElementById(valId).textContent=el.value; };
+}
+bindSlider('sGain','gain','vGain');
+bindSlider('sHexR','hexR','vHexR',parseInt);
+bindSlider('sSpin','spin','vSpin');
+bindSlider('sBloom','bloom','vBloom');
+bindSlider('sTrail','trail','vTrail');
+bindSlider('sHue','hueShift','vHue',parseInt);
+bindSlider('sSat','sat','vSat',parseInt);
+bindSlider('sLim','limThresh','vLim');
+bindSlider('sPsycho','psychoMix','vPsycho');
+bindSlider('sWaveAmp','waveAmp','vWaveAmp');
+bindSlider('sArms','arms','vArms',parseInt);
+bindSlider('sSparkR','sparkRate','vSparkR');
+bindSlider('sMathFreq','mathFreq','vMathFreq');
+bindSlider('sMathAmp','mathAmp','vMathAmp');
+
+// Toggle helper
+function bindToggle(id,key,label0,label1){
+  document.getElementById(id).onclick=function(){
+    SHOW[key]=!SHOW[key];
+    this.classList.toggle('active',SHOW[key]);
+    this.textContent=SHOW[key]?label0:label1;
+  };
+}
+bindToggle('tWave','wave','WAVE','WAVE OFF');
+bindToggle('tSpiral','spiral','SPIRAL','SPIRAL OFF');
+bindToggle('tSparks','sparks','SPARKS','SPARKS OFF');
+bindToggle('tRing','ring','RING','RING OFF');
+bindToggle('tSectors','sectors','SECTORS','SECTORS OFF');
+bindToggle('tVortex','vortex','VORTEX','VORTEX OFF');
+bindToggle('tGrain','grain','GRAIN','GRAIN OFF');
+bindToggle('tAberr','aberr','ABERR','ABERR OFF');
+bindToggle('tRain','rain','GLYPH RAIN','GLYPH RAIN OFF');
+bindToggle('tNlp','nlp','NLP COLOUR MAP: ON','NLP COLOUR MAP: OFF');
+
+// Limiter
+document.getElementById('tLimiter').onclick=function(){
+  SHOW.limiter=!SHOW.limiter;
+  this.classList.toggle('active',SHOW.limiter);
+  this.textContent='PEAK LIMITER: '+(SHOW.limiter?'ON':'OFF');
+  if(!SHOW.limiter) document.getElementById('statusFill').style.width='0';
+};
+
+// Static
+document.getElementById('tStatic').onclick=function(){
+  staticMode=!staticMode;
+  this.classList.toggle('active',staticMode);
+  this.textContent='STATIC MINDSTATE: '+(staticMode?'ON':'OFF');
+  axiomPool=staticMode?AXIOMS_STATIC:AXIOMS; axiomIdx=0;
+  if(staticMode){ psychoState='static'; setStatus('STATIC · Spectrum crystallised','live'); }
+  else setStatus('Stream live · NLP active','live');
+};
+
+// Modes
+const modeRow=document.getElementById('modeRow');
+MODES.forEach(m=>{
+  const b=document.createElement('button');
+  b.className='mode-pill'+(m===currentMode?' active':'');
+  b.textContent=m;
+  b.onclick=()=>{
+    currentMode=m;
+    document.querySelectorAll('.mode-pill').forEach(p=>p.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('topMode').textContent='MODE: '+m;
+    if(m==='STATIC'){ staticMode=true; axiomPool=AXIOMS_STATIC; document.getElementById('tStatic').classList.add('active'); document.getElementById('tStatic').textContent='STATIC MINDSTATE: ON'; }
+    else{ staticMode=false; axiomPool=AXIOMS; document.getElementById('tStatic').classList.remove('active'); document.getElementById('tStatic').textContent='STATIC MINDSTATE: OFF'; }
+  };
+  modeRow.appendChild(b);
+});
+
+// NLP Planes
+const nlpGrid=document.getElementById('nlpGrid');
+NLP12.forEach(p=>{
+  const b=document.createElement('button');
+  const hue=p.hue;
+  b.className='nlp-pill active';
+  b.textContent=p.label;
+  b.style.color=`hsl(${hue},88%,62%)`;
+  b.style.borderColor=`hsla(${hue},88%,62%,.35)`;
+  b.onclick=()=>{
+    if(activePlanes.has(p.id)){ activePlanes.delete(p.id); b.classList.remove('active'); b.style.opacity='0.3'; }
+    else{ activePlanes.add(p.id); b.classList.add('active'); b.style.opacity='1'; }
+  };
+  nlpGrid.appendChild(b);
+});
+
+// Psycho state buttons
+const psyCont=document.getElementById('psychoStates');
+PSYCHO_STATES.forEach(s=>{
+  const b=document.createElement('button');
+  b.className='btn psycho-btn'; b.dataset.state=s.id; b.dataset.color=s.color;
+  b.textContent=s.label; b.style.borderColor=s.color; b.style.color=s.color;
+  b.style.opacity='0.3';
+  psyCont.appendChild(b);
+});
+
+// Math modes
+const mathRow=document.getElementById('mathRow');
+MATH_MODES.forEach(m=>{
+  const b=document.createElement('button');
+  b.className='mode-pill'+(m===currentMath?' active':'');
+  b.textContent=m; b.style.fontSize='7px';
+  b.onclick=()=>{
+    currentMath=m;
+    mathRow.querySelectorAll('.mode-pill').forEach(p=>p.classList.remove('active'));
+    b.classList.add('active');
+  };
+  mathRow.appendChild(b);
+});
+
+// Audio controls
+document.getElementById('aud').onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  document.getElementById('fileLabel').firstChild.textContent='⬆ '+f.name.slice(0,20);
+  document.getElementById('btnPlay').textContent='INITIALIZE ENGINE';
+  document.getElementById('btnPlay')._file=f;
+  isStarted=false;
+};
+
+document.getElementById('btnPlay').onclick=function(){
+  if(this._file&&!isStarted){ initFromFile(this._file); return; }
+  if(!audioEl) return;
+  if(audioEl.paused){
+    aCtx.resume(); audioEl.play(); isPaused=false;
+    this.textContent='PAUSE SIGNAL';
+    setStatus('Stream live · NLP active','live');
+    axiomPool=AXIOMS;
+  } else {
+    audioEl.pause(); isPaused=true;
+    this.textContent='RESUME SIGNAL';
+    setStatus('SUSPENDED · Fluid mode','');
+  }
+};
+
+document.getElementById('btnSystem').onclick=initFromSystem;
+
+// Panel toggle
+document.getElementById('panelToggle').onclick=()=>{
+  document.getElementById('panel').classList.toggle('hidden');
+};
+
+setStatus('Idle · Waiting source','');
+</script>
 </body>
 </html>
+HTMLEOF
+echo "done $(wc -l ~/axiom/hex-visualizer-v2.html)"
+done 
+/bin/bash: line 1: /home/user/axiom/hex-visualizer-v2.html: No such file or directory
+wc: /home/user/axiom/hex-visualizer-v2.html: No such file or directory
