@@ -193,11 +193,13 @@
                     <div class="flex flex-col gap-2" id="axiomList"></div>
                 </div>
 
-                <!-- Audio + NLP + Creativity Panel -->
+                <!-- Audio + NLP + Creativity + Visual Settings Panel -->
                 <div class="interactable glass p-4">
                     <h3 class="text-xs mono uppercase mb-3 border-b border-white/10 pb-2">
                         Forensic Audio & HEX-NLP
                     </h3>
+
+                    <!-- ── Audio upload ── -->
                     <label class="block text-[10px] mono mb-1 opacity-70">↑ Upload audio</label>
                     <input
                         id="audioFile"
@@ -215,6 +217,7 @@
                         No source loaded.
                     </div>
 
+                    <!-- ── HEX-NLP planes ── -->
                     <div class="mb-3">
                         <div class="flex items-center justify-between mb-1">
                             <span class="text-[10px] mono uppercase text-muted">HEX-NLP · 12 Planes</span>
@@ -223,12 +226,88 @@
                         <div id="nlpPlaneList" class="flex flex-wrap gap-1"></div>
                     </div>
 
-                    <div>
+                    <!-- ── Creativity Modes ── -->
+                    <div class="mb-3">
                         <div class="flex items-center justify-between mb-1">
                             <span class="text-[10px] mono uppercase text-muted">Creativity Modes</span>
                             <span class="text-[9px] mono opacity-60" id="currentModeLabel">FLUID</span>
                         </div>
                         <div id="creativityModes" class="flex flex-wrap gap-1"></div>
+                    </div>
+
+                    <!-- ── Visual Settings (vše co ovlivňuje render) ── -->
+                    <div class="mt-1 pt-3 border-t border-white/10">
+                        <div class="text-[10px] mono uppercase text-muted mb-2">Visual Settings</div>
+                        <div class="flex flex-col gap-2">
+
+                            <!-- Visual Gain: zesiluje energyNorm -> opacity vrstev -->
+                            <label class="flex items-center justify-between text-[9px] mono gap-2">
+                                <span class="opacity-70">Visual Gain</span>
+                                <span id="gainVal" class="opacity-50 w-6 text-right">1.0</span>
+                                <input id="vsGain" type="range" min="0.3" max="2.5" value="1.0" step="0.1" class="w-24 accent-[#00e5ff]">
+                            </label>
+
+                            <!-- Fractal speed: jak rychle se fraktální pole pohybuje -->
+                            <label class="flex items-center justify-between text-[9px] mono gap-2">
+                                <span class="opacity-70">Fractal Speed</span>
+                                <span id="fspeedVal" class="opacity-50 w-6 text-right">1.0</span>
+                                <input id="vsFractalSpeed" type="range" min="0.1" max="4.0" value="1.0" step="0.1" class="w-24 accent-[#00e5ff]">
+                            </label>
+
+                            <!-- Fractal threshold: kolik fraktálu se zobrazuje -->
+                            <label class="flex items-center justify-between text-[9px] mono gap-2">
+                                <span class="opacity-70">Fractal Density</span>
+                                <span id="fdensVal" class="opacity-50 w-6 text-right">med</span>
+                                <input id="vsFractalDensity" type="range" min="0.50" max="0.95" value="0.72" step="0.01" class="w-24 accent-[#00e5ff]">
+                            </label>
+
+                            <!-- Grid wave speed -->
+                            <label class="flex items-center justify-between text-[9px] mono gap-2">
+                                <span class="opacity-70">Grid Wave Speed</span>
+                                <span id="gwsVal" class="opacity-50 w-6 text-right">1.0</span>
+                                <input id="vsGridWave" type="range" min="0.2" max="3.0" value="1.0" step="0.1" class="w-24 accent-[#00e5ff]">
+                            </label>
+
+                            <!-- Central manifold spin -->
+                            <label class="flex items-center justify-between text-[9px] mono gap-2">
+                                <span class="opacity-70">Manifold Spin</span>
+                                <span id="mspinVal" class="opacity-50 w-6 text-right">1.0</span>
+                                <input id="vsManifoldSpin" type="range" min="0.1" max="3.0" value="1.0" step="0.1" class="w-24 accent-[#00e5ff]">
+                            </label>
+
+                            <!-- Streak density -->
+                            <label class="flex items-center justify-between text-[9px] mono gap-2">
+                                <span class="opacity-70">Streak Density</span>
+                                <span id="sdensVal" class="opacity-50 w-6 text-right">1.0</span>
+                                <input id="vsStreakDensity" type="range" min="0.0" max="3.0" value="1.0" step="0.1" class="w-24 accent-[#00e5ff]">
+                            </label>
+
+                            <!-- Waveform opacity -->
+                            <label class="flex items-center justify-between text-[9px] mono gap-2">
+                                <span class="opacity-70">Waveform Alpha</span>
+                                <span id="walphaVal" class="opacity-50 w-6 text-right">1.0</span>
+                                <input id="vsWaveAlpha" type="range" min="0.0" max="3.0" value="1.0" step="0.1" class="w-24 accent-[#00e5ff]">
+                            </label>
+
+                            <!-- Fractal ON/OFF -->
+                            <label class="flex items-center justify-between text-[9px] mono gap-2">
+                                <span class="opacity-70">Fractal Veil</span>
+                                <input id="vsToggleFractal" type="checkbox" class="accent-[#00e5ff]" checked>
+                            </label>
+
+                            <!-- Streaks ON/OFF -->
+                            <label class="flex items-center justify-between text-[9px] mono gap-2">
+                                <span class="opacity-70">Sync Streaks</span>
+                                <input id="vsToggleStreaks" type="checkbox" class="accent-[#00e5ff]" checked>
+                            </label>
+
+                            <!-- Waveform ON/OFF -->
+                            <label class="flex items-center justify-between text-[9px] mono gap-2">
+                                <span class="opacity-70">Waveform Ribbon</span>
+                                <input id="vsToggleWave" type="checkbox" class="accent-[#00e5ff]" checked>
+                            </label>
+
+                        </div>
                     </div>
                 </div>
 
@@ -557,7 +636,7 @@
         }
 
         function drawWaveformRibbon() {
-            if (!waveData) return;
+            if (!waveData || !VS.wave) return;
             const midY = centerY;
             const len = waveData.length;
             const step = width / len;
@@ -569,7 +648,7 @@
                 const y = midY + (v * 0.6);
                 ctx.lineTo(i * step, y);
             }
-            const alpha = 0.08 + energyNorm * 0.2;
+            const alpha = (0.08 + energyNorm * 0.2) * VS.waveAlpha;
             ctx.strokeStyle = `rgba(0,255,180,${alpha})`;
             ctx.lineWidth = 1;
             ctx.stroke();
@@ -604,11 +683,11 @@
                     if (dist > maxDist) continue;
 
                     const wave = Math.sin(
-                        dist * 0.02 * modeFactor * (1 + magnet * 0.6) - time * 2 * (1 + lowNorm * 1.5)
+                        dist * 0.02 * modeFactor * (1 + magnet * 0.6) - time * 2 * VS.gridWave * (1 + lowNorm * 1.5)
                     ) * 0.5 + 0.5;
 
                     let opacity = (1 - (dist / maxDist)) * 0.2 * wave;
-                    opacity *= (0.4 + energyNorm) * (1 + magnet * 0.6);
+                    opacity *= (0.4 + energyNorm) * (1 + magnet * 0.6) * VS.gain;
 
                     const hiMix = highNorm;
                     const rCol = Math.round(0 + hiMix * 255);
@@ -639,7 +718,7 @@
             const layers = 5;
             for (let i = 0; i < layers; i++) {
                 const s = baseSize - (i * 25) * (1 - magnet * 0.4) + pulse;
-                const rot = time * (i % 2 === 0 ? 1 : -1) * (modeSpin + midNorm * 0.4);
+                const rot = time * (i % 2 === 0 ? 1 : -1) * (modeSpin * VS.manifoldSpin + midNorm * 0.4);
 
                 ctx.save();
                 ctx.translate(centerX, centerY);
@@ -677,8 +756,9 @@
         }
 
         function updateSyncHexStreaks() {
+            if (!VS.streaks) { syncHexStreaks = []; return; }
             const nlpActive = currentMode !== 0; // LINEAR off, ostatní jako NLP ON
-            if (nlpActive && syncHexStreaks.length < 80 && Math.random() < energyNorm * 0.35) {
+            if (nlpActive && syncHexStreaks.length < 80 && Math.random() < energyNorm * 0.35 * VS.streakDensity) {
                 const baseAngle = Math.random() * Math.PI * 2;
                 const step = Math.PI / 3;
                 const snapped = Math.round(baseAngle / step) * step;
@@ -745,6 +825,7 @@
         }
 
         function drawFractalVeil() {
+            if (!VS.fractal) return;
             const maxR = Math.min(width, height) * 0.55;
             const stepsR = 14;
             const stepsA = 80;
@@ -763,9 +844,9 @@
                     const r = (j / stepsR) * maxR;
                     const x = centerX + ax * r;
                     const y = centerY + ay * r;
-                    const f = fractalField(x - centerX, y - centerY, time);
+                    const f = fractalField(x - centerX, y - centerY, time * VS.fractalSpeed);
 
-                    const threshold = 0.72 + (1 - ent) * 0.15;
+                    const threshold = VS.fractalDensity + (1 - ent) * 0.15;
                     if (f > threshold) {
                         const r2 = r + 4 + hi * 6;
                         const x2 = centerX + ax * r2;
@@ -806,6 +887,39 @@
             createAxiomList();
             buildNLPPlanes();
             buildCreativityModes();
+
+            // ── Wire Visual Settings sliders/toggles to VS ──────────────────
+            function bindSlider(id, key, labelId, fmt) {
+                const el = document.getElementById(id);
+                const lbl = document.getElementById(labelId);
+                if (!el) return;
+                el.addEventListener('input', () => {
+                    VS[key] = parseFloat(el.value);
+                    if (lbl) lbl.textContent = fmt ? fmt(VS[key]) : VS[key].toFixed(1);
+                    logToTerminal(`[VS] ${key} → ${VS[key].toFixed(2)}`);
+                });
+            }
+            function bindToggle(id, key) {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('change', () => {
+                    VS[key] = el.checked;
+                    logToTerminal(`[VS] ${key} → ${VS[key]}`);
+                });
+            }
+
+            const densLabel = v => v < 0.62 ? 'hi' : v < 0.78 ? 'med' : 'lo';
+            bindSlider('vsGain',           'gain',           'gainVal',    null);
+            bindSlider('vsFractalSpeed',   'fractalSpeed',   'fspeedVal',  null);
+            bindSlider('vsFractalDensity', 'fractalDensity', 'fdensVal',   densLabel);
+            bindSlider('vsGridWave',       'gridWave',       'gwsVal',     null);
+            bindSlider('vsManifoldSpin',   'manifoldSpin',   'mspinVal',   null);
+            bindSlider('vsStreakDensity',  'streakDensity',  'sdensVal',   null);
+            bindSlider('vsWaveAlpha',      'waveAlpha',      'walphaVal',  null);
+            bindToggle('vsToggleFractal',  'fractal');
+            bindToggle('vsToggleStreaks',  'streaks');
+            bindToggle('vsToggleWave',     'wave');
+
             animate();
 
             setInterval(() => {
@@ -847,4 +961,3 @@
     </script>
 </body>
 </html>            updateSyncHexStreaks();
-
