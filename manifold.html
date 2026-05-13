@@ -1,4 +1,3 @@
-$ cat > ~/axiom/hex-visualizer-v2.html << 'HTMLEOF'
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -435,7 +434,7 @@ function initFromFile(file){
   teardown();
   const url=URL.createObjectURL(file);
   audioEl=new Audio();
-  audioEl.crossOrigin='anonymous'; audioEl.loop=true;
+  audioEl.loop=true;
   audioEl.onerror=()=>setStatus('Decode error','err');
   audioEl.addEventListener('canplay',()=>{
     if(isStarted) return; isStarted=true;
@@ -443,6 +442,7 @@ function initFromFile(file){
     srcNode=aCtx.createMediaElementSource(audioEl);
     srcNode.connect(analyser); analyser.connect(aCtx.destination);
     allocBufs();
+    if(aCtx.state==='suspended') aCtx.resume();
     aCtx.resume().then(()=>audioEl.play().then(()=>{
       setStatus('Stream live · NLP active','live');
       document.getElementById('btnPlay').textContent='PAUSE SIGNAL';
@@ -738,7 +738,12 @@ function drawSectors(t){
 }
 
 function drawRing(t){
-  if(!SHOW.ring||!freqData) return;
+  if(!SHOW.ring) return;
+  const _fd = freqData || (() => {
+    const a=new Uint8Array(512);
+    for(let i=0;i<512;i++) a[i]=128+Math.sin(i*0.03+t*VS.mathFreq)*55*VS.mathAmp;
+    return a;
+  })();
   const R=VS.hexR*5*PSY.ringScale;
   ctx.save(); ctx.translate(cx,cy);
   const hue=stateHue();
@@ -756,10 +761,10 @@ function drawRing(t){
     ctx.lineWidth=1+energyNorm*2; ctx.stroke();
   }
   // freq bar ring
-  const bars=64, step=Math.floor(freqData.length/bars);
+  const bars=64, step=Math.floor(_fd.length/bars);
   ctx.rotate(-t*0.3*VS.spin);
   for(let i=0;i<bars;i++){
-    const v=freqData[i*step]/255, a=i/bars*Math.PI*2;
+    const v=_fd[i*step]/255, a=i/bars*Math.PI*2;
     const inner=R*0.8, outer=inner+v*50*VS.gain;
     ctx.beginPath();
     ctx.moveTo(Math.cos(a)*inner,Math.sin(a)*inner);
@@ -965,8 +970,6 @@ function draw(){
   requestAnimationFrame(draw);
   t+=0.012;
 
-  W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; cx=W/2; cy=H/2;
-
   updateMetrics();
   applyPsycho(); lerpPSY();
   updatePsychoUI();
@@ -1112,7 +1115,7 @@ document.getElementById('aud').onchange=e=>{
   document.getElementById('fileLabel').firstChild.textContent='⬆ '+f.name.slice(0,20);
   document.getElementById('btnPlay').textContent='INITIALIZE ENGINE';
   document.getElementById('btnPlay')._file=f;
-  isStarted=false;
+  teardown(); isStarted=false;
 };
 
 document.getElementById('btnPlay').onclick=function(){
@@ -1141,8 +1144,3 @@ setStatus('Idle · Waiting source','');
 </script>
 </body>
 </html>
-HTMLEOF
-echo "done $(wc -l ~/axiom/hex-visualizer-v2.html)"
-done 
-/bin/bash: line 1: /home/user/axiom/hex-visualizer-v2.html: No such file or directory
-wc: /home/user/axiom/hex-visualizer-v2.html: No such file or directory
