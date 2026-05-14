@@ -1,428 +1,631 @@
+```html
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-    <title>Lex Forensica | HEX-NLP Manifold v12</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-        * { box-sizing: border-box; }
-        body { margin: 0; background: #000; overflow: hidden; font-family: 'Share Tech Mono', 'Courier New', monospace; }
-        canvas { display: block; position: absolute; inset: 0; }
-        .ui { position: relative; z-index: 10; pointer-events: none; }
-        .interact { pointer-events: auto; }
-        .glass {
-            background: rgba(0, 4, 12, 0.82);
-            backdrop-filter: blur(14px);
-            border: 1px solid rgba(0, 255, 180, 0.12);
-        }
-        .glow-text { text-shadow: 0 0 12px rgba(0, 255, 180, 0.6); }
-        .axiom-pulse {
-            animation: axiomPulse 3s ease-in-out infinite;
-        }
-        @keyframes axiomPulse {
-            0%, 100% { opacity: 0.35; }
-            50% { opacity: 0.9; }
-        }
-        ::-webkit-scrollbar { width: 3px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(0,255,180,0.3); }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HEXAGONAL ROOM — RELEASE BUILD</title>
 
-        .btn {
-            border: 1px solid rgba(0,255,180,0.4);
-            background: rgba(0,255,180,0.05);
-            color: #00ffb4;
-            padding: 8px 12px;
-            cursor: pointer;
-            font-family: inherit;
-            font-size: 10px;
-            letter-spacing: 0.1em;
-            transition: all 0.2s;
-            text-transform: uppercase;
-        }
-        .btn:hover { background: rgba(0,255,180,0.15); border-color: rgba(0,255,180,0.8); box-shadow: 0 0 16px rgba(0,255,180,0.2); }
-        .btn.active { background: rgba(0,255,180,0.2); border-color: #00ffb4; box-shadow: 0 0 20px rgba(0,255,180,0.35); }
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-        .status-dot {
-            width: 6px; height: 6px; border-radius: 50%;
-            background: #00ffb4;
-            box-shadow: 0 0 8px #00ffb4;
-            display: inline-block;
-            animation: statusBlink 1.5s ease-in-out infinite;
-        }
-        @keyframes statusBlink { 0%,100%{opacity:1} 50%{opacity:0.2} }
-        .status-dot.idle { background: #334; box-shadow: none; animation: none; }
-        .status-dot.warn { background: #f90; box-shadow: 0 0 8px #f90; }
-    </style>
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #050510;
+    font-family: monospace;
+}
+
+body {
+    color: #00ffcc;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+#overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
+}
+
+#stats,
+#controls,
+#timer {
+    pointer-events: auto;
+}
+
+.panel {
+    background: rgba(0,0,0,0.88);
+    border: 2px solid #00ffaa;
+    box-shadow: 0 0 18px rgba(0,255,170,0.15);
+    backdrop-filter: blur(8px);
+}
+
+#stats {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    padding: 12px;
+    font-size: 11px;
+    line-height: 1.6;
+    min-width: 200px;
+}
+
+#controls {
+    position: fixed;
+    bottom: 12px;
+    left: 12px;
+    padding: 10px;
+}
+
+#timer {
+    position: fixed;
+    bottom: 12px;
+    right: 12px;
+    padding: 12px;
+    text-align: center;
+}
+
+button {
+    background: #00ffaa;
+    color: #000;
+    border: none;
+    padding: 8px 12px;
+    margin: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    font-family: monospace;
+    transition: 0.2s ease;
+}
+
+button:hover {
+    transform: scale(1.05);
+}
+
+button.active {
+    background: #ffff00;
+}
+
+button.playing {
+    background: #ff00ff;
+    color: white;
+}
+
+#fileInput {
+    display: none;
+}
+
+.time-label {
+    font-size: 10px;
+    color: #888;
+}
+</style>
 </head>
 <body>
-<canvas id="c"></canvas>
 
-<div class="ui h-screen w-full flex flex-col items-end justify-between p-5">
+<canvas id="canvas"></canvas>
 
-    <!-- TOP RIGHT: NLP12 LEGEND -->
-    <div class="glass interact p-4 rounded-lg w-56 mt-0">
-        <div class="text-[9px] tracking-widest text-emerald-400 mb-2 opacity-60 uppercase">HEX-NLP · 12 Planes</div>
-        <div id="nlp-legend" class="grid grid-cols-2 gap-y-1 gap-x-2"></div>
+<div id="overlay">
+
+    <div id="stats" class="panel">
+        <strong>HEXAGONAL ROOM</strong><br>
+        ━━━━━━━━━━━━━━<br>
+        Mode: <span id="mode">MATH</span><br>
+        Status: <span id="status">▶ PLAYING</span><br>
+        ━━━━━━━━━━━━━━<br>
+        Bass: <span id="bass">0.00</span><br>
+        Mid: <span id="mid">0.00</span><br>
+        High: <span id="high">0.00</span><br>
+        Energy: <span id="energy">0.00</span><br>
     </div>
 
-    <!-- BOTTOM RIGHT: MAIN PANEL -->
-    <div class="glass interact p-5 rounded-lg w-64 flex flex-col gap-3">
-
-        <!-- HEADER -->
-        <div class="text-center border-b border-emerald-500/20 pb-3">
-            <div class="glow-text text-emerald-300 text-base font-bold tracking-[0.3em]">LEX FORENSICA</div>
-            <div class="text-[8px] text-emerald-500/50 tracking-widest mt-0.5">INTERACTIVE MANIFOLD · v12</div>
-        </div>
-
-        <!-- AXIOM STATUS -->
-        <div class="text-[8px] text-emerald-400/60 leading-relaxed axiom-pulse border border-emerald-500/10 rounded p-2">
-            <div id="axiomDisplay">A0 · Pipeline integrity verified</div>
-        </div>
-
-        <!-- UPLOAD -->
-        <label class="btn block text-center cursor-pointer">
-            <span id="fileLabel">↑ UPLOAD AUDIO SOURCE</span>
-            <input type="file" id="aud" class="hidden" accept="audio/*">
-        </label>
-
-        <!-- PLAY -->
-        <button id="play" class="btn font-bold text-sm py-3 tracking-widest">INITIALIZE SYSTEM</button>
-
-        <!-- MODE CONTROLS -->
-        <div class="flex gap-2">
-            <button id="toggleNLP"  class="btn flex-1 active">NLP: ON</button>
-            <button id="toggleMode" class="btn flex-1">FLUID</button>
-        </div>
-
-        <!-- INTENSITY SLIDER -->
-        <div class="flex flex-col gap-1">
-            <div class="text-[8px] text-emerald-500/50 tracking-widest">SIGNAL INTENSITY</div>
-            <input type="range" id="intensity" min="0.1" max="3" step="0.05" value="1"
-                style="accent-color:#00ffb4; width:100%; cursor:pointer;">
-        </div>
-
-        <!-- STATUS BAR -->
-        <div class="flex items-center gap-2 pt-1 border-t border-emerald-500/10">
-            <span class="status-dot idle" id="statusDot"></span>
-            <span class="text-[8px] text-emerald-400/50 tracking-tight uppercase" id="status">System Idle · Waiting Target</span>
-        </div>
-
-        <!-- ZERO-KNOWLEDGE TAG -->
-        <div class="text-[7px] text-emerald-600/30 text-center tracking-widest">
-            Ω · DIGNITY > PROCESS > INSTITUTION · ZK-ACTIVE
-        </div>
+    <div id="controls" class="panel">
+        <button id="btnUpload">📁 UPLOAD</button>
+        <button id="btnMath" class="active">⚡ MATH</button>
+        <button id="btnPlayPause" class="playing">⏸ PAUSE</button>
+        <button id="btnStop">⏹ STOP</button>
+        <button id="btnFullscreen">⛶ FULL</button>
+        <br>
+        <input type="file" id="fileInput" accept="audio/*">
     </div>
+
+    <div id="timer" class="panel">
+        <div class="time-label">ELAPSED</div>
+        <div id="time-display">0:00</div>
+    </div>
+
 </div>
 
 <script>
-// ─────────────────────────────────────────────────────────
-// HEX-NLP 12-STATE PLANE
-// 6 Speech Acts × 2 Register Valences = 12 × 30° sectors
-// Colors derived from Lex Forensica visual identity
-// ─────────────────────────────────────────────────────────
-const NLP12 = [
-    { id:0,  label:"ASSERT⁺", act:"Assertive",   reg:"Formal",   hue:165 },
-    { id:1,  label:"ASSERT⁻", act:"Assertive",   reg:"Informal", hue:180 },
-    { id:2,  label:"DIRECT⁺", act:"Directive",   reg:"Formal",   hue:195 },
-    { id:3,  label:"DIRECT⁻", act:"Directive",   reg:"Informal", hue:210 },
-    { id:4,  label:"COMMIT⁺", act:"Commissive",  reg:"Formal",   hue:255 },
-    { id:5,  label:"COMMIT⁻", act:"Commissive",  reg:"Informal", hue:275 },
-    { id:6,  label:"EXPR⁺",   act:"Expressive",  reg:"Formal",   hue:300 },
-    { id:7,  label:"EXPR⁻",   act:"Expressive",  reg:"Informal", hue:325 },
-    { id:8,  label:"DECL⁺",   act:"Declarative", reg:"Formal",   hue:15  },
-    { id:9,  label:"DECL⁻",   act:"Declarative", reg:"Informal", hue:35  },
-    { id:10, label:"META⁺",   act:"Meta",        reg:"Formal",   hue:55  },
-    { id:11, label:"META⁻",   act:"Meta",        reg:"Informal", hue:75  },
-];
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
 
-// AXIOM CYCLE — from steelssystem.github.io pipeline axioms
-const AXIOMS = [
-    "A0 · Pipeline integrity verified",
-    "A1 · Axiom validation active",
-    "A2 · LOOP_CYCLE verifikace",
-    "A3 · Zero-Knowledge šifrování ✓",
-    "A4 · Narativ chráněn · Ω",
-    "A5 · Forenzní přesnost: ON",
-    "A6 · Důstojnost > Proces",
-    "A7 · ECHR/CRPD/GDPR layer",
-    "A8 · Financial forensic active",
-    "A9 · Control Room synced",
-    "A10 · Visual network aligned",
-    "A11 · META signal detected",
-    "A12 · NLP_DRIFT: monitoring",
-    "A13 · LOOP_CYCLE 90% · →100%",
-];
+let cx = 0;
+let cy = 0;
 
-// Build legend
-const legend = document.getElementById('nlp-legend');
-NLP12.forEach(n => {
-    const el = document.createElement('div');
-    el.className = 'text-[8px] truncate';
-    el.style.color = `hsl(${n.hue},90%,62%)`;
-    el.innerHTML = `<span style="opacity:.4">[${n.id}]</span> ${n.label}`;
-    legend.appendChild(el);
+function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.scale(dpr, dpr);
+
+    cx = window.innerWidth / 2;
+    cy = window.innerHeight / 2;
+}
+
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+let audioCtx = null;
+let analyser = null;
+let freqData = null;
+let audioElement = null;
+let source = null;
+let currentObjectURL = null;
+
+let mBass = 0;
+let mMid = 0;
+let mHigh = 0;
+let mEnergy = 0;
+
+let mode = 'MATH';
+let isPlaying = true;
+let time = 0;
+let elapsedTime = 0;
+let startTime = Date.now();
+let isTabVisible = true;
+
+function initAudio() {
+    if (audioCtx) return;
+
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 1024;
+    analyser.smoothingTimeConstant = 0.85;
+
+    freqData = new Uint8Array(analyser.frequencyBinCount);
+}
+
+initAudio();
+
+function formatTime(ms) {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+}
+
+setInterval(() => {
+    if (isPlaying) {
+        elapsedTime = Date.now() - startTime;
+        document.getElementById('time-display').textContent = formatTime(elapsedTime);
+    }
+}, 100);
+
+async function ensureAudioRunning() {
+    if (audioCtx && audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+    }
+}
+
+async function loadAudioFile(file) {
+    await ensureAudioRunning();
+
+    if (audioElement) {
+        audioElement.pause();
+    }
+
+    if (source) {
+        source.disconnect();
+    }
+
+    if (currentObjectURL) {
+        URL.revokeObjectURL(currentObjectURL);
+    }
+
+    currentObjectURL = URL.createObjectURL(file);
+
+    audioElement = new Audio(currentObjectURL);
+    audioElement.crossOrigin = 'anonymous';
+
+    source = audioCtx.createMediaElementSource(audioElement);
+
+    source.connect(analyser);
+    analyser.connect(audioCtx.destination);
+
+    await audioElement.play();
+
+    mode = 'FILE';
+    isPlaying = true;
+    startTime = Date.now();
+    elapsedTime = 0;
+
+    document.getElementById('mode').textContent = 'FILE';
+    document.getElementById('status').textContent = '▶ PLAYING';
+
+    document.getElementById('btnMath').classList.remove('active');
+    document.getElementById('btnUpload').classList.add('active');
+    document.getElementById('btnPlayPause').classList.add('playing');
+}
+
+const fileInput = document.getElementById('fileInput');
+
+
+document.getElementById('btnUpload').onclick = async () => {
+    await ensureAudioRunning();
+    fileInput.click();
+};
+
+fileInput.onchange = async (e) => {
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    await loadAudioFile(file);
+};
+
+
+document.body.addEventListener('dragover', e => {
+    e.preventDefault();
 });
 
-// ─────────────────────────────────────────────────────────
-// AUDIO ENGINE
-// ─────────────────────────────────────────────────────────
-const canvas = document.getElementById('c');
-const ctx    = canvas.getContext('2d');
-const audio  = new Audio();
 
-let aCtx, analyser, freqData, waveData;
-let isStarted = false;
-let nlpActive = true;
-let visualMode = 0;
-let intensityMul = 1.0;
-const MODES = ['FLUID','STATIC','DEEP'];
+document.body.addEventListener('drop', async e => {
+    e.preventDefault();
 
-let axiomIdx = 0;
-setInterval(() => {
-    axiomIdx = (axiomIdx + 1) % AXIOMS.length;
-    document.getElementById('axiomDisplay').innerText = AXIOMS[axiomIdx];
-}, 2800);
+    const file = e.dataTransfer.files[0];
 
-function setStatus(msg, type='active') {
-    document.getElementById('status').innerText = msg;
-    const dot = document.getElementById('statusDot');
-    dot.className = 'status-dot' + (type==='idle' ? ' idle' : type==='warn' ? ' warn' : '');
-}
-
-function init() {
-    if (aCtx) return;
-    aCtx     = new (window.AudioContext || window.webkitAudioContext)();
-    analyser = aCtx.createAnalyser();
-    analyser.fftSize = 1024;
-    analyser.smoothingTimeConstant = 0.82;
-    const src = aCtx.createMediaElementSource(audio);
-    src.connect(analyser);
-    analyser.connect(aCtx.destination);
-    freqData = new Uint8Array(analyser.frequencyBinCount);
-    waveData = new Uint8Array(analyser.frequencyBinCount);
-    isStarted = true;
-    setStatus('Manifold Active · NLP12 Engaged');
-}
-
-document.getElementById('aud').onchange = e => {
-    const f = e.target.files[0];
-    if (!f) return;
-    audio.src = URL.createObjectURL(f);
-    document.getElementById('fileLabel').innerText = '♪ ' + f.name.substring(0,22);
-    setStatus('SRC: ' + f.name.substring(0,20));
-};
-
-document.getElementById('play').onclick = () => {
-    init();
-    if (aCtx.state === 'suspended') aCtx.resume();
-    if (audio.paused) {
-        audio.play();
-        document.getElementById('play').innerText = 'PAUSE SIGNAL';
-        setStatus('Signal streaming · NLP active');
-    } else {
-        audio.pause();
-        document.getElementById('play').innerText = 'RESUME SIGNAL';
-        setStatus('Signal paused', 'warn');
+    if (file) {
+        await loadAudioFile(file);
     }
-};
+});
 
-document.getElementById('toggleNLP').onclick = function() {
-    nlpActive = !nlpActive;
-    this.innerText = nlpActive ? 'NLP: ON' : 'NLP: OFF';
-    this.classList.toggle('active', nlpActive);
-};
 
-document.getElementById('toggleMode').onclick = function() {
-    visualMode = (visualMode + 1) % 3;
-    this.innerText = MODES[visualMode];
-};
-
-document.getElementById('intensity').oninput = function() {
-    intensityMul = parseFloat(this.value);
-};
-
-// ─────────────────────────────────────────────────────────
-// RENDER ENGINE
-// ─────────────────────────────────────────────────────────
-let t = 0;
-// Idle wave seeds — organic motion without audio
-const seeds = Array.from({length:8}, () => ({
-    ox: Math.random() * 800,
-    oy: Math.random() * 600,
-    freq: 0.3 + Math.random() * 0.7,
-    phase: Math.random() * Math.PI * 2,
-}));
-
-function idleVal(x, y, time) {
-    let v = 0;
-    seeds.forEach(s => {
-        const d = Math.sqrt((x - s.ox)**2 + (y - s.oy)**2);
-        v += Math.sin(d * 0.012 - time * s.freq + s.phase) * 0.5 + 0.5;
-    });
-    return Math.min(255, (v / seeds.length) * 80 + 12);
-}
-
-function getNLP12Cat(x, y, cx, cy) {
-    const a = Math.atan2(y - cy, x - cx);
-    return Math.floor(((a * 180 / Math.PI) + 360) % 360 / 30);
-}
-
-function draw() {
-    requestAnimationFrame(draw);
-    t += 0.012;
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
-    const W = canvas.width, H = canvas.height;
-    const cx = W / 2, cy = H / 2;
-
-    // Background fade style per mode
-    if (visualMode === 0) {
-        ctx.fillStyle = 'rgba(0,3,8,0.18)';
-    } else if (visualMode === 1) {
-        ctx.fillStyle = '#000308';
-    } else {
-        ctx.fillStyle = 'rgba(0,1,5,0.45)';
-    }
-    ctx.fillRect(0, 0, W, H);
-
-    if (isStarted) {
-        analyser.getByteFrequencyData(freqData);
-        analyser.getByteTimeDomainData(waveData);
+document.getElementById('btnMath').onclick = () => {
+    if (audioElement) {
+        audioElement.pause();
     }
 
-    // ── WAVEFORM RIBBON (center horizontal) ──
-    if (isStarted) {
-        ctx.beginPath();
-        ctx.moveTo(0, cy);
-        const step = W / waveData.length;
-        for (let i = 0; i < waveData.length; i++) {
-            const v = (waveData[i] / 128.0 - 1) * 60 * intensityMul;
-            ctx.lineTo(i * step, cy + v);
+    mode = 'MATH';
+    isPlaying = true;
+    elapsedTime = 0;
+    startTime = Date.now();
+
+    document.getElementById('mode').textContent = 'MATH';
+    document.getElementById('status').textContent = '▶ PLAYING';
+
+    document.getElementById('btnMath').classList.add('active');
+    document.getElementById('btnUpload').classList.remove('active');
+};
+
+
+document.getElementById('btnPlayPause').onclick = async () => {
+    isPlaying = !isPlaying;
+
+    if (isPlaying) {
+        startTime = Date.now() - elapsedTime;
+
+        if (mode === 'IDLE') {
+            mode = 'MATH';
         }
-        ctx.strokeStyle = 'rgba(0,255,180,0.12)';
+
+        await ensureAudioRunning();
+
+        if (audioElement && audioElement.paused) {
+            await audioElement.play();
+        }
+
+        document.getElementById('status').textContent = '▶ PLAYING';
+        document.getElementById('btnPlayPause').textContent = '⏸ PAUSE';
+        document.getElementById('btnPlayPause').classList.add('playing');
+
+    } else {
+
+        if (audioElement) {
+            audioElement.pause();
+        }
+
+        document.getElementById('status').textContent = '⏸ PAUSED';
+        document.getElementById('btnPlayPause').textContent = '▶ PLAY';
+        document.getElementById('btnPlayPause').classList.remove('playing');
+    }
+};
+
+
+document.getElementById('btnStop').onclick = () => {
+
+    if (audioElement) {
+        audioElement.pause();
+        audioElement.currentTime = 0;
+    }
+
+    isPlaying = false;
+    mode = 'IDLE';
+
+    time = 0;
+    elapsedTime = 0;
+
+    mBass = 0;
+    mMid = 0;
+    mHigh = 0;
+    mEnergy = 0;
+
+    document.getElementById('mode').textContent = 'IDLE';
+    document.getElementById('status').textContent = '⏹ STOPPED';
+    document.getElementById('time-display').textContent = '0:00';
+};
+
+
+document.getElementById('btnFullscreen').onclick = async () => {
+    if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+    } else {
+        await document.exitFullscreen();
+    }
+};
+
+
+document.addEventListener('visibilitychange', () => {
+    isTabVisible = !document.hidden;
+});
+
+function generateMathData() {
+
+    const t = time * 0.02;
+
+    for (let i = 0; i < freqData.length; i++) {
+
+        const bass = Math.sin(t * 0.4 + i * 0.05) * 0.5 + 0.5;
+        const mid = Math.cos(t * 1.2 + i * 0.08) * 0.5 + 0.5;
+        const high = Math.sin(t * 2.4 + i * 0.12) * 0.5 + 0.5;
+
+        let value;
+
+        if (i < freqData.length * 0.33) {
+            value = bass;
+        } else if (i < freqData.length * 0.66) {
+            value = mid;
+        } else {
+            value = high;
+        }
+
+        freqData[i] = value * 255;
+    }
+}
+
+function updateAudio() {
+
+    if (!isPlaying || mode === 'IDLE') {
+
+        mBass *= 0.9;
+        mMid *= 0.9;
+        mHigh *= 0.9;
+        mEnergy *= 0.9;
+
+        return;
+    }
+
+    if (mode === 'MATH') {
+        generateMathData();
+    } else if (mode === 'FILE') {
+        analyser.getByteFrequencyData(freqData);
+    }
+
+    const len = freqData.length;
+
+    const bassEnd = Math.floor(len * 0.1);
+    const midEnd = Math.floor(len * 0.5);
+
+    let b = 0;
+    let m = 0;
+    let h = 0;
+
+    for (let i = 0; i < len; i++) {
+
+        if (i < bassEnd) {
+            b += freqData[i];
+        } else if (i < midEnd) {
+            m += freqData[i];
+        } else {
+            h += freqData[i];
+        }
+    }
+
+    const bAvg = b / bassEnd / 255;
+    const mAvg = m / (midEnd - bassEnd) / 255;
+    const hAvg = h / (len - midEnd) / 255;
+
+    mBass += (bAvg - mBass) * 0.12;
+    mMid += (mAvg - mMid) * 0.12;
+    mHigh += (hAvg - mHigh) * 0.12;
+
+    mEnergy = (mBass + mMid + mHigh) / 3;
+}
+
+function drawMultilineText(text, x, y, lineHeight = 12) {
+
+    const lines = text.split('\n');
+
+    lines.forEach((line, index) => {
+
+        ctx.fillText(
+            line,
+            x,
+            y + (index - (lines.length - 1) / 2) * lineHeight
+        );
+    });
+}
+
+function drawHexPanel(x, y, size, hue, label, energy) {
+
+    ctx.beginPath();
+
+    for (let i = 0; i < 6; i++) {
+
+        const angle = (i / 6) * Math.PI * 2 + Math.PI / 6;
+
+        const px = x + size * Math.cos(angle);
+        const py = y + size * Math.sin(angle);
+
+        if (i === 0) {
+            ctx.moveTo(px, py);
+        } else {
+            ctx.lineTo(px, py);
+        }
+    }
+
+    ctx.closePath();
+
+    ctx.fillStyle = `hsla(${hue},100%,50%,${energy * 0.2})`;
+    ctx.fill();
+
+    ctx.strokeStyle = `hsl(${hue},100%,60%)`;
+    ctx.lineWidth = 2 + energy * 2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    drawMultilineText(label, x, y);
+}
+
+function drawCentralCore(x, y, energy, t) {
+
+    const size = 60 + energy * 80;
+
+    for (let i = 0; i < 3; i++) {
+
+        const radius = size * (1 + i * 0.7);
+
+        ctx.beginPath();
+
+        ctx.arc(
+            x,
+            y,
+            radius + Math.sin(t + i) * energy * 20,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.strokeStyle = `hsla(${(t * 30 + i * 80) % 360},100%,60%,0.5)`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+}
+
+function drawResonanceField(t) {
+
+    if (mEnergy < 0.05) return;
+
+    for (let ring = 0; ring < 5; ring++) {
+
+        const baseRadius = 100 + ring * 70;
+
+        ctx.beginPath();
+
+        for (let angle = 0; angle <= Math.PI * 2; angle += 0.08) {
+
+            const distortion = Math.sin(angle * 6 + t * 0.8) * mEnergy * 25;
+
+            const r = baseRadius + distortion;
+
+            const x = cx + Math.cos(angle) * r;
+            const y = cy + Math.sin(angle) * r;
+
+            if (angle === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+
+        ctx.strokeStyle = `rgba(0,255,255,${0.08 + mEnergy * 0.2})`;
         ctx.lineWidth = 1;
         ctx.stroke();
     }
-
-    // ── HEXAGONAL GRID ──
-    const r  = 36;
-    const gw = r * Math.sqrt(3);
-    const gh = r * 1.5;
-
-    for (let row = -1; row * gh < H + r; row++) {
-        const hy0 = row * gh;
-        const shift = (((row % 2) + 2) % 2) * (gw / 2);
-
-        for (let col = -1; col * gw < W + gw; col++) {
-            const hx = col * gw + shift;
-            const hy = hy0;
-
-            const dx = hx - cx, dy = hy - cy;
-            const dist = Math.sqrt(dx*dx + dy*dy);
-
-            const idx = Math.floor((dist / (Math.max(W,H)*0.72)) * (freqData.length/2)) % (freqData.length/2);
-            const raw = isStarted
-                ? freqData[idx]
-                : idleVal(hx, hy, t);
-
-            const val = Math.min(255, raw * intensityMul);
-            const p   = val / 255;
-
-            const catId  = nlpActive ? getNLP12Cat(hx, hy, cx, cy) : null;
-            const cat    = catId !== null ? NLP12[catId] : null;
-            let baseHue  = cat ? cat.hue : (160 + p * 80);
-
-            // DEEP: rotating hue phase-shifted by energy
-            if (visualMode === 2) baseHue = (baseHue + t * 30 * p) % 360;
-
-            // FLUID: breathing radius
-            const breathe = visualMode === 0
-                ? Math.sin(t * 1.8 + dist * 0.018) * 0.1
-                : 0;
-            const hexR = r * (0.38 + p * 0.62 + breathe);
-
-            // Lightness boost for hot hexagons (signal peaks)
-            const light = 40 + p * 25;
-            const alpha = 0.12 + p * 0.88;
-
-            ctx.beginPath();
-            for (let i = 0; i < 6; i++) {
-                const ang = (Math.PI / 3) * i + (visualMode === 2 ? t * 0.04 : 0);
-                ctx.lineTo(hx + hexR * Math.cos(ang), hy + hexR * Math.sin(ang));
-            }
-            ctx.closePath();
-
-            // Inner fill for high-energy cells
-            if (p > 0.4) {
-                ctx.fillStyle = `hsla(${baseHue},90%,${light}%,${p * 0.18})`;
-                ctx.fill();
-            }
-
-            ctx.strokeStyle = `hsla(${baseHue},100%,${light}%,${alpha})`;
-            ctx.lineWidth = 0.6 + p * 4.5;
-            ctx.stroke();
-
-            // GLOW for peak cells
-            if (p > 0.75) {
-                ctx.shadowBlur = 12 * p;
-                ctx.shadowColor = `hsl(${baseHue},100%,70%)`;
-                ctx.stroke();
-                ctx.shadowBlur = 0;
-            }
-        }
-    }
-
-    // ── NLP SECTOR DIVIDERS ──
-    if (nlpActive) {
-        const maxR = Math.max(W, H) * 1.2;
-        ctx.save();
-        for (let i = 0; i < 12; i++) {
-            const ang = (Math.PI / 6) * i;
-            const cat = NLP12[i];
-
-            // Radial line
-            ctx.beginPath();
-            ctx.moveTo(cx, cy);
-            ctx.lineTo(cx + maxR * Math.cos(ang), cy + maxR * Math.sin(ang));
-            ctx.strokeStyle = `hsla(${cat.hue},80%,55%,0.07)`;
-            ctx.lineWidth = 1;
-            ctx.stroke();
-
-            // Sector label
-            const midAng = ang + Math.PI / 12;
-            const lr = 150 + 20 * Math.sin(t * 0.8 + i);
-            const lx = cx + lr * Math.cos(midAng);
-            const ly = cy + lr * Math.sin(midAng);
-
-            ctx.fillStyle = `hsla(${cat.hue},85%,65%,0.55)`;
-            ctx.font = 'bold 8px Share Tech Mono, Courier New';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(cat.label, lx, ly);
-        }
-        ctx.restore();
-    }
-
-    // ── CENTER OMEGA MARK ──
-    const omegaAlpha = 0.12 + 0.08 * Math.sin(t * 1.2);
-    ctx.save();
-    ctx.font = 'bold 22px Share Tech Mono, Courier New';
-    ctx.fillStyle = `rgba(0,255,180,${omegaAlpha})`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('Ω', cx, cy);
-    ctx.restore();
-
-    // ── CORNER TIMESTAMP ──
-    ctx.save();
-    ctx.font = '8px Share Tech Mono, Courier New';
-    ctx.fillStyle = 'rgba(0,255,180,0.15)';
-    ctx.textAlign = 'left';
-    ctx.fillText(`LOOP_CYCLE · NLP:${nlpActive?'ACTIVE':'OFF'} · MODE:${MODES[visualMode]} · t:${t.toFixed(1)}`, 14, H - 14);
-    ctx.restore();
 }
 
-draw();
+function drawScene() {
+
+    ctx.fillStyle = '#050510';
+    ctx.fillRect(0,0,window.innerWidth,window.innerHeight);
+
+    const t = time * 0.02;
+
+    const positions = [
+        { x: -1, y: -1, hue: 200, label: `TOPOLOGICAL\nSPACE` },
+        { x: 0, y: -1, hue: 260, label: `QUANTUM\nSPACE` },
+        { x: 1, y: -1, hue: 20, label: `RESOURCE\nOPT` },
+        { x: -1, y: 0, hue: 180, label: `INFO\nSPACE` },
+        { x: 1, y: 0, hue: 330, label: `ENTROPY\nOPT` }
+    ];
+
+    positions.forEach((p, i) => {
+
+        const depth = 1 + p.y * 0.3;
+
+        const x = cx + p.x * 220 * depth + Math.sin(t + i) * mBass * 40;
+        const y = cy - 180 + p.y * 180 * depth + Math.cos(t + i) * mMid * 30;
+
+        const scale = 120 * depth + mEnergy * 40;
+
+        drawHexPanel(x, y, scale, p.hue, p.label, mEnergy);
+    });
+
+    drawCentralCore(
+        cx + Math.sin(t * 0.5) * mBass * 50,
+        cy + 180 + Math.cos(t * 0.8) * mMid * 40,
+        mEnergy,
+        t
+    );
+
+    drawResonanceField(t);
+
+    document.getElementById('bass').textContent = mBass.toFixed(2);
+    document.getElementById('mid').textContent = mMid.toFixed(2);
+    document.getElementById('high').textContent = mHigh.toFixed(2);
+    document.getElementById('energy').textContent = mEnergy.toFixed(2);
+}
+
+function render() {
+
+    requestAnimationFrame(render);
+
+    if (!isTabVisible) return;
+
+    if (isPlaying) {
+        time++;
+    }
+
+    updateAudio();
+    drawScene();
+}
+
+render();
+
+console.log('HEXAGONAL ROOM — RELEASE BUILD INITIALIZED');
 </script>
+
 </body>
 </html>
+```
