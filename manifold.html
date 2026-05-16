@@ -683,7 +683,7 @@ function arkSpectrumSpeed(sector){
   const bassBias = 0.25 + bassNorm * 0.75;
   const fluxBias = 0.15 + fluxNorm * 0.5;
   const cPhase   = 0.4 + consciousnessPhase() * 0.6;
-  return 0.004 + e * 0.012 * bassBias * cPhase + fluxBias * 0.004;
+  return 0.004 + e * 0.012 * bassBias * cPhase + fluxNorm * 0.004;
 }
 
 function arkSpectrumRadius(sector){
@@ -789,7 +789,7 @@ function updateArkSystem(t){
     spawnAuraWave(cx + (Math.random()-0.5)*80, cy + (Math.random()-0.5)*80, color);
   }
 
-  // ── Draw aura waves ──
+  // ── Draw aura waves as vibrating circles ──
   if(SHOW.auraWaves){
     for(let i=auraWaves.length-1; i>=0; i--){
       const w = auraWaves[i];
@@ -797,19 +797,26 @@ function updateArkSystem(t){
       w.alpha  -= 0.013;
       if(w.alpha<=0 || w.radius>=w.maxRadius){ auraWaves.splice(i,1); continue; }
 
+      // pulsation je čistě radiální (žádná „zubatá“ anomálie)
+      const pulse = 1 + Math.sin(t*4 + w.radius*0.04) * (0.12 + bassNorm*0.6);
+      const innerR = w.radius * 0.96;
+      const outerR = w.radius * pulse;
+
+      // vnější jemný halo kruh
       arkCtx.beginPath();
       arkCtx.strokeStyle = w.color;
-      arkCtx.lineWidth   = 1.5 + energyNorm*5;
-      arkCtx.globalAlpha = w.alpha;
-      const segs=60;
-      for(let s=0;s<=segs;s++){
-        const ang = (s/segs)*PI*2;
-        const dist = w.radius + Math.sin(ang*8 + t*5)*(2 + bassNorm*8);
-        const px = w.x + Math.cos(ang)*dist;
-        const py = w.y + Math.sin(ang)*dist;
-        s===0 ? arkCtx.moveTo(px,py) : arkCtx.lineTo(px,py);
-      }
+      arkCtx.lineWidth   = 1.2 + energyNorm*3;
+      arkCtx.globalAlpha = w.alpha * 0.55;
+      arkCtx.arc(w.x, w.y, outerR, 0, PI*2);
       arkCtx.stroke();
+
+      // vnitřní jasnější vibrující kruh
+      arkCtx.beginPath();
+      arkCtx.globalAlpha = w.alpha;
+      arkCtx.lineWidth   = 1.5 + bassNorm*4;
+      arkCtx.arc(w.x, w.y, innerR, 0, PI*2);
+      arkCtx.stroke();
+
       arkCtx.globalAlpha = 1;
     }
   }
