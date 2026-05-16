@@ -201,7 +201,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:9px;height
     </div>
     <div class="btn-row">
       <button class="btn active" id="tArks">ARK PARTICLES</button>
-      <button class="btn active" id="tAuraWaves">AURA WAVES</button>
     </div>
     <div style="height:4px"></div>
     <button class="btn peak-btn active" id="tLimiter">PEAK LIMITER: ON</button>
@@ -371,7 +370,7 @@ const VS = {
 const SHOW = {
   wave:true, spiral:true, sparks:true, ring:true,
   sectors:true, vortex:true, grain:true, aberr:true,
-  rain:true, nlp:true, limiter:true, arks:true, auraWaves:true
+  rain:true, nlp:true, limiter:true, arks:true, auraWaves:true // aura waves auto-controlled by spectrum
 };
 let staticMode   = false;
 let currentMode  = 'FORENSIC';
@@ -651,6 +650,54 @@ function spawnParticle(x,y,hue,power){
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// HUMAN CONSCIOUSNESS METAPROGRAMMING LAYER
+// The manifold treats each NLP12 sector as a cognitive plane. Ark packets
+// become "intent carriers" whose trajectory is shaped by local spectrum energy.
+// This stays strictly visual – no external state, only audio-driven geometry.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function sectorEnergy(sector){
+  // Returns a stable 0..1 energy metric for a given NLP plane.
+  // In audio mode uses smoothed sectorBright; in math mode uses mathBright.
+  if(isStarted && !isPaused && freqData){
+    return Math.min(1, Math.max(0, sectorBright[sector]));
+  }
+  const tLocal = t || 0.0;
+  return Math.min(1, Math.max(0, mathBright(sector, tLocal)));
+}
+
+function consciousnessPhase(){
+  // Meta-phase of the "mind" based on psychoState & entropy.
+  let base = 0.0;
+  if(psychoState === 'peak') base = 0.8;
+  else if(psychoState === 'active') base = 0.5;
+  else if(psychoState === 'recovery') base = 0.35;
+  else if(psychoState === 'suspended') base = 0.2;
+  else if(psychoState === 'static') base = 0.1;
+  const eNorm = Math.min(1, entropy / 10.0);
+  return base * 0.7 + eNorm * 0.3;
+}
+
+function arkSpectrumSpeed(sector){
+  const e = sectorEnergy(sector);
+  const bassBias = 0.25 + bassNorm * 0.75;
+  const fluxBias = 0.15 + fluxNorm * 0.5;
+  const cPhase   = 0.4 + consciousnessPhase() * 0.6;
+  return 0.004 + e * 0.012 * bassBias * cPhase + fluxBias * 0.004;
+}
+
+function arkSpectrumRadius(sector){
+  const e = sectorEnergy(sector);
+  const baseR = 8 + VS.hexR * 0.25;
+  return baseR * (0.8 + e * 1.8 + bassNorm * 0.5);
+}
+
+function arkSpectrumSize(sector){
+  const e = sectorEnergy(sector);
+  return 1.8 + e * 3.5 + bassNorm * 2.2;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // STEEL AURAS — ARK PARTICLE SYSTEM
 // ═══════════════════════════════════════════════════════════════════════════════
 const ARK_TYPES = ['circle','hex','lissajous','infinity'];
@@ -665,17 +712,21 @@ function spawnArkPacket(sx, sy, color, sector){
   const arkType = ARK_TYPES[Math.floor(Math.random()*ARK_TYPES.length)];
   const angle = Math.atan2(cy - sy, cx - sx);
   const dist  = Math.hypot(cx - sx, cy - sy);
+  const e     = sectorEnergy(sector);
+  const speed = arkSpectrumSpeed(sector);
+  const size  = arkSpectrumSize(sector);
+  const radius = arkSpectrumRadius(sector);
   arkPackets.push({
     x:sx, y:sy, startX:sx, startY:sy,
     progress:0,
-    speed: 0.008 + Math.random()*0.016,
+    speed: speed,
     color,
     angle, dist,
-    size: 2 + Math.random()*4 + bassNorm*3,
+    size: size,
     arkType,
     arkPhase: Math.random()*PI*2,
-    arkRadius: 10 + Math.random()*18,
-    arkFreq:   4  + Math.random()*6,
+    arkRadius: radius,
+    arkFreq:   3.5  + Math.random()*4.5,
     sector
   });
 }
@@ -688,7 +739,7 @@ function spawnAuraWave(x, y, color){
     maxRadius: dist * 1.6,
     color,
     alpha: 0.7,
-    speed: 3.5 + energyNorm * 6
+    speed: 1.5 + bassNorm * 10 + entropy * 0.3
   });
 }
 
@@ -717,9 +768,10 @@ function updateArkSystem(t){
       for(let col=-1; col*gw<W+R; col++){
         const hx=col*gw+shift, hy=row*gh;
         const sid=sectorOf(hx,hy);
-        const bright = isStarted&&!isPaused ? sectorBright[sid] : mathBright(sid,t)*0.6;
+        const bright = isStarted&&!isPaused ? sectorEnergy(sid) : mathBright(sid,t)*0.6;
         if(bright < 0.30) continue;
-        if(Math.random() < VS.arkRate * bright){
+        const weight = bright*bright*bright;
+        if(Math.random() < VS.arkRate * weight){
           const hue = getHue(NLP12[sid].hue);
           const color = `hsl(${hue},100%,65%)`;
           spawnArkPacket(hx, hy, color, sid);
@@ -1240,14 +1292,13 @@ bindToggle('tWave','wave','WAVE','WAVE OFF');
 bindToggle('tSpiral','spiral','SPIRAL','SPIRAL OFF');
 bindToggle('tSparks','sparks','SPARKS','SPARKS OFF');
 bindToggle('tRing','ring','RING','RING OFF');
-bindToggle('tSectors','sectors','SECTORS','SECTORS OFF');
-bindToggle('tVortex','vortex','VORTEX','VORTEX OFF');
+bindToggle('tSectors','sectors','SECTORS OFF');
+bindToggle('tVortex','vortex','VORTEX OFF');
 bindToggle('tGrain','grain','GRAIN','GRAIN OFF');
 bindToggle('tAberr','aberr','ABERR','ABERR OFF');
 bindToggle('tRain','rain','GLYPH RAIN','GLYPH RAIN OFF');
 bindToggle('tNlp','nlp','NLP COLOUR MAP: ON','NLP COLOUR MAP: OFF');
 bindToggle('tArks','arks','ARK PARTICLES','ARK PARTICLES OFF');
-bindToggle('tAuraWaves','auraWaves','AURA WAVES','AURA WAVES OFF');
 
 document.getElementById('tLimiter').onclick=function(){
   SHOW.limiter=!SHOW.limiter;
