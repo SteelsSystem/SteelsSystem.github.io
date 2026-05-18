@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Axiom | Hexagonal Forensic Manifold</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Inter:wght@400;600&display=swap');
+
+        :root {
+            --bg: #050507;
+            --surface: #0a0a0f;
+            --accent: #00e5ff;
+            --accent-dim: rgba(0, 229, 255, 0.2);
+            --border: rgba(255, 255, 255, 0.08);
+            --text-muted: #888891;
+            --gold: #ffcc33;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: #e4e4e7;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        canvas {
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 1;
+        }
+
+        .ui-layer {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+        }
+
+        .interactable { pointer-events: auto; }
+
+        .glass {
+            background: rgba(10, 10, 15, 0.80);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-idle  { background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.12); }
+        .badge-sync  { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); }
+        .badge-error { background: rgba(255,60,60,0.15); color: #ff6060; border: 1px solid rgba(255,60,60,0.5); }
+
+        .terminal {
+            height: 100%;
+            overflow-y: auto;
+            font-size: 0.7rem;
+            line-height: 1.4;
+            color: var(--text-muted);
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+        }
+
+        .node {
+            position: relative;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            overflow: hidden;
+            border-radius: 6px;
+            background: radial-gradient(circle at 0% 0%, rgba(0, 229, 255, 0.05), transparent 55%);
+        }
+        .node:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+            background: radial-gradient(circle at 10% 0%, rgba(0, 229, 255, 0.14), transparent 60%);
+            box-shadow: 0 0 18px rgba(0, 229, 255, 0.18);
+        }
+        .node-hex {
+            width: 14px; height: 12px;
+            background: linear-gradient(135deg, #00e5ff, #7b2fff);
+            clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+            opacity: 0.7; flex-shrink: 0;
+        }
+        .node:hover .node-hex { opacity: 1; box-shadow: 0 0 10px rgba(0, 229, 255, 0.9); }
+
+        .pill {
+            font-size: 9px;
+            padding: 0.15rem 0.45rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.12);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            background: none;
+            color: var(--text-muted);
+        }
+        .pill:hover { border-color: rgba(0,229,255,0.6); color: var(--accent); }
+        .pill-active { border-color: var(--accent); background: rgba(0,229,255,0.15); color: var(--accent); }
+
+        .scanline {
+            width: 100%; height: 2px;
+            background: rgba(0, 229, 255, 0.05);
+            position: absolute;
+            z-index: 5;
+            animation: scan 8s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes scan { 0%{top:0} 100%{top:100%} }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            background: rgba(255,255,255,0.1);
+            height: 2px; border-radius: 2px;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 10px; height: 10px;
+            background: var(--accent);
+            border-radius: 50%; cursor: pointer;
+        }
+
+        #btnInitAudio {
+            transition: background 0.2s, border-color 0.2s;
+        }
+        #btnInitAudio:hover { background: rgba(0,229,255,0.1); border-color: var(--accent); color: var(--accent); }
+        #btnInitAudio:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* Waveform canvas overlay at bottom */
+        #waveCanvas {
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 100%; height: 80px;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .pulse-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse-anim 1.2s ease-in-out infinite;
+        }
+        @keyframes pulse-anim {
+            0%,100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(0,229,255,0.6); }
+            50%      { opacity: 0.6; transform: scale(0.8); box-shadow: 0 0 0 4px rgba(0,229,255,0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="scanline"></div>
+    <canvas id="manifoldCanvas"></canvas>
+    <canvas id="waveCanvas"></canvas>
+
+    <div class="ui-layer">
+        <!-- HEADER -->
+        <header class="flex justify-between items-start mb-6">
+            <div class="interactable">
+                <h1 class="text-2xl font-bold tracking-tighter mono text-white">AXIOM_01</h1>
+                <p class="text-xs mono opacity-60" style="color:var(--text-muted)">
+                    HEX-NLP · 12 Planes // Forensic Manifold Engine
+                </p>
+            </div>
+            <div class="interactable glass p-4 flex flex-col gap-2 min-w-[260px]">
+                <div class="flex justify-between items-center">
+                    <span class="text-[10px] mono uppercase">System State</span>
+                    <div class="status-badge badge-idle" id="syncStatus">
+                        <span id="syncDot" style="display:none"></span>
+                        Idle
+                    </div>
+                </div>
+                <div class="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+                    <div id="syncProgress" class="h-full bg-[#00e5ff] transition-all duration-300" style="width:0%"></div>
+                </div>
+                <div class="flex justify-between text-[9px] mono" style="color:var(--text-muted)">
+                    <span id="alignLabel">ALIGNMENT: 0.0000</span>
+                    <span id="latencyLabel">LATENCY: —</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN -->
+        <main class="flex-grow flex gap-6 overflow-hidden">
+            <!-- Sidebar -->
+            <aside class="w-80 flex flex-col gap-4 overflow-hidden">
+
+                <!-- Axiom Nodes -->
+                <div class="interactable glass p-4 flex-shrink-0">
+                    <h3 class="text-xs mono uppercase mb-3 border-b pb-2" style="border-color:var(--border)">Axiom Nodes</h3>
+                    <div class="flex flex-col gap-2" id="axiomList"></div>
+                </div>
+
+                <!-- Audio & NLP -->
+                <div class="interactable glass p-4 flex flex-col overflow-y-auto flex-shrink-0" style="max-height:420px">
+                    <h3 class="text-xs mono uppercase mb-3 border-b pb-2" style="border-color:var(--border)">
+                        Forensic Audio & HEX-NLP
+                    </h3>
+
+                    <label class="block text-[10px] mono mb-1 opacity-70">↑ Upload audio</label>
+                    <input id="audioFile" type="file" accept="audio/*"
+                        class="w-full text-[10px] mono bg-black/40 border rounded px-2 py-1 mb-2 cursor-pointer"
+                        style="border-color:rgba(255,255,255,0.1)"/>
+
+                    <button id="btnInitAudio"
+                        class="w-full text-[10px] mono uppercase border bg-white/5 px-2 py-1 rounded mb-2"
+                        style="border-color:rgba(255,255,255,0.2)">
+                        INIT FORENSIC ENGINE
+                    </button>
+
+                    <div id="audioStatus" class="text-[10px] mono mb-3" style="color:var(--text-muted)">
+                        No source loaded.
+                    </div>
+
+                    <!-- NLP Planes -->
+                    <div class="mb-3">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[10px] mono uppercase" style="color:var(--text-muted)">HEX-NLP · 12 Planes</span>
+                            <span class="text-[9px] mono opacity-60" id="currentPlaneLabel">[0] ASSERT⁺</span>
+                        </div>
+                        <div id="nlpPlaneList" class="flex flex-wrap gap-1"></div>
+                    </div>
+
+                    <!-- Creativity Modes -->
+                    <div class="mb-3">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[10px] mono uppercase" style="color:var(--text-muted)">Modes</span>
+                            <span class="text-[9px] mono opacity-60" id="currentModeLabel">FLUID</span>
+                        </div>
+                        <div id="creativityModes" class="flex flex-wrap gap-1"></div>
+                    </div>
+
+                    <!-- Visual Settings -->
+                    <div class="mt-1 pt-3 border-t" style="border-color:rgba(255,255,255,0.1)">
+                        <div class="text-[10px] mono uppercase mb-2" style="color:var(--text-muted)">Visual Filters</div>
+                        <div class="flex flex-col gap-2">
+                            <label class="flex items-center justify-between text-[9px] mono gap-2">
+                                <span class="opacity-70">Gain</span>
+                                <input id="vsGain" type="range" min="0.3" max="2.5" value="1.0" step="0.1" class="w-24">
+                            </label>
+                            <label class="flex items-center justify-between text-[9px] mono gap-2">
+                                <span class="opacity-70">Fractal Spd</span>
+                                <input id="vsFractalSpeed" type="range" min="0.1" max="4.0" value="1.0" step="0.1" class="w-24">
+                            </label>
+                            <label class="flex items-center justify-between text-[9px] mono gap-2">
+                                <span class="opacity-70">Density</span>
+                                <input id="vsFractalDensity" type="range" min="0.50" max="0.95" value="0.72" step="0.01" class="w-24">
+                            </label>
+                            <label class="flex items-center justify-between text-[9px] mono gap-2">
+                                <span class="opacity-70">Spin</span>
+                                <input id="vsManifoldSpin" type="range" min="0.1" max="3.0" value="1.0" step="0.1" class="w-24">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Log -->
+                <div class="interactable glass p-4 flex flex-col" style="min-height:120px;flex:1;overflow:hidden">
+                    <h3 class="text-xs mono uppercase mb-3 border-b pb-2 flex-shrink-0" style="border-color:var(--border)">Execution Log</h3>
+                    <div id="terminalOutput" class="terminal mono flex-grow"></div>
+                </div>
+            </aside>
+
+            <!-- Center -->
+            <div class="flex-grow relative">
+                <div class="absolute bottom-4 left-1/2 -translate-x-1/2 interactable glass px-6 py-3 flex gap-8 whitespace-nowrap">
+                    <div class="text-center">
+                        <div class="text-[10px] mono uppercase" style="color:var(--text-muted)">Entropy</div>
+                        <div class="text-lg mono" id="valEntropy">0.000</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-[10px] mono uppercase" style="color:var(--text-muted)">Invariant</div>
+                        <div class="text-lg mono" id="valRot">True</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-[10px] mono uppercase" style="color:var(--text-muted)">Confidence</div>
+                        <div class="text-lg mono" id="valPath">0%</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="mt-6 flex justify-between items-center text-[10px] mono opacity-50">
+            <div>LEX FORENSICA // TOPOLOGICAL AUDIO ANALYSIS MODULE</div>
+            <div>BUILD 2026.Q2 // NO PHANTOM BRANCHES DETECTED</div>
+        </footer>
+    </div>
+
+<script>
+// ─── Canvas Setup ───────────────────────────────────────────────────────────
+const canvas  = document.getElementById('manifoldCanvas');
+const ctx     = canvas.getContext('2d');
+const wCvs    = document.getElementById('waveCanvas');
+const wCtx    = wCvs.getContext('2d');
+const terminal = document.getElementById('terminalOutput');
+
+let width, height, centerX, centerY;
+let time = 0;
+
+const VS = { gain:1.0, fractalSpeed:1.0, fractalDensity:0.72, manifoldSpin:1.0 };
+
+// ─── Audio State ─────────────────────────────────────────────────────────────
+let audioCtx     = null;
+let analyser     = null;
+let sourceNode   = null;   // MediaElementSourceNode – ONE per element
+let dataArray    = null;
+let waveData     = null;
+let audioElement = null;
+let audioActive  = false;
+let audioReady   = false;  // canplay fired
+
+let energyNorm   = 0;
+let entropyNorm  = 0;
+let spectralEntropy = 0;
+
+const bands3 = {
+    low:  { energy: 0 },
+    mid:  { energy: 0 },
+    high: { energy: 0 }
+};
+
+let syncHexStreaks = [];
+
+// ─── Data Models ─────────────────────────────────────────────────────────────
+const NLP12 = [
+    {id:0,label:'ASSERT⁺'},{id:1,label:'ASSERT⁻'},
+    {id:2,label:'DIRECT⁺'},{id:3,label:'DIRECT⁻'},
+    {id:4,label:'COMMIT⁺'},{id:5,label:'COMMIT⁻'},
+    {id:6,label:'EXPR⁺'},  {id:7,label:'EXPR⁻'},
+    {id:8,label:'DECL⁺'},  {id:9,label:'DECL⁻'},
+    {id:10,label:'META⁺'},{id:11,label:'META⁻'}
+];
+const CREATIVE_MODES = ['LINEAR','FLUID','DEEP','CHAOS','FORENSIC'];
+let currentPlane = 0, currentMode = 1;
+
+const axioms = [
+    {id:'A0', name:'Integrity Verification', status:'Active'},
+    {id:'A1', name:'Manifold Mapping',       status:'Standby'},
+    {id:'A4', name:'Absolute Determinism',   status:'Active'},
+    {id:'F0', name:'Spectral Forensics',     status:'Idle'}
+];
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function setStatus(text, type='idle') {
+    const el = document.getElementById('syncStatus');
+    el.className = 'status-badge badge-' + type;
+    // pulse dot
+    const dot = document.getElementById('syncDot');
+    if (type === 'sync') {
+        dot.className = 'pulse-dot';
+        dot.style.display = 'inline-block';
+    } else {
+        dot.style.display = 'none';
+    }
+    el.childNodes[el.childNodes.length-1].textContent = ' ' + text;
+}
+
+function logToTerminal(msg) {
+    const entry = document.createElement('div');
+    const t = new Date().toLocaleTimeString([],{hour12:false});
+    entry.innerHTML = `<span style="color:#fff;opacity:.4;margin-right:8px">[${t}]</span>${msg}`;
+    terminal.appendChild(entry);
+    terminal.scrollTop = terminal.scrollHeight;
+    while (terminal.childNodes.length > 60) terminal.removeChild(terminal.firstChild);
+}
+
+function drawHex(c, x, y, size, color, alpha=1, fill=false) {
+    c.save();
+    c.globalAlpha = alpha;
+    c.beginPath();
+    for (let i=0; i<6; i++) {
+        const a = (Math.PI/3)*i + (Math.PI/6);
+        const px = x + size*Math.cos(a);
+        const py = y + size*Math.sin(a);
+        i===0 ? c.moveTo(px,py) : c.lineTo(px,py);
+    }
+    c.closePath();
+    if (fill) { c.fillStyle=color; c.fill(); }
+    else       { c.strokeStyle=color; c.lineWidth=1; c.stroke(); }
+    c.restore();
+}
+
+function resize() {
+    width  = canvas.width  = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+    wCvs.width  = width;
+    wCvs.height = 80;
+    centerX = width/2;
+    centerY = height/2;
+}
+
+// ─── Audio Setup ──────────────────────────────────────────────────────────────
+function teardownAudio() {
+    if (audioElement) {
+        audioElement.pause();
+        audioElement.src = '';
+        audioElement.load();
+    }
+    if (sourceNode) {
+        try { sourceNode.disconnect(); } catch(e){}
+        sourceNode = null;
+    }
+    if (analyser) {
+        try { analyser.disconnect(); } catch(e){}
+        analyser = null;
+    }
+    audioElement = null;
+    audioActive  = false;
+    audioReady   = false;
+    dataArray    = null;
+    waveData     = null;
+}
+
+function setupAnalyserForAudio(file) {
+    const btn = document.getElementById('btnInitAudio');
+    btn.disabled = true;
+    btn.textContent = 'LOADING…';
+
+    // Always create a fresh AudioContext (browsers require user gesture)
+    if (!audioCtx || audioCtx.state === 'closed') {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    // Full teardown of old nodes first
+    teardownAudio();
+
+    const url = URL.createObjectURL(file);
+    audioElement = new Audio();
+    audioElement.crossOrigin = 'anonymous';
+
+    // Error handler
+    audioElement.onerror = () => {
+        logToTerminal('<span style="color:#ff6060">[ERR] Audio decode failed. Try another file.</span>');
+        setStatus('Error', 'error');
+        document.getElementById('audioStatus').innerText = 'Decode error.';
+        btn.disabled = false;
+        btn.textContent = 'INIT FORENSIC ENGINE';
+        teardownAudio();
+    };
+
+    audioElement.addEventListener('canplay', () => {
+        if (audioReady) return;   // prevent double-fire
+        audioReady = true;
+
+        try {
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 2048;
+            analyser.smoothingTimeConstant = 0.82;
+
+            // createMediaElementSource must be called only once per element
+            sourceNode = audioCtx.createMediaElementSource(audioElement);
+            sourceNode.connect(analyser);
+            analyser.connect(audioCtx.destination);
+
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
+            waveData  = new Uint8Array(analyser.frequencyBinCount);
+        } catch(e) {
+            logToTerminal(`<span style="color:#ff6060">[ERR] ${e.message}</span>`);
+            btn.disabled = false;
+            btn.textContent = 'INIT FORENSIC ENGINE';
+            return;
+        }
+
+        // Resume context if suspended (Safari autoplay policy)
+        audioCtx.resume().then(() => {
+            audioElement.play()
+                .then(() => {
+                    audioActive = true;
+                    setStatus('Synced', 'sync');
+                    document.getElementById('audioStatus').innerText = 'FORENSIC STREAM ACTIVE';
+                    logToTerminal('[AUDIO] Manifold injection successful. Stream live.');
+                    btn.disabled = false;
+                    btn.textContent = 'REINIT ENGINE';
+                })
+                .catch(err => {
+                    logToTerminal(`<span style="color:#ff6060">[ERR] Playback blocked: ${err.message}</span>`);
+                    setStatus('Blocked', 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'INIT FORENSIC ENGINE';
+                });
+        });
+    }, { once: true });
+
+    audioElement.src = url;
+    audioElement.loop = true;
+    audioElement.load();
+
+    document.getElementById('audioStatus').innerText = 'Decoding…';
+    setStatus('Loading', 'idle');
+    logToTerminal(`[AUDIO] Loading: <span style="color:#00e5ff">${file.name}</span>`);
+}
+
+function setupListeners() {
+    const btn  = document.getElementById('btnInitAudio');
+    const file = document.getElementById('audioFile');
+
+    btn.onclick = () => {
+        if (!file.files[0]) {
+            logToTerminal('<span style="color:#ffcc33">[WARN] Upload a file first.</span>');
+            return;
+        }
+        setupAnalyserForAudio(file.files[0]);
+    };
+
+    // Allow re-init when new file selected
+    file.onchange = () => {
+        if (file.files[0]) {
+            btn.textContent = 'INIT FORENSIC ENGINE';
+            btn.disabled = false;
+        }
+    };
+
+    document.getElementById('vsGain').oninput          = e => VS.gain          = +e.target.value;
+    document.getElementById('vsFractalSpeed').oninput  = e => VS.fractalSpeed  = +e.target.value;
+    document.getElementById('vsFractalDensity').oninput= e => VS.fractalDensity= +e.target.value;
+    document.getElementById('vsManifoldSpin').oninput  = e => VS.manifoldSpin  = +e.target.value;
+}
+
+// ─── Metrics ─────────────────────────────────────────────────────────────────
+let latencyT = 0;
+function updateMetrics() {
+    if (!analyser || !audioActive) {
+        // Idle animation still moves entropy slightly
+        energyNorm  = 0;
+        entropyNorm = 0;
+        document.getElementById('valEntropy').innerText = '0.000';
+        document.getElementById('valPath').innerText    = '0%';
+        document.getElementById('syncProgress').style.width = '0%';
+        return;
+    }
+
+    analyser.getByteFrequencyData(dataArray);
+    analyser.getByteTimeDomainData(waveData);
+
+    const third = Math.floor(dataArray.length/3);
+    let lS=0, mS=0, hS=0;
+    for(let i=0;       i<third;      i++) lS += dataArray[i];
+    for(let i=third;   i<third*2;    i++) mS += dataArray[i];
+    for(let i=third*2; i<dataArray.length; i++) hS += dataArray[i];
+
+    bands3.low.energy  = lS / third;
+    bands3.mid.energy  = mS / third;
+    bands3.high.energy = hS / (dataArray.length - third*2);
+
+    energyNorm = Math.min(1,
+        (bands3.low.energy*0.5 + bands3.mid.energy*0.3 + bands3.high.energy*0.2) / 150
+    ) * VS.gain;
+
+    // Spectral entropy
+    const total = dataArray.reduce((a,b)=>a+b, 0);
+    let ent = 0;
+    if (total > 0) {
+        dataArray.forEach(v => { if(v>0){ const p=v/total; ent -= p*Math.log2(p); } });
+    }
+    spectralEntropy = ent;
+    entropyNorm = Math.min(1, ent/8);
+
+    // Latency ping (cosmetic)
+    latencyT += 0.05;
+    const lat = Math.round(4 + Math.sin(latencyT)*2 + Math.random()*1.5);
+    document.getElementById('latencyLabel').innerText = `LATENCY: ${lat}ms`;
+
+    document.getElementById('valEntropy').innerText  = ent.toFixed(3);
+    document.getElementById('valPath').innerText     = Math.round(energyNorm*100) + '%';
+    document.getElementById('alignLabel').innerText  = 'ALIGNMENT: ' + (0.85 + entropyNorm*0.14).toFixed(4);
+    document.getElementById('syncProgress').style.width = (40 + energyNorm*60) + '%';
+}
+
+// ─── Streaks ─────────────────────────────────────────────────────────────────
+function updateStreaks() {
+    if (!audioActive) return;
+    if (bands3.high.energy > 35 && syncHexStreaks.length < 60) {
+        const angle = Math.random()*Math.PI*2;
+        syncHexStreaks.push({
+            x:0, y:0,
+            vx: Math.cos(angle)*(2 + Math.random()*5),
+            vy: Math.sin(angle)*(2 + Math.random()*5),
+            life: 1.0,
+            size: 2 + Math.random()*4,
+            color: Math.random()>0.5 ? '#00e5ff' : '#7b2fff'
+        });
+    }
+    for (let i = syncHexStreaks.length-1; i>=0; i--) {
+        const s = syncHexStreaks[i];
+        s.x += s.vx*(1 + energyNorm);
+        s.y += s.vy*(1 + energyNorm);
+        s.life -= 0.014;
+        if (s.life <= 0) syncHexStreaks.splice(i,1);
+    }
+}
+
+// ─── Draw ─────────────────────────────────────────────────────────────────────
+function drawVisuals() {
+    ctx.clearRect(0,0,width,height);
+
+    // 1. Hex Grid
+    const size = 50, h = size*Math.sqrt(3);
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    for (let r=-10; r<=10; r++) {
+        for (let c=-10; c<=10; c++) {
+            const x = c*(size*1.5);
+            const y = r*h + (Math.abs(c)%2===1 ? h/2 : 0);
+            const dist = Math.sqrt(x*x+y*y);
+            const op = Math.max(0, (1-dist/(size*8))*0.15*(0.5+energyNorm));
+            if (op>0) drawHex(ctx, x, y, size-2, '#00e5ff', op*VS.gain);
+        }
+    }
+    ctx.restore();
+
+    // 2. Streaks
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    syncHexStreaks.forEach(s => {
+        drawHex(ctx, s.x, s.y, s.size, s.color, s.life*0.8, true);
+        ctx.beginPath();
+        ctx.moveTo(s.x, s.y);
+        ctx.lineTo(s.x-s.vx*10, s.y-s.vy*10);
+        ctx.strokeStyle = s.color;
+        ctx.globalAlpha = s.life*0.3;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    });
+    ctx.restore();
+
+    // 3. Central Manifold rings
+    const baseSize = 180 + energyNorm*60;
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    for (let i=0; i<4; i++) {
+        const s = baseSize - i*30;
+        const rot = time*0.5*VS.manifoldSpin * (i%2===0?1:-1);
+        ctx.rotate(rot - (i>0 ? (time*0.5*VS.manifoldSpin*(((i-1)%2===0)?1:-1)) : 0));
+
+        const alpha = (0.6 - i*0.15)*(0.5 + energyNorm*0.5)*VS.gain;
+        drawHex(ctx, 0, 0, s, i===0?'#00e5ff':'#7b2fff', alpha);
+
+        if (i===1 && energyNorm>0.25) {
+            for (let j=0; j<6; j++) {
+                const a = (Math.PI/3)*j+(Math.PI/6);
+                ctx.beginPath();
+                ctx.arc(s*Math.cos(a), s*Math.sin(a), 3, 0, Math.PI*2);
+                ctx.fillStyle = '#fff';
+                ctx.globalAlpha = energyNorm*0.9;
+                ctx.fill();
+            }
+        }
+    }
+    ctx.restore();
+
+    // 4. Waveform on separate canvas
+    wCtx.clearRect(0,0,width,80);
+    if (audioActive && waveData && waveData.length > 0) {
+        wCtx.beginPath();
+        const sw = width/waveData.length;
+        for (let i=0; i<waveData.length; i++) {
+            const v = waveData[i]/128.0;
+            const y = v*40;  // center = 40, full range ±40
+            i===0 ? wCtx.moveTo(0, y) : wCtx.lineTo(i*sw, y);
+        }
+        wCtx.strokeStyle = `rgba(0,229,255,${0.08+energyNorm*0.25})`;
+        wCtx.lineWidth = 1.5;
+        wCtx.stroke();
+
+        // Mirror below
+        wCtx.beginPath();
+        for (let i=0; i<waveData.length; i++) {
+            const v = waveData[i]/128.0;
+            const y = 80 - v*40;
+            i===0 ? wCtx.moveTo(0, y) : wCtx.lineTo(i*sw, y);
+        }
+        wCtx.strokeStyle = `rgba(123,47,255,${0.05+energyNorm*0.15})`;
+        wCtx.lineWidth = 1;
+        wCtx.stroke();
+    }
+}
+
+// ─── Loop ─────────────────────────────────────────────────────────────────────
+function animate() {
+    time += 0.01 * VS.fractalSpeed;
+    updateMetrics();
+    updateStreaks();
+    drawVisuals();
+    requestAnimationFrame(animate);
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+window.onload = () => {
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Axiom Nodes
+    const list = document.getElementById('axiomList');
+    axioms.forEach(a => {
+        const div = document.createElement('div');
+        div.className='interactable node border border-white/10 p-2 text-[10px] mono flex justify-between items-center';
+        div.innerHTML=`<div class="flex items-center gap-2"><div class="node-hex"></div><span>${a.id} // ${a.name}</span></div><span style="opacity:.4">${a.status}</span>`;
+        list.appendChild(div);
+    });
+
+    // NLP Planes
+    const nlpCont = document.getElementById('nlpPlaneList');
+    NLP12.forEach(p => {
+        const b = document.createElement('button');
+        b.className = `pill mono ${p.id===currentPlane?'pill-active':''}`;
+        b.textContent = p.label;
+        b.onclick = () => {
+            currentPlane = p.id;
+            document.getElementById('currentPlaneLabel').innerText=`[${p.id}] ${p.label}`;
+            nlpCont.querySelectorAll('.pill').forEach(c=>c.classList.remove('pill-active'));
+            b.classList.add('pill-active');
+            logToTerminal(`[NLP] Shifted to plane <span style="color:#00e5ff">${p.label}</span>`);
+        };
+        nlpCont.appendChild(b);
+    });
+
+    // Creativity Modes
+    const modeCont = document.getElementById('creativityModes');
+    CREATIVE_MODES.forEach((m,i) => {
+        const b = document.createElement('button');
+        b.className = `pill mono ${i===currentMode?'pill-active':''}`;
+        b.textContent = m;
+        b.onclick = () => {
+            currentMode = i;
+            document.getElementById('currentModeLabel').innerText = m;
+            modeCont.querySelectorAll('.pill').forEach(c=>c.classList.remove('pill-active'));
+            b.classList.add('pill-active');
+            logToTerminal(`[MODE] Logic state: <span style="color:#00e5ff">${m}</span>`);
+        };
+        modeCont.appendChild(b);
+    });
+
+    setupListeners();
+
+    // Initial log
+    logToTerminal('[INIT] Starting PC2 Forensic Execution...');
+    logToTerminal('[LOG] Loading Hexagonal Manifold...');
+    logToTerminal('[LOG] Topology verified.');
+    logToTerminal('[OK] Forensic engine idle. Upload audio to begin.');
+
+    animate();
+};
+</script>
+</body>
+</html>

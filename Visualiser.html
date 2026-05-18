@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HEXAGONAL ROOM — RELEASE BUILD</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #050510;
+    font-family: monospace;
+}
+
+body {
+    color: #00ffcc;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+#overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
+}
+
+#stats,
+#controls,
+#timer {
+    pointer-events: auto;
+}
+
+.panel {
+    background: rgba(0,0,0,0.88);
+    border: 2px solid #00ffaa;
+    box-shadow: 0 0 18px rgba(0,255,170,0.15);
+    backdrop-filter: blur(8px);
+}
+
+#stats {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    padding: 12px;
+    font-size: 11px;
+    line-height: 1.6;
+    min-width: 200px;
+}
+
+#controls {
+    position: fixed;
+    bottom: 12px;
+    left: 12px;
+    padding: 10px;
+}
+
+#timer {
+    position: fixed;
+    bottom: 12px;
+    right: 12px;
+    padding: 12px;
+    text-align: center;
+}
+
+button {
+    background: #00ffaa;
+    color: #000;
+    border: none;
+    padding: 8px 12px;
+    margin: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    font-family: monospace;
+    transition: 0.2s ease;
+}
+
+button:hover {
+    transform: scale(1.05);
+}
+
+button.active {
+    background: #ffff00;
+}
+
+button.playing {
+    background: #ff00ff;
+    color: white;
+}
+
+#fileInput {
+    display: none;
+}
+
+.time-label {
+    font-size: 10px;
+    color: #888;
+}
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div id="overlay">
+
+    <div id="stats" class="panel">
+        <strong>HEXAGONAL ROOM</strong><br>
+        ━━━━━━━━━━━━━━<br>
+        Mode: <span id="mode">MATH</span><br>
+        Status: <span id="status">▶ PLAYING</span><br>
+        ━━━━━━━━━━━━━━<br>
+        Bass: <span id="bass">0.00</span><br>
+        Mid: <span id="mid">0.00</span><br>
+        High: <span id="high">0.00</span><br>
+        Energy: <span id="energy">0.00</span><br>
+    </div>
+
+    <div id="controls" class="panel">
+        <button id="btnUpload">📁 UPLOAD</button>
+        <button id="btnMath" class="active">⚡ MATH</button>
+        <button id="btnPlayPause" class="playing">⏸ PAUSE</button>
+        <button id="btnStop">⏹ STOP</button>
+        <button id="btnFullscreen">⛶ FULL</button>
+        <br>
+        <input type="file" id="fileInput" accept="audio/*">
+    </div>
+
+    <div id="timer" class="panel">
+        <div class="time-label">ELAPSED</div>
+        <div id="time-display">0:00</div>
+    </div>
+
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let cx = 0;
+let cy = 0;
+
+function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.scale(dpr, dpr);
+
+    cx = window.innerWidth / 2;
+    cy = window.innerHeight / 2;
+}
+
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+let audioCtx = null;
+let analyser = null;
+let freqData = null;
+let audioElement = null;
+let source = null;
+let currentObjectURL = null;
+
+let mBass = 0;
+let mMid = 0;
+let mHigh = 0;
+let mEnergy = 0;
+
+let mode = 'MATH';
+let isPlaying = true;
+let time = 0;
+let elapsedTime = 0;
+let startTime = Date.now();
+let isTabVisible = true;
+
+function initAudio() {
+    if (audioCtx) return;
+
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 1024;
+    analyser.smoothingTimeConstant = 0.85;
+
+    freqData = new Uint8Array(analyser.frequencyBinCount);
+}
+
+initAudio();
+
+function formatTime(ms) {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+}
+
+setInterval(() => {
+    if (isPlaying) {
+        elapsedTime = Date.now() - startTime;
+        document.getElementById('time-display').textContent = formatTime(elapsedTime);
+    }
+}, 100);
+
+async function ensureAudioRunning() {
+    if (audioCtx && audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+    }
+}
+
+async function loadAudioFile(file) {
+    await ensureAudioRunning();
+
+    if (audioElement) {
+        audioElement.pause();
+    }
+
+    if (source) {
+        source.disconnect();
+    }
+
+    if (currentObjectURL) {
+        URL.revokeObjectURL(currentObjectURL);
+    }
+
+    currentObjectURL = URL.createObjectURL(file);
+
+    audioElement = new Audio(currentObjectURL);
+    audioElement.crossOrigin = 'anonymous';
+
+    source = audioCtx.createMediaElementSource(audioElement);
+
+    source.connect(analyser);
+    analyser.connect(audioCtx.destination);
+
+    await audioElement.play();
+
+    mode = 'FILE';
+    isPlaying = true;
+    startTime = Date.now();
+    elapsedTime = 0;
+
+    document.getElementById('mode').textContent = 'FILE';
+    document.getElementById('status').textContent = '▶ PLAYING';
+
+    document.getElementById('btnMath').classList.remove('active');
+    document.getElementById('btnUpload').classList.add('active');
+    document.getElementById('btnPlayPause').classList.add('playing');
+}
+
+const fileInput = document.getElementById('fileInput');
+
+
+document.getElementById('btnUpload').onclick = async () => {
+    await ensureAudioRunning();
+    fileInput.click();
+};
+
+fileInput.onchange = async (e) => {
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    await loadAudioFile(file);
+};
+
+
+document.body.addEventListener('dragover', e => {
+    e.preventDefault();
+});
+
+
+document.body.addEventListener('drop', async e => {
+    e.preventDefault();
+
+    const file = e.dataTransfer.files[0];
+
+    if (file) {
+        await loadAudioFile(file);
+    }
+});
+
+
+document.getElementById('btnMath').onclick = () => {
+    if (audioElement) {
+        audioElement.pause();
+    }
+
+    mode = 'MATH';
+    isPlaying = true;
+    elapsedTime = 0;
+    startTime = Date.now();
+
+    document.getElementById('mode').textContent = 'MATH';
+    document.getElementById('status').textContent = '▶ PLAYING';
+
+    document.getElementById('btnMath').classList.add('active');
+    document.getElementById('btnUpload').classList.remove('active');
+};
+
+
+document.getElementById('btnPlayPause').onclick = async () => {
+    isPlaying = !isPlaying;
+
+    if (isPlaying) {
+        startTime = Date.now() - elapsedTime;
+
+        if (mode === 'IDLE') {
+            mode = 'MATH';
+        }
+
+        await ensureAudioRunning();
+
+        if (audioElement && audioElement.paused) {
+            await audioElement.play();
+        }
+
+        document.getElementById('status').textContent = '▶ PLAYING';
+        document.getElementById('btnPlayPause').textContent = '⏸ PAUSE';
+        document.getElementById('btnPlayPause').classList.add('playing');
+
+    } else {
+
+        if (audioElement) {
+            audioElement.pause();
+        }
+
+        document.getElementById('status').textContent = '⏸ PAUSED';
+        document.getElementById('btnPlayPause').textContent = '▶ PLAY';
+        document.getElementById('btnPlayPause').classList.remove('playing');
+    }
+};
+
+
+document.getElementById('btnStop').onclick = () => {
+
+    if (audioElement) {
+        audioElement.pause();
+        audioElement.currentTime = 0;
+    }
+
+    isPlaying = false;
+    mode = 'IDLE';
+
+    time = 0;
+    elapsedTime = 0;
+
+    mBass = 0;
+    mMid = 0;
+    mHigh = 0;
+    mEnergy = 0;
+
+    document.getElementById('mode').textContent = 'IDLE';
+    document.getElementById('status').textContent = '⏹ STOPPED';
+    document.getElementById('time-display').textContent = '0:00';
+};
+
+
+document.getElementById('btnFullscreen').onclick = async () => {
+    if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+    } else {
+        await document.exitFullscreen();
+    }
+};
+
+
+document.addEventListener('visibilitychange', () => {
+    isTabVisible = !document.hidden;
+});
+
+function generateMathData() {
+
+    const t = time * 0.02;
+
+    for (let i = 0; i < freqData.length; i++) {
+
+        const bass = Math.sin(t * 0.4 + i * 0.05) * 0.5 + 0.5;
+        const mid = Math.cos(t * 1.2 + i * 0.08) * 0.5 + 0.5;
+        const high = Math.sin(t * 2.4 + i * 0.12) * 0.5 + 0.5;
+
+        let value;
+
+        if (i < freqData.length * 0.33) {
+            value = bass;
+        } else if (i < freqData.length * 0.66) {
+            value = mid;
+        } else {
+            value = high;
+        }
+
+        freqData[i] = value * 255;
+    }
+}
+
+function updateAudio() {
+
+    if (!isPlaying || mode === 'IDLE') {
+
+        mBass *= 0.9;
+        mMid *= 0.9;
+        mHigh *= 0.9;
+        mEnergy *= 0.9;
+
+        return;
+    }
+
+    if (mode === 'MATH') {
+        generateMathData();
+    } else if (mode === 'FILE') {
+        analyser.getByteFrequencyData(freqData);
+    }
+
+    const len = freqData.length;
+
+    const bassEnd = Math.floor(len * 0.1);
+    const midEnd = Math.floor(len * 0.5);
+
+    let b = 0;
+    let m = 0;
+    let h = 0;
+
+    for (let i = 0; i < len; i++) {
+
+        if (i < bassEnd) {
+            b += freqData[i];
+        } else if (i < midEnd) {
+            m += freqData[i];
+        } else {
+            h += freqData[i];
+        }
+    }
+
+    const bAvg = b / bassEnd / 255;
+    const mAvg = m / (midEnd - bassEnd) / 255;
+    const hAvg = h / (len - midEnd) / 255;
+
+    mBass += (bAvg - mBass) * 0.12;
+    mMid += (mAvg - mMid) * 0.12;
+    mHigh += (hAvg - mHigh) * 0.12;
+
+    mEnergy = (mBass + mMid + mHigh) / 3;
+}
+
+function drawMultilineText(text, x, y, lineHeight = 12) {
+
+    const lines = text.split('\n');
+
+    lines.forEach((line, index) => {
+
+        ctx.fillText(
+            line,
+            x,
+            y + (index - (lines.length - 1) / 2) * lineHeight
+        );
+    });
+}
+
+function drawHexPanel(x, y, size, hue, label, energy) {
+
+    ctx.beginPath();
+
+    for (let i = 0; i < 6; i++) {
+
+        const angle = (i / 6) * Math.PI * 2 + Math.PI / 6;
+
+        const px = x + size * Math.cos(angle);
+        const py = y + size * Math.sin(angle);
+
+        if (i === 0) {
+            ctx.moveTo(px, py);
+        } else {
+            ctx.lineTo(px, py);
+        }
+    }
+
+    ctx.closePath();
+
+    ctx.fillStyle = `hsla(${hue},100%,50%,${energy * 0.2})`;
+    ctx.fill();
+
+    ctx.strokeStyle = `hsl(${hue},100%,60%)`;
+    ctx.lineWidth = 2 + energy * 2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    drawMultilineText(label, x, y);
+}
+
+function drawCentralCore(x, y, energy, t) {
+
+    const size = 60 + energy * 80;
+
+    for (let i = 0; i < 3; i++) {
+
+        const radius = size * (1 + i * 0.7);
+
+        ctx.beginPath();
+
+        ctx.arc(
+            x,
+            y,
+            radius + Math.sin(t + i) * energy * 20,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.strokeStyle = `hsla(${(t * 30 + i * 80) % 360},100%,60%,0.5)`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+}
+
+function drawResonanceField(t) {
+
+    if (mEnergy < 0.05) return;
+
+    for (let ring = 0; ring < 5; ring++) {
+
+        const baseRadius = 100 + ring * 70;
+
+        ctx.beginPath();
+
+        for (let angle = 0; angle <= Math.PI * 2; angle += 0.08) {
+
+            const distortion = Math.sin(angle * 6 + t * 0.8) * mEnergy * 25;
+
+            const r = baseRadius + distortion;
+
+            const x = cx + Math.cos(angle) * r;
+            const y = cy + Math.sin(angle) * r;
+
+            if (angle === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+
+        ctx.strokeStyle = `rgba(0,255,255,${0.08 + mEnergy * 0.2})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
+}
+
+function drawScene() {
+
+    ctx.fillStyle = '#050510';
+    ctx.fillRect(0,0,window.innerWidth,window.innerHeight);
+
+    const t = time * 0.02;
+
+    const positions = [
+        { x: -1, y: -1, hue: 200, label: `TOPOLOGICAL\nSPACE` },
+        { x: 0, y: -1, hue: 260, label: `QUANTUM\nSPACE` },
+        { x: 1, y: -1, hue: 20, label: `RESOURCE\nOPT` },
+        { x: -1, y: 0, hue: 180, label: `INFO\nSPACE` },
+        { x: 1, y: 0, hue: 330, label: `ENTROPY\nOPT` }
+    ];
+
+    positions.forEach((p, i) => {
+
+        const depth = 1 + p.y * 0.3;
+
+        const x = cx + p.x * 220 * depth + Math.sin(t + i) * mBass * 40;
+        const y = cy - 180 + p.y * 180 * depth + Math.cos(t + i) * mMid * 30;
+
+        const scale = 120 * depth + mEnergy * 40;
+
+        drawHexPanel(x, y, scale, p.hue, p.label, mEnergy);
+    });
+
+    drawCentralCore(
+        cx + Math.sin(t * 0.5) * mBass * 50,
+        cy + 180 + Math.cos(t * 0.8) * mMid * 40,
+        mEnergy,
+        t
+    );
+
+    drawResonanceField(t);
+
+    document.getElementById('bass').textContent = mBass.toFixed(2);
+    document.getElementById('mid').textContent = mMid.toFixed(2);
+    document.getElementById('high').textContent = mHigh.toFixed(2);
+    document.getElementById('energy').textContent = mEnergy.toFixed(2);
+}
+
+function render() {
+
+    requestAnimationFrame(render);
+
+    if (!isTabVisible) return;
+
+    if (isPlaying) {
+        time++;
+    }
+
+    updateAudio();
+    drawScene();
+}
+
+render();
+
+console.log('HEXAGONAL ROOM — RELEASE BUILD INITIALIZED');
+</script>
+
+</body>
+</html>
+```

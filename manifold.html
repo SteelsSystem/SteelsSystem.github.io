@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HEX Spectrum Visualizer · STEEL AURAS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;height:100vh;font-family:'JetBrains Mono',monospace;color:#e4e4e7}
+canvas{display:block;position:absolute;inset:0;z-index:1}
+#arkCanvas{z-index:2;pointer-events:none}
+
+/* ── STATUS BAR ── */
+#statusBar{position:fixed;top:0;left:0;width:100%;height:2px;z-index:50;pointer-events:none}
+#statusFill{height:100%;width:0;background:linear-gradient(to right,#00ffb4,#7b2fff,#ff4444);
+            transition:width .06s linear;box-shadow:0 0 6px rgba(0,255,180,.5)}
+
+/* ── SIDE PANEL ── */
+#panel{position:fixed;top:0;right:0;height:100vh;width:260px;z-index:20;
+       background:rgba(0,4,12,.82);border-left:1px solid rgba(0,255,180,.10);
+       backdrop-filter:blur(18px);display:flex;flex-direction:column;
+       overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;
+       scrollbar-color:rgba(0,255,180,.18) transparent;
+       transition:transform .35s cubic-bezier(.16,1,.3,1)}
+#panel.hidden{transform:translateX(100%)}
+
+#panelToggle{position:fixed;top:50%;right:0;transform:translateY(-50%);z-index:30;
+             background:rgba(0,4,12,.75);border:1px solid rgba(0,255,180,.2);
+             border-right:none;color:rgba(0,255,180,.5);font-family:inherit;
+             font-size:9px;writing-mode:vertical-rl;padding:12px 6px;
+             cursor:pointer;letter-spacing:.15em;transition:all .2s;
+             border-radius:4px 0 0 4px;backdrop-filter:blur(8px)}
+#panelToggle:hover{color:#00ffb4;border-color:rgba(0,255,180,.6);
+                   box-shadow:-4px 0 14px rgba(0,255,180,.18)}
+
+.section{border-bottom:1px solid rgba(0,255,180,.08);padding:14px 16px}
+.sec-title{font-size:8px;letter-spacing:.2em;text-transform:uppercase;
+           color:rgba(0,255,180,.4);margin-bottom:10px;display:flex;
+           align-items:center;gap:6px}
+.sec-title::before{content:'';display:block;width:3px;height:3px;
+                   background:#00ffb4;border-radius:50%;
+                   box-shadow:0 0 6px #00ffb4}
+
+/* ── BUTTONS ── */
+.btn{background:rgba(0,255,180,.04);border:1px solid rgba(0,255,180,.22);
+     color:rgba(0,255,180,.5);padding:6px 10px;font-family:inherit;
+     font-size:8px;letter-spacing:.12em;text-transform:uppercase;
+     cursor:pointer;border-radius:2px;transition:all .2s;width:100%;
+     text-align:left;margin-bottom:4px}
+.btn:hover{background:rgba(0,255,180,.10);border-color:rgba(0,255,180,.6);color:#00ffb4}
+.btn.active{background:rgba(0,255,180,.14);border-color:#00ffb4;color:#00ffb4;
+            box-shadow:0 0 10px rgba(0,255,180,.2)}
+.btn.peak-btn{border-color:rgba(255,160,40,.4);color:rgba(255,160,40,.6)}
+.btn.peak-btn.active{background:rgba(255,140,0,.14);border-color:#ffa040;
+                     color:#ffa040;box-shadow:0 0 10px rgba(255,140,0,.25)}
+.btn.susp-btn{border-color:rgba(160,80,255,.4);color:rgba(160,80,255,.6)}
+.btn.susp-btn.active{background:rgba(160,80,255,.12);border-color:#c084fc;
+                     color:#c084fc;box-shadow:0 0 10px rgba(160,80,255,.22)}
+.btn-row{display:flex;gap:4px}
+.btn-row .btn{flex:1}
+
+/* ── FILE ── */
+#fileLabel{display:block;background:rgba(0,255,180,.03);border:1px dashed rgba(0,255,180,.25);
+           color:rgba(0,255,180,.45);padding:10px;font-size:8px;letter-spacing:.12em;
+           text-transform:uppercase;cursor:pointer;border-radius:2px;
+           transition:all .2s;text-align:center;margin-bottom:6px}
+#fileLabel:hover{background:rgba(0,255,180,.08);border-color:rgba(0,255,180,.6);color:#00ffb4}
+
+/* ── SLIDERS ── */
+.slider-row{display:flex;align-items:center;justify-content:space-between;
+            margin-bottom:8px;gap:8px}
+.slider-label{font-size:8px;letter-spacing:.10em;color:rgba(255,255,255,.35);
+              text-transform:uppercase;white-space:nowrap;flex-shrink:0;width:90px}
+.slider-val{font-size:8px;color:rgba(0,255,180,.5);width:28px;text-align:right;flex-shrink:0}
+input[type=range]{-webkit-appearance:none;flex:1;background:rgba(255,255,255,.10);
+                  height:2px;border-radius:2px;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:9px;height:9px;
+  background:#00ffb4;border-radius:50%;cursor:pointer;
+  box-shadow:0 0 6px rgba(0,255,180,.6)}
+
+/* ── NLP PILLS ── */
+#nlpGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
+.nlp-pill{font-size:7px;letter-spacing:.08em;padding:4px 6px;border-radius:2px;
+          border:1px solid rgba(255,255,255,.10);cursor:pointer;transition:all .2s;
+          text-align:center;background:rgba(0,0,0,.3);color:rgba(255,255,255,.35)}
+.nlp-pill.active{border-color:currentColor;opacity:1}
+.nlp-pill:hover{opacity:.85}
+
+/* ── MODE PILLS ── */
+#modeRow{display:flex;flex-wrap:wrap;gap:3px}
+.mode-pill{font-size:7px;letter-spacing:.10em;padding:4px 8px;border-radius:2px;
+           border:1px solid rgba(0,255,180,.2);background:rgba(0,0,0,.3);
+           color:rgba(0,255,180,.4);cursor:pointer;transition:all .2s;text-transform:uppercase}
+.mode-pill:hover{border-color:rgba(0,255,180,.6);color:#00ffb4}
+.mode-pill.active{border-color:#00ffb4;color:#00ffb4;background:rgba(0,255,180,.10);
+                  box-shadow:0 0 8px rgba(0,255,180,.18)}
+
+/* ── STATUS CHIP ── */
+#statusChip{display:flex;align-items:center;gap:6px;padding:8px 10px;
+            border-radius:2px;border:1px solid rgba(255,255,255,.08);
+            background:rgba(0,0,0,.3);font-size:8px;letter-spacing:.08em;
+            color:rgba(255,255,255,.35);margin-bottom:0}
+.dot{width:5px;height:5px;border-radius:50%;background:#333;flex-shrink:0;transition:all .4s}
+.dot.live{background:#00ffb4;box-shadow:0 0 8px #00ffb4;animation:blink 1.6s infinite}
+.dot.warn{background:#f90;box-shadow:0 0 8px #f90}
+.dot.err{background:#f44;box-shadow:0 0 8px #f44}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+
+/* ── AXIOM TICKER ── */
+#axiomTicker{font-size:7px;letter-spacing:.10em;color:rgba(0,255,180,.28);
+             padding:8px 10px;border:1px solid rgba(0,255,180,.06);
+             border-radius:2px;min-height:28px;transition:color .4s}
+#axiomTicker.peak{color:rgba(255,160,40,.55)}
+#axiomTicker.susp{color:rgba(160,80,255,.45)}
+
+/* ── METRICS ── */
+#metricsRow{display:flex;justify-content:space-between;gap:4px}
+.metric{flex:1;text-align:center;padding:6px 4px;
+        background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:2px}
+.metric-val{font-size:11px;font-weight:700;color:rgba(0,255,180,.7);
+            display:block;line-height:1}
+.metric-lbl{font-size:6px;letter-spacing:.12em;color:rgba(255,255,255,.25);
+            text-transform:uppercase;margin-top:3px;display:block}
+
+/* ── TOP STATUS ── */
+#topBar{position:fixed;top:0;left:0;width:calc(100% - 260px);z-index:15;
+        display:flex;align-items:center;justify-content:space-between;
+        padding:10px 16px;pointer-events:none}
+#topTitle{font-size:9px;letter-spacing:.22em;color:rgba(0,255,180,.22);text-transform:uppercase}
+#topMode{font-size:8px;letter-spacing:.18em;color:rgba(0,255,180,.18);text-transform:uppercase}
+
+/* ── CENTRE GLYPH ── */
+#centreGlyph{position:fixed;top:50%;left:calc(50% - 130px);transform:translate(-50%,-50%);
+             z-index:8;pointer-events:none;font-size:12px;letter-spacing:.35em;
+             color:rgba(0,255,180,.16);text-shadow:0 0 22px rgba(0,255,180,.25);
+             transition:color .18s,text-shadow .18s,opacity .3s}
+#centreGlyph.flash{color:rgba(255,255,255,.9);
+                   text-shadow:0 0 32px rgba(255,220,120,.85),0 0 60px rgba(255,120,0,.4)}
+</style>
+</head>
+<body>
+<div id="statusBar"><div id="statusFill"></div></div>
+<canvas id="c"></canvas>
+<canvas id="arkCanvas"></canvas>
+
+<div id="topBar">
+  <div id="topTitle">HEX SPECTRUM · STEEL AURAS MANIFOLD</div>
+  <div id="topMode">MODE: FORENSIC</div>
+</div>
+<div id="centreGlyph">ENTER</div>
+
+<button id="panelToggle">CONTROLS</button>
+
+<div id="panel">
+
+  <div class="section">
+    <div class="sec-title">System</div>
+    <div id="statusChip"><div class="dot" id="dot"></div><span id="statusTxt">Idle · Waiting source</span></div>
+    <div style="height:6px"></div>
+    <div id="axiomTicker">A0 · Pipeline integrity verified</div>
+    <div style="height:8px"></div>
+    <div id="metricsRow">
+      <div class="metric"><span class="metric-val" id="mBass">0</span><span class="metric-lbl">Bass</span></div>
+      <div class="metric"><span class="metric-val" id="mMids">0</span><span class="metric-lbl">Mids</span></div>
+      <div class="metric"><span class="metric-val" id="mHigh">0</span><span class="metric-lbl">High</span></div>
+      <div class="metric"><span class="metric-val" id="mEntr">0.0</span><span class="metric-lbl">Entr</span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-title">Audio Source</div>
+    <label id="fileLabel">⬆ Upload audio file
+      <input type="file" id="aud" accept="audio/*" style="display:none">
+    </label>
+    <button class="btn" id="btnPlay">INITIALIZE ENGINE</button>
+    <button class="btn" id="btnSystem">⬡ SHARE SYSTEM SOUND</button>
+  </div>
+
+  <div class="section">
+    <div class="sec-title">Mindstate Mode</div>
+    <div id="modeRow"></div>
+  </div>
+
+  <div class="section">
+    <div class="sec-title">Visual Layers</div>
+    <div class="btn-row">
+      <button class="btn active" id="tWave">WAVE</button>
+      <button class="btn active" id="tSpiral">SPIRAL</button>
+      <button class="btn active" id="tSparks">SPARKS</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn active" id="tRing">RING</button>
+      <button class="btn active" id="tSectors">SECTORS</button>
+      <button class="btn active" id="tVortex">VORTEX</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn active" id="tGrain">GRAIN</button>
+      <button class="btn active" id="tAberr">ABERR</button>
+      <button class="btn active" id="tRain">GLYPH RAIN</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn active" id="tArks">ARK PARTICLES</button>
+    </div>
+    <div style="height:4px"></div>
+    <button class="btn peak-btn active" id="tLimiter">PEAK LIMITER: ON</button>
+    <button class="btn susp-btn" id="tStatic">STATIC MINDSTATE: OFF</button>
+  </div>
+
+  <div class="section">
+    <div class="sec-title">Parameters</div>
+    <div class="slider-row">
+      <span class="slider-label">Signal Gain</span>
+      <input type="range" id="sGain" min="0.3" max="3.0" step="0.05" value="1.2">
+      <span class="slider-val" id="vGain">1.2</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Hex Size</span>
+      <input type="range" id="sHexR" min="18" max="68" step="2" value="36">
+      <span class="slider-val" id="vHexR">36</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Spin Speed</span>
+      <input type="range" id="sSpin" min="0" max="3.0" step="0.05" value="0.8">
+      <span class="slider-val" id="vSpin">0.8</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Bloom</span>
+      <input type="range" id="sBloom" min="0" max="2.0" step="0.05" value="0.7">
+      <span class="slider-val" id="vBloom">0.7</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Trail</span>
+      <input type="range" id="sTrail" min="0.05" max="0.98" step="0.01" value="0.22">
+      <span class="slider-val" id="vTrail">0.22</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Hue Shift</span>
+      <input type="range" id="sHue" min="-180" max="180" step="1" value="0">
+      <span class="slider-val" id="vHue">0</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Saturation</span>
+      <input type="range" id="sSat" min="20" max="120" step="2" value="88">
+      <span class="slider-val" id="vSat">88</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Limiter Thr</span>
+      <input type="range" id="sLim" min="0.30" max="0.95" step="0.01" value="0.72">
+      <span class="slider-val" id="vLim">0.72</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Psycho Mix</span>
+      <input type="range" id="sPsycho" min="0" max="1.0" step="0.01" value="1.0">
+      <span class="slider-val" id="vPsycho">1.0</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Wave Amp</span>
+      <input type="range" id="sWaveAmp" min="0.1" max="2.0" step="0.05" value="1.0">
+      <span class="slider-val" id="vWaveAmp">1.0</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Spiral Arms</span>
+      <input type="range" id="sArms" min="1" max="6" step="1" value="3">
+      <span class="slider-val" id="vArms">3</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Spark Rate</span>
+      <input type="range" id="sSparkR" min="0.01" max="0.18" step="0.005" value="0.045">
+      <span class="slider-val" id="vSparkR">0.045</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Ark Density</span>
+      <input type="range" id="sArkRate" min="0.005" max="0.12" step="0.005" value="0.04">
+      <span class="slider-val" id="vArkRate">0.04</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-title">HEX-NLP · 12 Planes</div>
+    <div id="nlpGrid"></div>
+    <div style="height:6px"></div>
+    <button class="btn active" id="tNlp">NLP COLOUR MAP: ON</button>
+  </div>
+
+  <div class="section">
+    <div class="sec-title">Psycho Colour State</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px" id="psychoStates"></div>
+  </div>
+
+  <div class="section">
+    <div class="sec-title">Math Generator (no audio)</div>
+    <div id="mathRow" style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px"></div>
+    <div class="slider-row">
+      <span class="slider-label">Math Freq</span>
+      <input type="range" id="sMathFreq" min="0.1" max="8.0" step="0.1" value="1.0">
+      <span class="slider-val" id="vMathFreq">1.0</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Math Amp</span>
+      <input type="range" id="sMathAmp" min="0.1" max="2.0" step="0.05" value="1.0">
+      <span class="slider-val" id="vMathAmp">1.0</span>
+    </div>
+  </div>
+
+  <div style="height:20px"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════════
+// CRITICAL FIX: PI must be defined before any geometric calculations
+// ═══════════════════════════════════════════════════════════════════════════════
+const PI = Math.PI;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════════════════════════
+const NLP12 = [
+  {id:0,  label:'ASSERT⁺', hue:165},
+  {id:1,  label:'ASSERT⁻', hue:180},
+  {id:2,  label:'DIRECT⁺', hue:195},
+  {id:3,  label:'DIRECT⁻', hue:210},
+  {id:4,  label:'COMMIT⁺', hue:255},
+  {id:5,  label:'COMMIT⁻', hue:275},
+  {id:6,  label:'EXPR⁺',   hue:300},
+  {id:7,  label:'EXPR⁻',   hue:325},
+  {id:8,  label:'DECL⁺',   hue:15},
+  {id:9,  label:'DECL⁻',   hue:35},
+  {id:10, label:'META⁺',   hue:55},
+  {id:11, label:'META⁻',   hue:75}
+];
+
+const AXIOMS = [
+  'A0 · Pipeline integrity verified','A1 · Axiom validation active',
+  'A2 · LOOPCYCLE verifikace','A3 · Zero-Knowledge šifrování',
+  'A4 · Narativ chráněn','A5 · Forenzní přesnost ON',
+  'A6 · Důstojnost › Proces','A7 · ECHR·CRPD·GDPR layer',
+  'A8 · Financial forensic active','A9 · Control Room synced',
+  'A10 · Visual network aligned','A11 · META signal detected',
+  'A12 · NLP·DRIFT monitoring','A13 · LOOPCYCLE 100%'
+];
+const AXIOMS_STATIC = [
+  'STATIC MINDSTATE · Signal frozen','Noise floor suppressed NF-18',
+  'Spectrum crystallised holding','Peak limiter active — GR locked',
+  'Zero drift manifold stable','Whiteness bounded post-limiter',
+  'Frozen hexfield sector memory','Static coherence optimal',
+  'Mindstate crystalline rest','NLP12 sectors ambient frozen'
+];
+const BEAT_GLYPHS = ['ENTER','LOCK','TRACE','SYNC','VERIFY','ASSERT','PROOF','ALIGN'];
+const MODES = ['FORENSIC','RITUAL','ASCEND','IMPACT','STATIC','AMBIENT'];
+const PSYCHO_STATES = [
+  {id:'idle',     label:'IDLE',     color:'rgba(60,40,160,.7)'},
+  {id:'active',   label:'ACTIVE',   color:'rgba(0,220,255,.8)'},
+  {id:'recovery', label:'RECOVERY', color:'rgba(80,40,200,.8)'},
+  {id:'peak',     label:'PEAK',     color:'rgba(255,200,60,.9)'},
+  {id:'suspended',label:'SUSPEND',  color:'rgba(160,80,255,.8)'},
+  {id:'static',   label:'STATIC',   color:'rgba(64,255,144,.7)'}
+];
+const MATH_MODES = ['SINE','LISSAJOUS','FOURIER','LORENZ','SPIRAL','NOISE'];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════════════════
+const VS = {
+  gain:1.2, hexR:36, spin:0.8, bloom:0.7, trail:0.22,
+  hueShift:0, sat:88, limThresh:0.72, psychoMix:1.0,
+  waveAmp:1.0, arms:3, sparkRate:0.045,
+  mathFreq:1.0, mathAmp:1.0, arkRate:0.04
+};
+const SHOW = {
+  wave:true, spiral:true, sparks:true, ring:true,
+  sectors:true, vortex:true, grain:true, aberr:true,
+  rain:true, nlp:true, limiter:true, arks:true, auraWaves:true // aura waves auto-controlled by spectrum
+};
+let staticMode   = false;
+let currentMode  = 'FORENSIC';
+let currentMath  = 'SINE';
+let psychoState  = 'idle';
+let activePlanes = new Set([0,1,2,3,4,5,6,7,8,9,10,11]);
+
+const PSY = {
+  bloom:0.2, tBloom:0.2, shake:0, tShake:0,
+  ringScale:1, tRingScale:1, aberr:0, tAberr:0,
+  fog:0.2, tFog:0.2, trail:0.9, tTrail:0.9,
+  hueRot:0, tHueRot:0
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CANVAS SETUP — main + ark overlay
+// ═══════════════════════════════════════════════════════════════════════════════
+const canvas    = document.getElementById('c');
+const ctx       = canvas.getContext('2d');
+const arkCanvas = document.getElementById('arkCanvas');
+const arkCtx    = arkCanvas.getContext('2d');
+let W,H,cx,cy;
+function resize(){
+  W=canvas.width=arkCanvas.width=window.innerWidth;
+  H=canvas.height=arkCanvas.height=window.innerHeight;
+  cx=W/2; cy=H/2;
+}
+window.addEventListener('resize',resize); resize();
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AUDIO
+// ═══════════════════════════════════════════════════════════════════════════════
+let aCtx,analyser,freqData,waveData,srcNode,audioEl,displayStream;
+let isStarted=false, isPaused=false;
+const LIMITER_RELEASE = 0.985;
+let limGain = null;
+
+function teardown(){
+  if(audioEl){ audioEl.pause(); audioEl.src=''; audioEl.load(); }
+  if(srcNode){ try{srcNode.disconnect()}catch(e){} srcNode=null; }
+  if(analyser){ try{analyser.disconnect()}catch(e){} analyser=null; }
+  audioEl=null; isStarted=false; isPaused=false; freqData=waveData=limGain=null;
+}
+
+function allocBufs(){
+  freqData = new Uint8Array(analyser.frequencyBinCount);
+  waveData = new Uint8Array(analyser.frequencyBinCount);
+  limGain  = new Float32Array(analyser.frequencyBinCount).fill(1.0);
+}
+
+function applyLimiter(freq){
+  if(!SHOW.limiter||!limGain) return;
+  if(limGain.length!==freq.length) limGain=new Float32Array(freq.length).fill(1.0);
+  let gr=0;
+  for(let i=0;i<freq.length;i++){
+    const v=freq[i]/255;
+    if(v>VS.limThresh) limGain[i]=Math.min(limGain[i],VS.limThresh/v);
+    limGain[i]=Math.min(1.0,limGain[i]+(1-limGain[i])*(1-LIMITER_RELEASE));
+    freq[i]=Math.round(freq[i]*limGain[i]);
+    gr=Math.max(gr,1-limGain[i]);
+  }
+  document.getElementById('statusFill').style.width=(gr*100)+'%';
+}
+
+function initFromFile(file){
+  if(!aCtx||aCtx.state==='closed')
+    aCtx=new(window.AudioContext||window.webkitAudioContext)();
+  teardown();
+  const url=URL.createObjectURL(file);
+  audioEl=new Audio();
+  audioEl.loop=true;
+  audioEl.onerror=()=>setStatus('Decode error','err');
+  audioEl.addEventListener('canplay',()=>{
+    if(isStarted) return; isStarted=true;
+    analyser=aCtx.createAnalyser(); analyser.fftSize=2048; analyser.smoothingTimeConstant=0.80;
+    srcNode=aCtx.createMediaElementSource(audioEl);
+    srcNode.connect(analyser); analyser.connect(aCtx.destination);
+    allocBufs();
+    if(aCtx.state==='suspended') aCtx.resume();
+    aCtx.resume().then(()=>audioEl.play().then(()=>{
+      setStatus('Stream live · STEEL AURAS active','live');
+      document.getElementById('btnPlay').textContent='PAUSE SIGNAL';
+    }).catch(e=>setStatus('Playback blocked','warn')));
+  },{once:true});
+  audioEl.src=url; audioEl.load();
+  setStatus('Decoding…','');
+}
+
+async function initFromSystem(){
+  try{
+    if(displayStream) displayStream.getTracks().forEach(t=>t.stop());
+    displayStream=await navigator.mediaDevices.getDisplayMedia({
+      video:{displaySurface:'browser'},
+      audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false},
+      selfBrowserSurface:'include', systemAudio:'include'
+    });
+    const tracks=displayStream.getAudioTracks();
+    if(!tracks.length){ setStatus('No shared audio track','warn'); return; }
+    if(!aCtx||aCtx.state==='closed') aCtx=new(window.AudioContext||window.webkitAudioContext)();
+    if(aCtx.state==='suspended') await aCtx.resume();
+    analyser=aCtx.createAnalyser(); analyser.fftSize=1024; analyser.smoothingTimeConstant=0.85;
+    const ms=new MediaStream([tracks[0]]);
+    srcNode=aCtx.createMediaStreamSource(ms); srcNode.connect(analyser); allocBufs();
+    isStarted=true; isPaused=false;
+    setStatus('System audio · STEEL AURAS reactive','live');
+    tracks[0].addEventListener('ended',()=>setStatus('Shared audio ended','warn'));
+  }catch(e){ setStatus('Capture denied','err'); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// METRICS
+// ═══════════════════════════════════════════════════════════════════════════════
+let energyNorm=0,bassNorm=0,midsNorm=0,highsNorm=0,fluxNorm=0;
+let beatImpact=0,beatEnergy=0,beatHold=0,beatBaseline=0;
+const sectorBright=new Float32Array(12);
+let prevFreq=null;
+let entropy=0;
+
+function updateMetrics(){
+  if(!analyser||!isStarted||isPaused){
+    energyNorm*=0.97; bassNorm*=0.97; midsNorm*=0.97; highsNorm*=0.97;
+    beatImpact=0;
+    for(let i=0;i<12;i++) sectorBright[i]*=0.97;
+    return;
+  }
+  analyser.getByteFrequencyData(freqData);
+  analyser.getByteTimeDomainData(waveData);
+  applyLimiter(freqData);
+
+  if(!prevFreq) prevFreq=new Float32Array(freqData.length);
+  const len=freqData.length;
+  const bEnd=Math.floor(len*0.07), mEnd=Math.floor(len*0.33);
+  let bS=0,mS=0,hS=0,fl=0,tot=0;
+  for(let i=0;i<bEnd;i++) bS+=freqData[i];
+  for(let i=bEnd;i<mEnd;i++) mS+=freqData[i];
+  for(let i=mEnd;i<len;i++) hS+=freqData[i];
+  for(let i=0;i<len;i++){ fl+=Math.max(0,freqData[i]-prevFreq[i]); tot+=freqData[i]; }
+
+  bassNorm  =Math.min(1,bS/bEnd/180)*VS.gain;
+  midsNorm  =Math.min(1,mS/(mEnd-bEnd)/160)*VS.gain;
+  highsNorm =Math.min(1,hS/(len-mEnd)/130)*VS.gain;
+  fluxNorm  =Math.min(1,fl/len/80)*VS.gain;
+  energyNorm=Math.min(1,bassNorm*0.5+midsNorm*0.3+highsNorm*0.2);
+
+  let ent=0;
+  if(tot>0) for(let i=0;i<len;i++){ if(freqData[i]>0){const p=freqData[i]/tot; ent-=p*Math.log2(p);} }
+  entropy=ent;
+
+  const step=Math.floor(len/12);
+  for(let i=0;i<12;i++){
+    if(!activePlanes.has(i)){ sectorBright[i]*=0.94; continue; }
+    let s=0; const st=i*step, en=st+step;
+    for(let j=st;j<en;j++) s+=freqData[j];
+    const raw=Math.min(1,s/step/200)*VS.gain;
+    sectorBright[i]+=(raw-sectorBright[i])*0.15;
+  }
+
+  let low=0;
+  for(let i=0;i<Math.min(20,freqData.length);i++) low+=freqData[i];
+  low/=Math.min(20,freqData.length);
+  beatBaseline=beatBaseline*0.93+low*0.07;
+  const delta=Math.max(0,low-beatBaseline);
+  beatImpact=delta>14?Math.min(1,delta/80):0;
+  if(beatImpact>0.08){ beatHold=10; beatEnergy=Math.min(1,beatEnergy+beatImpact*0.4); flashGlyph(); }
+  else if(beatHold>0) beatHold--;
+  beatEnergy*=0.93;
+
+  for(let i=0;i<len;i++) prevFreq[i]=freqData[i];
+
+  document.getElementById('mBass').textContent=Math.round(bassNorm*100)+'%';
+  document.getElementById('mMids').textContent=Math.round(midsNorm*100)+'%';
+  document.getElementById('mHigh').textContent=Math.round(highsNorm*100)+'%';
+  document.getElementById('mEntr').textContent=entropy.toFixed(1);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MATH GENERATOR
+// ═══════════════════════════════════════════════════════════════════════════════
+function mathBright(sector, time){
+  const f=VS.mathFreq, A=VS.mathAmp;
+  switch(currentMath){
+    case 'SINE':
+      return Math.max(0, Math.sin(time*f + sector*PI/6)*0.5+0.5)*A;
+    case 'LISSAJOUS':{
+      const x=Math.sin(time*f*3+sector), y=Math.sin(time*f*2);
+      return Math.max(0,(Math.cos(x*y*PI)+1)*0.5)*A;
+    }
+    case 'FOURIER':{
+      let v=0;
+      for(let k=1;k<=5;k++) v+=Math.sin(time*f*k+sector*k*0.52)/k;
+      return Math.max(0,v/2.5+0.5)*A;
+    }
+    case 'LORENZ':{
+      const s=sector*0.618+time*f*0.13;
+      return Math.max(0,Math.sin(s)*Math.cos(s*1.31)*0.5+0.5)*A;
+    }
+    case 'SPIRAL':{
+      const r=((sector/12)+time*f*0.05)%1;
+      return Math.max(0,Math.sin(r*PI*2*4)*0.5+0.5)*A;
+    }
+    case 'NOISE':{
+      const n=Math.sin(sector*127.1+time*f)*43758.5453;
+      return Math.max(0,(n-Math.floor(n))*A);
+    }
+    default: return 0;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PSYCHO ENGINE
+// ═══════════════════════════════════════════════════════════════════════════════
+function applyPsycho(){
+  if(staticMode){
+    PSY.tBloom=0.14; PSY.tShake=0; PSY.tRingScale=1; PSY.tAberr=0;
+    PSY.tFog=0.08; PSY.tTrail=0.97; PSY.tHueRot=120;
+    psychoState='static'; return;
+  }
+  if(isPaused){ psychoState='suspended'; PSY.tHueRot=120; return; }
+  if(!isStarted){ psychoState='idle'; return; }
+
+  PSY.tBloom  = beatImpact>0.5?1.0 : 0.25+energyNorm*0.55;
+  PSY.tShake  = beatImpact>0.5?1.0 : fluxNorm*10;
+  PSY.tRingScale = 1.0+bassNorm*0.45;
+  PSY.tAberr  = highsNorm>0.55?(highsNorm-0.55)*3.5:0;
+  PSY.tFog    = 0.16+energyNorm*0.45;
+  PSY.tTrail  = beatImpact>0.3?0.78:0.92-energyNorm*0.12;
+  if(beatImpact>0.5)                         psychoState='peak';
+  else if(energyNorm>0.18)                   psychoState='active';
+  else if(psychoState==='peak')              psychoState='recovery';
+  else if(energyNorm<0.08)                   psychoState='idle';
+  PSY.tHueRot = psychoState==='peak'?40:psychoState==='active'?0:psychoState==='recovery'?-40:0;
+}
+
+function lerpPSY(){
+  const L=(a,b,t)=>a+(b-a)*t;
+  PSY.bloom     =L(PSY.bloom,    PSY.tBloom,    0.08);
+  PSY.shake     =L(PSY.shake,    PSY.tShake,    0.12);
+  PSY.ringScale =L(PSY.ringScale,PSY.tRingScale,0.08);
+  PSY.aberr     =L(PSY.aberr,    PSY.tAberr,    0.08);
+  PSY.fog       =L(PSY.fog,      PSY.tFog,      0.06);
+  PSY.trail     =L(PSY.trail,    PSY.tTrail,    0.06);
+  PSY.hueRot    =L(PSY.hueRot,  PSY.tHueRot,   0.04);
+  PSY.tShake*=0.9;
+}
+
+function getHue(baseHue){
+  let h = baseHue + VS.hueShift + PSY.hueRot;
+  if(currentMode==='RITUAL')  h+=40;
+  if(currentMode==='ASCEND')  h+=80;
+  if(currentMode==='IMPACT')  h+=180;
+  if(currentMode==='STATIC')  h+=120;
+  if(currentMode==='AMBIENT') h-=20;
+  return ((h%360)+360)%360;
+}
+
+function stateHue(){
+  switch(psychoState){
+    case 'peak':      return 40;
+    case 'active':    return 185;
+    case 'recovery':  return 260;
+    case 'suspended': return 270;
+    case 'static':    return 145;
+    default:          return 240;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PARTICLES (sparks)
+// ═══════════════════════════════════════════════════════════════════════════════
+const parts=[];
+const PMAX=320;
+function spawnParticle(x,y,hue,power){
+  if(parts.length>=PMAX) return;
+  const spd=0.5+power*2.2, ang=Math.random()*PI*2;
+  parts.push({x,y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,
+              life:20+Math.random()*35,max:55,hue,r:0.6+Math.random()*1.8*power});
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HUMAN CONSCIOUSNESS METAPROGRAMMING LAYER
+// The manifold treats each NLP12 sector as a cognitive plane. Ark packets
+// become "intent carriers" whose trajectory is shaped by local spectrum energy.
+// This stays strictly visual – no external state, only audio-driven geometry.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function sectorEnergy(sector){
+  // Returns a stable 0..1 energy metric for a given NLP plane.
+  // In audio mode uses smoothed sectorBright; in math mode uses mathBright.
+  if(isStarted && !isPaused && freqData){
+    return Math.min(1, Math.max(0, sectorBright[sector]));
+  }
+  const tLocal = t || 0.0;
+  return Math.min(1, Math.max(0, mathBright(sector, tLocal)));
+}
+
+function consciousnessPhase(){
+  // Meta-phase of the "mind" based on psychoState & entropy.
+  let base = 0.0;
+  if(psychoState === 'peak') base = 0.8;
+  else if(psychoState === 'active') base = 0.5;
+  else if(psychoState === 'recovery') base = 0.35;
+  else if(psychoState === 'suspended') base = 0.2;
+  else if(psychoState === 'static') base = 0.1;
+  const eNorm = Math.min(1, entropy / 10.0);
+  return base * 0.7 + eNorm * 0.3;
+}
+
+function arkSpectrumSpeed(sector){
+  const e = sectorEnergy(sector);
+  const bassBias = 0.25 + bassNorm * 0.75;
+  const fluxBias = 0.15 + fluxNorm * 0.5;
+  const cPhase   = 0.4 + consciousnessPhase() * 0.6;
+  return 0.004 + e * 0.012 * bassBias * cPhase + fluxBias * 0.004;
+}
+
+function arkSpectrumRadius(sector){
+  const e = sectorEnergy(sector);
+  const baseR = 8 + VS.hexR * 0.25;
+  return baseR * (0.8 + e * 1.8 + bassNorm * 0.5);
+}
+
+function arkSpectrumSize(sector){
+  const e = sectorEnergy(sector);
+  return 1.8 + e * 3.5 + bassNorm * 2.2;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STEEL AURAS — ARK PARTICLE SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════════
+const ARK_TYPES = ['circle','hex','lissajous','infinity'];
+const arkPackets = [];       // flying ark particles
+const auraWaves  = [];       // radiating interference rings
+const collisionSparks = [];  // burst sparks at centre
+const AURA_COLORS = [
+  '#00ffb4','#7b2fff','#00f2ff','#ff6600','#e666ff','#ffa040'
+];
+
+function spawnArkPacket(sx, sy, color, sector){
+  const arkType = ARK_TYPES[Math.floor(Math.random()*ARK_TYPES.length)];
+  const angle = Math.atan2(cy - sy, cx - sx);
+  const dist  = Math.hypot(cx - sx, cy - sy);
+  const e     = sectorEnergy(sector);
+  const speed = arkSpectrumSpeed(sector);
+  const size  = arkSpectrumSize(sector);
+  const radius = arkSpectrumRadius(sector);
+  arkPackets.push({
+    x:sx, y:sy, startX:sx, startY:sy,
+    progress:0,
+    speed: speed,
+    color,
+    angle, dist,
+    size: size,
+    arkType,
+    arkPhase: Math.random()*PI*2,
+    arkRadius: radius,
+    arkFreq:   3.5  + Math.random()*4.5,
+    sector
+  });
+}
+
+function spawnAuraWave(x, y, color){
+  const dist = Math.hypot(cx - x, cy - y);
+  auraWaves.push({
+    x, y,
+    radius: 5,
+    maxRadius: dist * 1.6,
+    color,
+    alpha: 0.7,
+    speed: 1.5 + bassNorm * 10 + entropy * 0.3
+  });
+}
+
+// Helper: draw mini-hexagon outline for hex ark
+function drawMiniHex(ctx2, x, y, r){
+  ctx2.beginPath();
+  for(let i=0;i<6;i++){
+    const a = (i/6)*PI*2 - PI/6;
+    const px = x + Math.cos(a)*r;
+    const py = y + Math.sin(a)*r;
+    i===0 ? ctx2.moveTo(px,py) : ctx2.lineTo(px,py);
+  }
+  ctx2.closePath();
+}
+
+function updateArkSystem(t){
+  if(!SHOW.arks && !SHOW.auraWaves) return;
+
+  arkCtx.clearRect(0, 0, W, H);
+
+  // ── Spawn new ark packets from hex positions that are bright ──
+  if(SHOW.arks){
+    const R=VS.hexR, gw=R*Math.sqrt(3), gh=R*1.5;
+    for(let row=-1; row*gh<H+R; row++){
+      const shift=(row%2===0?0:gw/2);
+      for(let col=-1; col*gw<W+R; col++){
+        const hx=col*gw+shift, hy=row*gh;
+        const sid=sectorOf(hx,hy);
+        const bright = isStarted&&!isPaused ? sectorEnergy(sid) : mathBright(sid,t)*0.6;
+        if(bright < 0.30) continue;
+        const weight = bright*bright*bright;
+        if(Math.random() < VS.arkRate * weight){
+          const hue = getHue(NLP12[sid].hue);
+          const color = `hsl(${hue},100%,65%)`;
+          spawnArkPacket(hx, hy, color, sid);
+          // occasionally spawn aura wave from bright hexes
+          if(SHOW.auraWaves && Math.random() < 0.04)
+            spawnAuraWave(hx, hy, color);
+        }
+      }
+    }
+  }
+
+  // ── Bass-beat burst from centre ──
+  if(beatImpact > 0.5 && SHOW.auraWaves){
+    const color = AURA_COLORS[Math.floor(Math.random()*AURA_COLORS.length)];
+    spawnAuraWave(cx + (Math.random()-0.5)*80, cy + (Math.random()-0.5)*80, color);
+  }
+
+  // ── Draw aura waves ──
+  if(SHOW.auraWaves){
+    for(let i=auraWaves.length-1; i>=0; i--){
+      const w = auraWaves[i];
+      w.radius += w.speed;
+      w.alpha  -= 0.013;
+      if(w.alpha<=0 || w.radius>=w.maxRadius){ auraWaves.splice(i,1); continue; }
+
+      arkCtx.beginPath();
+      arkCtx.strokeStyle = w.color;
+      arkCtx.lineWidth   = 1.5 + energyNorm*5;
+      arkCtx.globalAlpha = w.alpha;
+      const segs=60;
+      for(let s=0;s<=segs;s++){
+        const ang = (s/segs)*PI*2;
+        const dist = w.radius + Math.sin(ang*8 + t*5)*(2 + bassNorm*8);
+        const px = w.x + Math.cos(ang)*dist;
+        const py = w.y + Math.sin(ang)*dist;
+        s===0 ? arkCtx.moveTo(px,py) : arkCtx.lineTo(px,py);
+      }
+      arkCtx.stroke();
+      arkCtx.globalAlpha = 1;
+    }
+  }
+
+  // ── Update & draw ark packets ──
+  if(SHOW.arks){
+    for(let i=arkPackets.length-1; i>=0; i--){
+      const p = arkPackets[i];
+      p.progress += p.speed * (1 + energyNorm * 0.5);
+
+      if(p.progress >= 1.0){
+        // collision burst at centre
+        const sparkCount = Math.floor(3 + energyNorm*8);
+        for(let s=0;s<sparkCount;s++){
+          const sa  = Math.random()*PI*2;
+          const force = 1.5 + Math.random()*6 + energyNorm*8;
+          collisionSparks.push({
+            x:cx, y:cy,
+            vx:Math.cos(sa)*force, vy:Math.sin(sa)*force,
+            alpha:0.9, decay:0.025+Math.random()*0.03,
+            color:p.color, size:1+Math.random()*2.5
+          });
+        }
+        arkPackets.splice(i,1); continue;
+      }
+
+      // macro position along waveguide to centre
+      const macroX = p.startX + Math.cos(p.angle)*p.dist*p.progress;
+      const macroY = p.startY + Math.sin(p.angle)*p.dist*p.progress;
+      const waveAmp = (8 + energyNorm*28)*Math.sin(p.progress*PI)*(0.3 + beatImpact*1.5);
+      const waveFreq = t*14 + p.progress*10;
+      const perpX = -Math.sin(p.angle)*Math.sin(waveFreq)*waveAmp;
+      const perpY =  Math.cos(p.angle)*Math.sin(waveFreq)*waveAmp;
+      const baseX = macroX + perpX;
+      const baseY = macroY + perpY;
+
+      // compute local ark offset — USES PI (now defined)
+      const arkAngle = t * p.arkFreq + p.arkPhase;
+      const dynR = p.arkRadius * (1 + bassNorm*0.6);
+      let offX=0, offY=0;
+
+      arkCtx.save();
+      arkCtx.beginPath();
+      arkCtx.strokeStyle = p.color + '22';
+      arkCtx.lineWidth   = 0.7;
+      arkCtx.setLineDash([2,4]);
+
+      if(p.arkType === 'circle'){
+        arkCtx.arc(baseX, baseY, dynR, 0, PI*2);
+        offX = Math.cos(arkAngle)*dynR;
+        offY = Math.sin(arkAngle)*dynR;
+      } else if(p.arkType === 'hex'){
+        drawMiniHex(arkCtx, baseX, baseY, dynR);
+        const hexSeg = Math.floor(arkAngle / (PI/3)) % 6;
+        const segRatio = (((arkAngle % (PI/3)) + PI/3) % (PI/3)) / (PI/3);
+        const a1 = hexSeg*(PI/3) - PI/6;
+        const a2 = (hexSeg+1)*(PI/3) - PI/6;
+        offX = Math.cos(a1)*dynR + (Math.cos(a2)-Math.cos(a1))*dynR*segRatio;
+        offY = Math.sin(a1)*dynR + (Math.sin(a2)-Math.sin(a1))*dynR*segRatio;
+      } else if(p.arkType === 'lissajous'){
+        offX = Math.sin(arkAngle*3)*dynR;
+        offY = Math.cos(arkAngle*4)*dynR;
+        for(let s=0;s<=40;s++){
+          const sa = (s/40)*PI*2;
+          const sx = baseX + Math.sin(sa*3)*dynR;
+          const sy = baseY + Math.cos(sa*4)*dynR;
+          s===0 ? arkCtx.moveTo(sx,sy) : arkCtx.lineTo(sx,sy);
+        }
+      } else { // infinity / lemniscate
+        const scale = dynR * 1.2;
+        const denom = 1 + Math.sin(arkAngle)*Math.sin(arkAngle);
+        offX = (scale*Math.cos(arkAngle))/denom;
+        offY = (scale*Math.sin(arkAngle)*Math.cos(arkAngle))/denom;
+        for(let s=0;s<=40;s++){
+          const sa = (s/40)*PI*2;
+          const sd = 1 + Math.sin(sa)*Math.sin(sa);
+          const sx = baseX + (scale*Math.cos(sa))/sd;
+          const sy = baseY + (scale*Math.sin(sa)*Math.cos(sa))/sd;
+          s===0 ? arkCtx.moveTo(sx,sy) : arkCtx.lineTo(sx,sy);
+        }
+      }
+
+      arkCtx.stroke();
+      arkCtx.setLineDash([]);
+      arkCtx.restore();
+
+      // draw glowing packet
+      const px = baseX + offX;
+      const py = baseY + offY;
+      arkCtx.beginPath();
+      arkCtx.fillStyle   = p.color;
+      arkCtx.shadowColor = p.color;
+      arkCtx.shadowBlur  = 10 + energyNorm*12;
+      arkCtx.arc(px, py, p.size*(0.7+energyNorm*0.5), 0, PI*2);
+      arkCtx.fill();
+      arkCtx.shadowBlur = 0;
+    }
+  }
+
+  // ── Collision sparks (drawn on arkCanvas) ──
+  for(let i=collisionSparks.length-1; i>=0; i--){
+    const s = collisionSparks[i];
+    s.x += s.vx; s.y += s.vy;
+    s.vx *= 0.94; s.vy *= 0.94;
+    s.alpha -= s.decay;
+    if(s.alpha<=0){ collisionSparks.splice(i,1); continue; }
+    arkCtx.beginPath();
+    arkCtx.globalAlpha = s.alpha;
+    arkCtx.fillStyle   = s.color;
+    arkCtx.shadowColor = s.color;
+    arkCtx.shadowBlur  = 6;
+    arkCtx.arc(s.x, s.y, s.size, 0, PI*2);
+    arkCtx.fill();
+    arkCtx.shadowBlur  = 0;
+    arkCtx.globalAlpha = 1;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GLYPH RAIN
+// ═══════════════════════════════════════════════════════════════════════════════
+const GLYPHS='ASSERT⁺DIRECT⁻COMMIT⁺EXPR⁻DECL⁺META⁻ZK';
+const RAIN_N=22;
+const rain=Array.from({length:RAIN_N},(_,i)=>({
+  x:0,y:-Math.random()*600,speed:0.45+Math.random()*1.1,
+  hue:NLP12[i%12].hue,
+  col:Array.from({length:10},()=>GLYPHS[Math.floor(Math.random()*GLYPHS.length)]),
+  alpha:0.025+Math.random()*0.04
+}));
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DRAW HELPERS
+// ═══════════════════════════════════════════════════════════════════════════════
+function hexPath(x,y,r,rot=0){
+  ctx.beginPath();
+  for(let i=0;i<6;i++){
+    const a=PI/3*i+PI/6+rot;
+    i===0?ctx.moveTo(x+r*Math.cos(a),y+r*Math.sin(a)):ctx.lineTo(x+r*Math.cos(a),y+r*Math.sin(a));
+  }
+  ctx.closePath();
+}
+function sectorOf(x,y){ return Math.floor((((Math.atan2(y-cy,x-cx)*180/PI)+360)%360)/30); }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RENDER LAYERS
+// ═══════════════════════════════════════════════════════════════════════════════
+function drawHexField(t){
+  const R=VS.hexR, gw=R*Math.sqrt(3), gh=R*1.5;
+  const maxDist=Math.sqrt(cx*cx+cy*cy)*1.05;
+  for(let row=-1;row*gh<H+R;row++){
+    const hy0=row*gh, shift=(row%2===0?0:gw/2);
+    for(let col=-1;col*gw<W+R;col++){
+      const hx=col*gw+shift, hy=hy0;
+      const dist=Math.hypot(hx-cx,hy-cy);
+      const sid=sectorOf(hx,hy);
+      let bright = isStarted&&!isPaused ? sectorBright[sid] : mathBright(sid,t);
+      if(!activePlanes.has(sid)){ bright*=0.12; }
+      const fade=Math.max(0,1-dist/maxDist);
+      const base=0.04+fade*0.06;
+      const react=bright*(0.55+fade*0.35)*VS.bloom;
+      const alpha=Math.min(1,base+react);
+      if(alpha<0.012) continue;
+      const hue=getHue(NLP12[sid].hue);
+      const light=28+bright*38;
+      const rot=t*0.003*VS.spin*(dist/maxDist)+sid*0.12;
+      hexPath(hx,hy,R-1.5,rot);
+      ctx.strokeStyle=`hsla(${hue},${VS.sat}%,${light}%,${alpha})`;
+      ctx.lineWidth=0.5+bright*3.5;
+      ctx.stroke();
+      if(bright>0.38){
+        hexPath(hx,hy,R-1.5,rot);
+        ctx.fillStyle=`hsla(${hue},100%,${light+10}%,${(bright-0.38)*0.16*VS.bloom})`;
+        ctx.fill();
+        hexPath(hx,hy,(R-1.5)*0.52,-rot*1.4);
+        ctx.strokeStyle=`hsla(${hue},100%,80%,${(bright-0.38)*0.4*VS.bloom})`;
+        ctx.lineWidth=0.5; ctx.stroke();
+      }
+      if(SHOW.sparks&&bright>0.62&&Math.random()<VS.sparkRate&&parts.length<PMAX)
+        spawnParticle(hx,hy,hue,bright);
+    }
+  }
+}
+
+function drawSectors(t){
+  if(!SHOW.sectors||!SHOW.nlp) return;
+  const maxR=Math.max(W,H)*0.62;
+  for(let i=0;i<12;i++){
+    if(!activePlanes.has(i)) continue;
+    const bright=isStarted&&!isPaused?sectorBright[i]:mathBright(i,t)*0.4;
+    if(bright<0.04) continue;
+    const hue=getHue(NLP12[i].hue);
+    const a0=i*PI/6-PI/12, a1=a0+PI/6;
+    const g=ctx.createRadialGradient(cx,cy,20,cx,cy,maxR*0.78);
+    g.addColorStop(0,`hsla(${hue},100%,60%,${0.01+bright*0.022})`);
+    g.addColorStop(0.5,`hsla(${hue},100%,52%,${bright*0.018})`);
+    g.addColorStop(1,`hsla(${hue},100%,45%,0)`);
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,maxR*0.78,a0,a1); ctx.closePath();
+    ctx.fillStyle=g; ctx.fill();
+  }
+}
+
+function drawRing(t){
+  if(!SHOW.ring) return;
+  const _fd = freqData || (()=>{
+    const a=new Uint8Array(512);
+    for(let i=0;i<512;i++) a[i]=128+Math.sin(i*0.03+t*VS.mathFreq)*55*VS.mathAmp;
+    return a;
+  })();
+  const R=VS.hexR*5*PSY.ringScale;
+  ctx.save(); ctx.translate(cx,cy);
+  const hue=stateHue();
+  for(let i=0;i<3;i++){
+    const s=R-i*30, rot=t*0.5*VS.spin*(i%2===0?1:-1);
+    ctx.rotate(rot);
+    const alpha=(0.6-i*0.15)*(0.5+energyNorm*0.5)*VS.bloom;
+    ctx.beginPath();
+    for(let j=0;j<6;j++){
+      const a=PI/3*j+PI/6;
+      j===0?ctx.moveTo(s*Math.cos(a),s*Math.sin(a)):ctx.lineTo(s*Math.cos(a),s*Math.sin(a));
+    }
+    ctx.closePath();
+    ctx.strokeStyle=`hsla(${hue+(i*20)},90%,${50+i*8}%,${alpha})`;
+    ctx.lineWidth=1+energyNorm*2; ctx.stroke();
+  }
+  const bars=64, step=Math.floor(_fd.length/bars);
+  ctx.rotate(-t*0.3*VS.spin);
+  for(let i=0;i<bars;i++){
+    const v=_fd[i*step]/255, a=i/bars*PI*2;
+    const inner=R*0.8, outer=inner+v*50*VS.gain;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a)*inner,Math.sin(a)*inner);
+    ctx.lineTo(Math.cos(a)*outer,Math.sin(a)*outer);
+    ctx.strokeStyle=`hsla(${hue+i*2},90%,65%,${0.06+v*0.35})`;
+    ctx.lineWidth=1+v*2; ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawWave(t){
+  if(!SHOW.wave) return;
+  const buf = waveData || (()=>{
+    const arr=new Uint8Array(512);
+    for(let i=0;i<512;i++) arr[i]=128+Math.sin(i*0.05+t*VS.mathFreq)*60*VS.mathAmp;
+    return arr;
+  })();
+  let maxB=0,domSid=0;
+  for(let i=0;i<12;i++) if(sectorBright[i]>maxB){maxB=sectorBright[i];domSid=i;}
+  const hue=getHue(NLP12[domSid].hue);
+  const hue2=getHue(NLP12[(domSid+4)%12].hue);
+  const sw=W/buf.length;
+
+  ctx.beginPath();
+  for(let i=0;i<buf.length;i++){
+    const v=(buf[i]/128.0-1)*(H*0.18*VS.waveAmp)*(0.5+energyNorm*0.8);
+    i===0?ctx.moveTo(0,cy+v):ctx.lineTo(i*sw,cy+v);
+  }
+  ctx.strokeStyle=`hsla(${hue},100%,65%,${0.07+energyNorm*0.25})`;
+  ctx.lineWidth=1+energyNorm*2;
+  ctx.shadowBlur=8+energyNorm*16; ctx.shadowColor=`hsl(${hue},100%,60%)`;
+  ctx.stroke(); ctx.shadowBlur=0;
+
+  ctx.beginPath();
+  for(let i=0;i<buf.length;i++){
+    const v=(buf[i]/128.0-1)*(H*0.10*VS.waveAmp)*(0.3+bassNorm*0.7);
+    i===0?ctx.moveTo(0,cy-v*0.55):ctx.lineTo(i*sw,cy-v*0.55);
+  }
+  ctx.strokeStyle=`hsla(${hue2},100%,55%,${0.04+midsNorm*0.14})`;
+  ctx.lineWidth=0.7+midsNorm; ctx.stroke();
+}
+
+function drawSpiral(t){
+  if(!SHOW.spiral) return;
+  const nArms=VS.arms;
+  for(let arm=0;arm<nArms;arm++){
+    const sid=Math.floor(arm/nArms*12), hue=getHue(NLP12[sid].hue);
+    ctx.beginPath();
+    for(let i=0;i<200;i++){
+      const fi=i/200;
+      const fv=freqData?freqData[Math.floor(fi*freqData.length*0.5)]/255:mathBright(sid,t+fi*3)*0.8;
+      const ang=fi*8.4+t*(0.3+arm*0.1)*VS.spin+arm*PI*2/nArms;
+      const rad=24+fi*Math.min(cx,cy)*0.55+fv*24*VS.gain;
+      const x=cx+Math.cos(ang)*rad, y=cy+Math.sin(ang)*rad*0.76;
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle=`hsla(${hue},100%,62%,${0.08+bassNorm*0.16})`;
+    ctx.lineWidth=0.8+energyNorm*1.4;
+    ctx.shadowBlur=5+energyNorm*8; ctx.shadowColor=`hsl(${hue},100%,60%)`;
+    ctx.stroke(); ctx.shadowBlur=0;
+  }
+  const ringR=Math.min(cx,cy)*0.38;
+  ctx.beginPath();
+  const buf2=freqData||new Uint8Array(512).fill(0).map((_,i)=>128+Math.sin(i*0.1+t)*60);
+  for(let i=0;i<buf2.length;i+=4){
+    const f=buf2[i]/255, ang=i/buf2.length*PI*2-PI/2;
+    const r=ringR+f*28*VS.gain;
+    i===0?ctx.moveTo(cx+Math.cos(ang)*r,cy+Math.sin(ang)*r):ctx.lineTo(cx+Math.cos(ang)*r,cy+Math.sin(ang)*r);
+  }
+  ctx.closePath();
+  const dh=getHue(stateHue());
+  ctx.strokeStyle=`hsla(${dh},90%,62%,${0.06+energyNorm*0.12})`;
+  ctx.lineWidth=0.8; ctx.stroke();
+}
+
+function drawVortex(t){
+  if(!SHOW.vortex) return;
+  for(let ri=0;ri<4;ri++){
+    const hue=getHue(165+ri*22+t*3), dir=ri%2===0?1:-1;
+    const spd=0.18*dir*(1+energyNorm*0.35)*VS.spin;
+    const phase=t*spd, segs=10+ri*4;
+    const alpha=0.045+beatEnergy*0.12*(1-ri*0.18);
+    ctx.save();
+    ctx.strokeStyle=`hsla(${hue},100%,62%,${alpha})`;
+    ctx.lineWidth=1.3-ri*0.16;
+    ctx.shadowBlur=4+beatEnergy*8; ctx.shadowColor=`hsl(${hue},100%,62%)`;
+    for(let s=0;s<segs;s++){
+      const a0=s/segs*PI*2+phase, a1=a0+PI*2/segs*0.78;
+      ctx.beginPath();
+      ctx.arc(cx,cy,44+ri*26,a0,a1);
+      ctx.stroke();
+    }
+    ctx.shadowBlur=0; ctx.restore();
+  }
+}
+
+function drawParticles(){
+  if(!SHOW.sparks) return;
+  for(let i=parts.length-1;i>=0;i--){
+    const p=parts[i];
+    p.x+=p.vx; p.y+=p.vy; p.vx*=0.974; p.vy*=0.974; p.life--;
+    const a=Math.max(0,p.life/p.max);
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r*a,0,PI*2);
+    ctx.fillStyle=`hsla(${p.hue},100%,72%,${a*0.82})`;
+    ctx.shadowBlur=5; ctx.shadowColor=`hsl(${p.hue},100%,68%)`; ctx.fill(); ctx.shadowBlur=0;
+    if(p.life<=0) parts.splice(i,1);
+  }
+}
+
+function drawGlyphRain(){
+  if(!SHOW.rain) return;
+  const cw=W/RAIN_N;
+  ctx.font='7px JetBrains Mono,monospace'; ctx.textAlign='center';
+  rain.forEach((col,ci)=>{
+    col.x=(ci+0.5)*cw; col.y+=col.speed;
+    if(col.y>H+180) col.y=-60-Math.random()*300;
+    col.col.forEach((ch,i)=>{
+      const a=Math.min(0.032, col.alpha*(1-i/col.col.length));
+      ctx.fillStyle=`hsla(${getHue(col.hue)},80%,62%,${a})`;
+      ctx.fillText(ch, col.x, col.y-i*10);
+    });
+  });
+}
+
+function drawAberration(){
+  if(!SHOW.aberr||PSY.aberr<0.5) return;
+  const d=PSY.aberr*3;
+  ctx.save();
+  ctx.globalCompositeOperation='screen';
+  ctx.globalAlpha=0.04+PSY.aberr*0.04;
+  ctx.drawImage(canvas,d,0,W,H,0,0,W,H);
+  ctx.drawImage(canvas,-d,0,W,H,0,0,W,H);
+  ctx.restore();
+}
+
+function drawFilmGrain(){
+  if(!SHOW.grain) return;
+  const N=Math.floor(W*H*0.00045);
+  ctx.save();
+  for(let i=0;i<N;i++){
+    const x=Math.random()*W, y=Math.random()*H, v=Math.random();
+    ctx.fillStyle=`rgba(${v>.5?255:0},${v>.5?255:0},${v>.5?255:0},${0.012+PSY.fog*0.006})`;
+    ctx.fillRect(x,y,1,1);
+  }
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GLYPH + AXIOM
+// ═══════════════════════════════════════════════════════════════════════════════
+let beatGlyphIdx=0;
+function flashGlyph(){
+  const el=document.getElementById('centreGlyph');
+  el.textContent=BEAT_GLYPHS[beatGlyphIdx%BEAT_GLYPHS.length];
+  beatGlyphIdx++;
+  el.classList.add('flash');
+  setTimeout(()=>el.classList.remove('flash'),160);
+}
+
+let axiomIdx=0, axiomPool=AXIOMS;
+setInterval(()=>{
+  axiomIdx=(axiomIdx+1)%axiomPool.length;
+  const el=document.getElementById('axiomTicker');
+  el.textContent=axiomPool[axiomIdx];
+  el.className='';
+  if(staticMode) el.classList.add('static-style');
+  if(isPaused)   el.classList.add('susp');
+  if(psychoState==='peak') el.classList.add('peak');
+},2800);
+
+function updatePsychoUI(){
+  document.querySelectorAll('.psycho-btn').forEach(b=>{
+    b.style.opacity = b.dataset.state===psychoState ? '1' : '0.3';
+    b.style.boxShadow = b.dataset.state===psychoState
+      ? `0 0 12px ${b.dataset.color}` : 'none';
+  });
+}
+
+function setStatus(msg,type){
+  document.getElementById('statusTxt').textContent=msg;
+  const dot=document.getElementById('dot');
+  dot.className='dot';
+  if(type==='live') dot.classList.add('live');
+  else if(type==='warn') dot.classList.add('warn');
+  else if(type==='err')  dot.classList.add('err');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN LOOP
+// ═══════════════════════════════════════════════════════════════════════════════
+let t=0;
+function draw(){
+  requestAnimationFrame(draw);
+  t+=0.012;
+
+  updateMetrics();
+  applyPsycho(); lerpPSY();
+  updatePsychoUI();
+
+  const trailAlpha=VS.trail*(staticMode?1.4:isPaused?1.3:1);
+  ctx.fillStyle=`rgba(0,0,0,${Math.min(0.95,trailAlpha)})`;
+  ctx.fillRect(0,0,W,H);
+
+  drawGlyphRain();
+  drawSectors(t);
+  drawHexField(t);
+  drawSpiral(t);
+  drawWave(t);
+  drawRing(t);
+  drawVortex(t);
+  drawParticles();
+  drawAberration();
+  drawFilmGrain();
+
+  // STEEL AURAS ark system on separate canvas
+  updateArkSystem(t);
+}
+draw();
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BUILD UI
+// ═══════════════════════════════════════════════════════════════════════════════
+function bindSlider(id,key,valId,parse=parseFloat){
+  const el=document.getElementById(id);
+  el.oninput=()=>{ VS[key]=parse(el.value); document.getElementById(valId).textContent=el.value; };
+}
+bindSlider('sGain','gain','vGain');
+bindSlider('sHexR','hexR','vHexR',parseInt);
+bindSlider('sSpin','spin','vSpin');
+bindSlider('sBloom','bloom','vBloom');
+bindSlider('sTrail','trail','vTrail');
+bindSlider('sHue','hueShift','vHue',parseInt);
+bindSlider('sSat','sat','vSat',parseInt);
+bindSlider('sLim','limThresh','vLim');
+bindSlider('sPsycho','psychoMix','vPsycho');
+bindSlider('sWaveAmp','waveAmp','vWaveAmp');
+bindSlider('sArms','arms','vArms',parseInt);
+bindSlider('sSparkR','sparkRate','vSparkR');
+bindSlider('sMathFreq','mathFreq','vMathFreq');
+bindSlider('sMathAmp','mathAmp','vMathAmp');
+bindSlider('sArkRate','arkRate','vArkRate');
+
+function bindToggle(id,key,label0,label1){
+  document.getElementById(id).onclick=function(){
+    SHOW[key]=!SHOW[key];
+    this.classList.toggle('active',SHOW[key]);
+    this.textContent=SHOW[key]?label0:label1;
+  };
+}
+bindToggle('tWave','wave','WAVE','WAVE OFF');
+bindToggle('tSpiral','spiral','SPIRAL','SPIRAL OFF');
+bindToggle('tSparks','sparks','SPARKS','SPARKS OFF');
+bindToggle('tRing','ring','RING','RING OFF');
+bindToggle('tSectors','sectors','SECTORS OFF');
+bindToggle('tVortex','vortex','VORTEX OFF');
+bindToggle('tGrain','grain','GRAIN','GRAIN OFF');
+bindToggle('tAberr','aberr','ABERR','ABERR OFF');
+bindToggle('tRain','rain','GLYPH RAIN','GLYPH RAIN OFF');
+bindToggle('tNlp','nlp','NLP COLOUR MAP: ON','NLP COLOUR MAP: OFF');
+bindToggle('tArks','arks','ARK PARTICLES','ARK PARTICLES OFF');
+
+document.getElementById('tLimiter').onclick=function(){
+  SHOW.limiter=!SHOW.limiter;
+  this.classList.toggle('active',SHOW.limiter);
+  this.textContent='PEAK LIMITER: '+(SHOW.limiter?'ON':'OFF');
+  if(!SHOW.limiter) document.getElementById('statusFill').style.width='0';
+};
+
+document.getElementById('tStatic').onclick=function(){
+  staticMode=!staticMode;
+  this.classList.toggle('active',staticMode);
+  this.textContent='STATIC MINDSTATE: '+(staticMode?'ON':'OFF');
+  axiomPool=staticMode?AXIOMS_STATIC:AXIOMS; axiomIdx=0;
+  if(staticMode){ psychoState='static'; setStatus('STATIC · Spectrum crystallised','live'); }
+  else setStatus('Stream live · STEEL AURAS active','live');
+};
+
+const modeRow=document.getElementById('modeRow');
+MODES.forEach(m=>{
+  const b=document.createElement('button');
+  b.className='mode-pill'+(m===currentMode?' active':'');
+  b.textContent=m;
+  b.onclick=()=>{
+    currentMode=m;
+    document.querySelectorAll('.mode-pill').forEach(p=>p.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('topMode').textContent='MODE: '+m;
+    if(m==='STATIC'){ staticMode=true; axiomPool=AXIOMS_STATIC; document.getElementById('tStatic').classList.add('active'); document.getElementById('tStatic').textContent='STATIC MINDSTATE: ON'; }
+    else{ staticMode=false; axiomPool=AXIOMS; document.getElementById('tStatic').classList.remove('active'); document.getElementById('tStatic').textContent='STATIC MINDSTATE: OFF'; }
+  };
+  modeRow.appendChild(b);
+});
+
+const nlpGrid=document.getElementById('nlpGrid');
+NLP12.forEach(p=>{
+  const b=document.createElement('button');
+  b.className='nlp-pill active';
+  b.textContent=p.label;
+  b.style.color=`hsl(${p.hue},88%,62%)`;
+  b.style.borderColor=`hsla(${p.hue},88%,62%,.35)`;
+  b.onclick=()=>{
+    if(activePlanes.has(p.id)){ activePlanes.delete(p.id); b.classList.remove('active'); b.style.opacity='0.3'; }
+    else{ activePlanes.add(p.id); b.classList.add('active'); b.style.opacity='1'; }
+  };
+  nlpGrid.appendChild(b);
+});
+
+const psyCont=document.getElementById('psychoStates');
+PSYCHO_STATES.forEach(s=>{
+  const b=document.createElement('button');
+  b.className='btn psycho-btn'; b.dataset.state=s.id; b.dataset.color=s.color;
+  b.textContent=s.label; b.style.borderColor=s.color; b.style.color=s.color;
+  b.style.opacity='0.3';
+  psyCont.appendChild(b);
+});
+
+const mathRow=document.getElementById('mathRow');
+MATH_MODES.forEach(m=>{
+  const b=document.createElement('button');
+  b.className='mode-pill'+(m===currentMath?' active':'');
+  b.textContent=m; b.style.fontSize='7px';
+  b.onclick=()=>{
+    currentMath=m;
+    mathRow.querySelectorAll('.mode-pill').forEach(p=>p.classList.remove('active'));
+    b.classList.add('active');
+  };
+  mathRow.appendChild(b);
+});
+
+document.getElementById('aud').onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  document.getElementById('fileLabel').firstChild.textContent='⬆ '+f.name.slice(0,20);
+  document.getElementById('btnPlay').textContent='INITIALIZE ENGINE';
+  document.getElementById('btnPlay')._file=f;
+  teardown(); isStarted=false;
+};
+
+document.getElementById('btnPlay').onclick=function(){
+  if(this._file&&!isStarted){ initFromFile(this._file); return; }
+  if(!audioEl) return;
+  if(audioEl.paused){
+    aCtx.resume(); audioEl.play(); isPaused=false;
+    this.textContent='PAUSE SIGNAL';
+    setStatus('Stream live · STEEL AURAS active','live');
+    axiomPool=AXIOMS;
+  } else {
+    audioEl.pause(); isPaused=true;
+    this.textContent='RESUME SIGNAL';
+    setStatus('SUSPENDED · Fluid mode','');
+  }
+};
+
+document.getElementById('btnSystem').onclick=initFromSystem;
+
+document.getElementById('panelToggle').onclick=()=>{
+  document.getElementById('panel').classList.toggle('hidden');
+};
+
+setStatus('Idle · Waiting source','');
+</script>
+</body>
+</html>

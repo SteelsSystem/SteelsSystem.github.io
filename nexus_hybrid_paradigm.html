@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS // Sound Mapper Control Room + GLSL Paradigm</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+
+:root {
+    --bg: #030108;
+    --panel: rgba(6, 3, 14, 0.75);
+    --cyan: #00f0ff;
+    --magenta: #ff0055;
+    --purple: #b026ff;
+    --amber: #ffb300;
+    --text-main: #e2e8f0;
+    --text-dim: #64748b;
+    --font-ui: 'Rajdhani', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+    --border-glow: 0 0 15px rgba(0, 240, 255, 0.3);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+body { background-color: var(--bg); color: var(--text-main); font-family: var(--font-ui); overflow: hidden; width: 100vw; height: 100vh; }
+
+#glslCanvas { position: absolute; top: 0; left: 0; z-index: 1; width: 100vw; height: 100vh; }
+#vizCanvas { position: absolute; top: 0; left: 0; z-index: 1; width: 100vw; height: 100vh; opacity: 0.85; pointer-events: none; }
+
+/* --- HUD CORNERS --- */
+.hud-corner { position: fixed; width: 60px; height: 60px; z-index: 10; pointer-events: none; opacity: 0.6; }
+.hud-corner.tl { top: 20px; left: 20px; border-top: 2px solid var(--cyan); border-left: 2px solid var(--cyan); }
+.hud-corner.tr { top: 20px; right: 20px; border-top: 2px solid var(--magenta); border-right: 2px solid var(--magenta); }
+.hud-corner.bl { bottom: 20px; left: 20px; border-bottom: 2px solid var(--cyan); border-left: 2px solid var(--cyan); }
+.hud-corner.br { bottom: 20px; right: 20px; border-bottom: 2px solid var(--magenta); border-right: 2px solid var(--magenta); }
+
+/* --- CONTROL PANELS --- */
+.panel { position: absolute; top: 40px; bottom: 40px; width: 320px; background: var(--panel); border: 1px solid rgba(0,240,255,0.15); backdrop-filter: blur(12px); z-index: 20; display: flex; flex-direction: column; overflow-y: auto; box-shadow: var(--border-glow); border-radius: 4px; }
+.panel::-webkit-scrollbar { width: 4px; }
+.panel::-webkit-scrollbar-thumb { background: var(--cyan); }
+.panel.left { left: 40px; border-left: 3px solid var(--cyan); }
+.panel.right { right: 40px; border-right: 3px solid var(--magenta); }
+
+.panel-header { padding: 15px 20px; border-bottom: 1px solid rgba(0,240,255,0.2); background: rgba(0,240,255,0.05); display: flex; align-items: center; justify-content: space-between; }
+.panel-title { font-size: 14px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: var(--cyan); text-shadow: 0 0 8px var(--cyan); }
+.panel-title.mag { color: var(--magenta); text-shadow: 0 0 8px var(--magenta); }
+
+.section { padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.sec-title { font-size: 10px; font-weight: 600; letter-spacing: 0.2em; color: var(--text-dim); text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.sec-title::before { content: ''; width: 4px; height: 4px; background: currentColor; }
+
+/* --- BUTTONS & INPUTS --- */
+.btn { width: 100%; background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.3); color: var(--cyan); padding: 10px; font-family: var(--font-ui); font-size: 12px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; text-align: center; margin-bottom: 8px; position: relative; overflow: hidden; }
+.btn:hover { background: rgba(0, 240, 255, 0.2); box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); text-shadow: 0 0 5px var(--cyan); }
+.btn.active { background: var(--cyan); color: var(--bg); font-weight: 700; text-shadow: none; box-shadow: 0 0 20px var(--cyan); }
+
+.btn-mag { border-color: rgba(255, 0, 85, 0.3); color: var(--magenta); background: rgba(255, 0, 85, 0.05); }
+.btn-mag:hover { background: rgba(255, 0, 85, 0.2); box-shadow: 0 0 15px rgba(255, 0, 85, 0.4); text-shadow: 0 0 5px var(--magenta); }
+.btn-mag.active { background: var(--magenta); color: var(--bg); box-shadow: 0 0 20px var(--magenta); }
+
+.btn-row { display: flex; gap: 8px; }
+.btn-row .btn { flex: 1; padding: 8px 4px; font-size: 11px; }
+
+.slider-group { margin-bottom: 12px; }
+.slider-header { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); margin-bottom: 6px; letter-spacing: 0.1em; }
+.slider-val { color: var(--text-main); font-weight: bold; }
+input[type=range] { -webkit-appearance: none; width: 100%; background: rgba(255,255,255,0.1); height: 2px; border-radius: 2px; cursor: pointer; outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; background: var(--cyan); border-radius: 50%; box-shadow: 0 0 10px var(--cyan); transition: transform 0.1s; }
+input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.5); background: #fff; }
+
+.mag-slider::-webkit-slider-thumb { background: var(--magenta); box-shadow: 0 0 10px var(--magenta); }
+
+/* --- METRICS & TERMINAL --- */
+.metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.metric-box { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.05); padding: 10px; border-left: 2px solid var(--purple); }
+.m-label { font-family: var(--font-mono); font-size: 8px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; }
+.m-value { font-family: var(--font-mono); font-size: 16px; font-weight: bold; color: var(--text-main); margin-top: 4px; text-shadow: 0 0 5px rgba(255,255,255,0.5); }
+.m-value.cyan { color: var(--cyan); text-shadow: 0 0 8px var(--cyan); }
+.m-value.mag { color: var(--magenta); text-shadow: 0 0 8px var(--magenta); }
+
+.terminal { background: rgba(0,0,0,0.8); border: 1px solid rgba(0,240,255,0.2); font-family: var(--font-mono); font-size: 9px; color: var(--cyan); padding: 10px; height: 120px; overflow-y: auto; line-height: 1.5; margin-top: 10px; box-shadow: inset 0 0 15px rgba(0,0,0,0.9); }
+.term-line { margin-bottom: 4px; opacity: 0.8; }
+.term-time { color: var(--text-dim); margin-right: 6px; }
+.term-err { color: var(--magenta); }
+.term-warn { color: var(--amber); }
+
+/* --- CENTER HUD --- */
+.center-hud { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 20; text-align: center; pointer-events: none; }
+.center-title { font-size: 24px; font-weight: 700; letter-spacing: 0.5em; text-transform: uppercase; color: #fff; text-shadow: 0 0 20px var(--cyan), 0 0 40px var(--purple); margin-bottom: 5px; }
+.center-sub { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.3em; color: var(--text-dim); }
+
+#fileInput { display: none; }
+</style>
+</head>
+<body>
+
+<!-- HUD Overlays -->
+<div class="hud-corner tl"></div>
+<div class="hud-corner tr"></div>
+<div class="hud-corner bl"></div>
+<div class="hud-corner br"></div>
+
+<!-- GLSL Shader Canvas (Background) -->
+<canvas id="glslCanvas"></canvas>
+
+<!-- Canvas 2D Visualizer (Overlay) -->
+<canvas id="vizCanvas"></canvas>
+
+<!-- LEFT PANEL: SIGNAL ROUTING & METRICS -->
+<div class="panel left">
+    <div class="panel-header">
+        <div class="panel-title">SIGNAL ROUTING</div>
+        <div style="font-family: var(--font-mono); font-size: 9px; color: var(--cyan);">NEXUS v2.0</div>
+    </div>
+
+    <div class="section">
+        <div class="sec-title">Ingestion Vectors</div>
+        <button class="btn" id="btnUpload" onclick="document.getElementById('fileInput').click()">[ INJECT AUDIO FILE ]</button>
+        <input type="file" id="fileInput" accept="audio/*">
+        <button class="btn" id="btnMic">[ BIND MICROPHONE ]</button>
+        <button class="btn btn-mag" id="btnPlayback" style="display:none;">[ PAUSE SIGNAL ]</button>
+    </div>
+
+    <div class="section">
+        <div class="sec-title">Live Telemetry</div>
+        <div class="metric-grid">
+            <div class="metric-box" style="border-color: var(--cyan);">
+                <div class="m-label">Bass Coh.</div>
+                <div class="m-value cyan" id="mBass">0.00</div>
+            </div>
+            <div class="metric-box" style="border-color: var(--purple);">
+                <div class="m-label">Mid Flux</div>
+                <div class="m-value" id="mMid">0.00</div>
+            </div>
+            <div class="metric-box" style="border-color: var(--magenta);">
+                <div class="m-label">High Freq</div>
+                <div class="m-value mag" id="mHigh">0.00</div>
+            </div>
+            <div class="metric-box" style="border-color: var(--amber);">
+                <div class="m-label">Sys Entropy</div>
+                <div class="m-value" id="mEntr">IDLE</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section" style="flex: 1;">
+        <div class="sec-title">System Console</div>
+        <div class="terminal" id="terminal"></div>
+    </div>
+</div>
+
+<!-- RIGHT PANEL: VISUAL MANIFOLD CONTROL -->
+<div class="panel right">
+    <div class="panel-header">
+        <div class="panel-title mag">MANIFOLD CONTROL</div>
+        <div style="font-family: var(--font-mono); font-size: 9px; color: var(--magenta);">HYBRID ENGINE</div>
+    </div>
+
+    <div class="section">
+        <div class="sec-title">Rendering Mode</div>
+        <div class="btn-row">
+            <button class="btn btn-mag active" id="modeHybrid">HYBRID</button>
+            <button class="btn btn-mag" id="modeGLSL">GLSL CORE</button>
+            <button class="btn btn-mag" id="mode2D">2D CANVAS</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="sec-title">Topology Mapper</div>
+        <div class="btn-row">
+            <button class="btn btn-mag active" id="modeOrbital">ORBITAL</button>
+            <button class="btn btn-mag" id="modeLattice">LATTICE</button>
+            <button class="btn btn-mag" id="modeQuantum">QUANTUM</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="sec-title">Topology Parameters</div>
+
+        <div class="slider-group">
+            <div class="slider-header"><span>Core Resonance</span><span class="slider-val" id="vCore">1.5</span></div>
+            <input type="range" id="sCore" class="mag-slider" min="0.5" max="3.0" step="0.1" value="1.5">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-header"><span>Node Dispersion</span><span class="slider-val" id="vDisp">180</span></div>
+            <input type="range" id="sDisp" class="mag-slider" min="50" max="400" step="10" value="180">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-header"><span>Orbital Velocity</span><span class="slider-val" id="vVel">1.0</span></div>
+            <input type="range" id="sVel" class="mag-slider" min="-3.0" max="3.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-header"><span>Tether Threshold</span><span class="slider-val" id="vTeth">150</span></div>
+            <input type="range" id="sTeth" class="mag-slider" min="0" max="300" step="5" value="150">
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="sec-title">Optics & Color</div>
+
+        <div class="slider-group">
+            <div class="slider-header"><span>Phase Shift (Hue)</span><span class="slider-val" id="vHue">0°</span></div>
+            <input type="range" id="sHue" min="0" max="360" step="1" value="0">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-header"><span>Photon Bleed (Bloom)</span><span class="slider-val" id="vBloom">20</span></div>
+            <input type="range" id="sBloom" min="0" max="50" step="1" value="20">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-header"><span>Temporal Decay</span><span class="slider-val" id="vDecay">0.85</span></div>
+            <input type="range" id="sDecay" min="0.5" max="0.99" step="0.01" value="0.85">
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="sec-title">Diagnostics</div>
+        <button class="btn" id="btnToggleGrid">TOGGLE CALIBRATION GRID</button>
+        <button class="btn" id="btnMathGen">ACTIVATE SYNTHESIS (NO AUDIO)</button>
+    </div>
+</div>
+
+<!-- BOTTOM CENTER HUD -->
+<div class="center-hud">
+    <div class="center-title">HEXAGONAL PARADIGM</div>
+    <div class="center-sub">HYBRID SOUND MAPPER · GLSL + CANVAS</div>
+</div>
+
+<script>
+// --- GLSL SHADER SETUP ---
+const glslCanvas = document.getElementById('glslCanvas');
+const gl = glslCanvas.getContext('webgl2', { antialias: true });
+
+glslCanvas.width = window.innerWidth;
+glslCanvas.height = window.innerHeight;
+
+gl.viewport(0, 0, glslCanvas.width, glslCanvas.height);
+gl.clearColor(0.02, 0.02, 0.05, 1.0);
+
+const fragmentShader = `#version 300 es
+precision highp float;
+
+uniform float time;
+uniform vec2 resolution;
+uniform float hueShift;
+uniform float saturation;
+uniform float bass;
+uniform float mid;
+uniform float high;
+
+out vec4 fragColor;
+
+vec3 hsv2rgb(vec3 c) {
+    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
+float hexagon(vec2 p, float s) {
+    const vec3 k = vec3(-0.866025404, 0.5, 0.577350269);
+    p = abs(p);
+    p -= 2.0 * min(dot(k.xy, p), 0.0) * k.xy;
+    p -= vec2(clamp(p.x, -k.z * s, k.z * s), s);
+    return length(p) * sign(p.y);
+}
+
+float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float a = sin(dot(i, vec2(12.9898, 78.233)) * 43758.5453);
+    float b = sin(dot(i + vec2(1.0, 0.0), vec2(12.9898, 78.233)) * 43758.5453);
+    float c = sin(dot(i + vec2(0.0, 1.0), vec2(12.9898, 78.233)) * 43758.5453);
+    float d = sin(dot(i + vec2(1.0, 1.0), vec2(12.9898, 78.233)) * 43758.5453);
+    float ab = mix(a, b, f.x);
+    float cd = mix(c, d, f.x);
+    return mix(ab, cd, f.y);
+}
+
+void main() {
+    vec2 uv = gl_FragCoord.xy / resolution.xy;
+    vec2 p = (gl_FragCoord.xy - resolution.xy * 0.5) / resolution.y;
+
+    float angle = atan(p.y, p.x);
+    float radius = length(p);
+
+    float hex1 = hexagon(p, 0.3 + sin(time * 0.5 + bass) * 0.1);
+    float hex2 = hexagon(p * 1.5, 0.2 + cos(time * 0.3 + mid) * 0.05);
+    float hex3 = hexagon(p * 2.5, 0.15 + sin(time * 0.7 + high) * 0.03);
+
+    float hexPattern = abs(hex1) + abs(hex2) * 0.5 + abs(hex3) * 0.3;
+    hexPattern = smoothstep(0.1, 0.0, hexPattern);
+
+    float vortex = sin(angle * 6.0 + time * 1.5 + bass * 2.0) * 0.5 + 0.5;
+    vortex *= smoothstep(0.5, 0.0, radius);
+
+    float spiral = sin(angle * 12.0 - radius * 3.0 + time * 2.0 + mid) * 0.5 + 0.5;
+    spiral *= smoothstep(0.8, 0.2, radius);
+
+    float particles = noise(p * 5.0 + time * 0.3);
+    particles = step(0.7 - high * 0.3, particles);
+
+    float layer1 = hexPattern * 0.8;
+    float layer2 = vortex * 0.6 * sin(time * 0.7);
+    float layer3 = spiral * 0.4;
+    float layer4 = particles * 0.3;
+
+    float intensity = layer1 + layer2 + layer3 + layer4;
+    intensity = clamp(intensity, 0.0, 1.0);
+
+    float hue = (angle / 6.28318 + time * 0.2 + hueShift) * 0.6;
+    vec3 color = hsv2rgb(vec3(hue, saturation * 0.8, intensity));
+
+    color += hsv2rgb(vec3(hue + 0.1, 1.0, 0.0)) * pow(intensity, 0.5) * 0.5;
+
+    if (hexPattern > 0.5) {
+        color = mix(color, vec3(0.0, 1.0, 1.0), 0.3);
+    }
+    if (spiral > 0.5) {
+        color = mix(color, vec3(1.0, 0.0, 1.0), 0.2);
+    }
+
+    color = pow(color, vec3(0.8));
+    fragColor = vec4(color, 1.0);
+}`;
+
+const vertexShader = `#version 300 es
+precision highp float;
+in vec2 position;
+out vec2 fragPos;
+void main() {
+    fragPos = position;
+    gl_Position = vec4(position, 0.0, 1.0);
+}`;
+
+function compileShader(source, type) {
+    const shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        console.error(gl.getShaderInfoLog(shader));
+    }
+    return shader;
+}
+
+const vertexCompiled = compileShader(vertexShader, gl.VERTEX_SHADER);
+const fragmentCompiled = compileShader(fragmentShader, gl.FRAGMENT_SHADER);
+
+const program = gl.createProgram();
+gl.attachShader(program, vertexCompiled);
+gl.attachShader(program, fragmentCompiled);
+gl.linkProgram(program);
+
+if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    console.error(gl.getProgramInfoLog(program));
+}
+
+gl.useProgram(program);
+
+const positions = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
+const positionBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+
+const positionLoc = gl.getAttribLocation(program, 'position');
+gl.enableVertexAttribArray(positionLoc);
+gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 0, 0);
+
+const timeLoc = gl.getUniformLocation(program, 'time');
+const resolutionLoc = gl.getUniformLocation(program, 'resolution');
+const hueShiftLoc = gl.getUniformLocation(program, 'hueShift');
+const saturationLoc = gl.getUniformLocation(program, 'saturation');
+const bassLoc = gl.getUniformLocation(program, 'bass');
+const midLoc = gl.getUniformLocation(program, 'mid');
+const highLoc = gl.getUniformLocation(program, 'high');
+
+gl.uniform2f(resolutionLoc, glslCanvas.width, glslCanvas.height);
+
+// --- SYSTEM TERMINAL LOGGER ---
+const term = document.getElementById('terminal');
+function logSys(msg, type = 'info') {
+    const d = new Date();
+    const time = `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}:${d.getSeconds().toString().padStart(2,'0')}.${d.getMilliseconds().toString().padStart(3,'0')}`;
+    const el = document.createElement('div');
+    el.className = `term-line ${type === 'err' ? 'term-err' : type === 'warn' ? 'term-warn' : ''}`;
+    el.innerHTML = `<span class="term-time">[${time}]</span> ${msg}`;
+    term.appendChild(el);
+    term.scrollTop = term.scrollHeight;
+}
+
+// --- GLOBAL STATE ---
+const CFG = {
+    coreResonance: 1.5, dispersion: 180, velocity: 1.0, tetherThresh: 150,
+    hueShift: 0, bloom: 20, decay: 0.85, 
+    mode: 'ORBITAL', showGrid: true, mathSynth: false,
+    renderMode: 'HYBRID'
+};
+
+// UI Binding
+function bindSlider(id, cfgKey, valId, isInt = false, suffix = '') {
+    const s = document.getElementById(id);
+    const v = document.getElementById(valId);
+    s.addEventListener('input', (e) => {
+        let val = parseFloat(e.target.value);
+        CFG[cfgKey] = val;
+        v.textContent = (isInt ? Math.round(val) : val.toFixed(2)) + suffix;
+    });
+}
+
+bindSlider('sCore', 'coreResonance', 'vCore');
+bindSlider('sDisp', 'dispersion', 'vDisp', true);
+bindSlider('sVel', 'velocity', 'vVel');
+bindSlider('sTeth', 'tetherThresh', 'vTeth', true);
+bindSlider('sHue', 'hueShift', 'vHue', true, '°');
+bindSlider('sBloom', 'bloom', 'vBloom', true);
+bindSlider('sDecay', 'decay', 'vDecay');
+
+document.getElementById('btnToggleGrid').onclick = () => { CFG.showGrid = !CFG.showGrid; logSys(`Calibration Grid: ${CFG.showGrid ? 'ONLINE' : 'OFFLINE'}`); };
+
+const renderModeBtns = ['modeHybrid', 'modeGLSL', 'mode2D'];
+renderModeBtns.forEach(id => {
+    document.getElementById(id).onclick = (e) => {
+        renderModeBtns.forEach(b => document.getElementById(b).classList.remove('active'));
+        e.target.classList.add('active');
+        CFG.renderMode = id.replace('mode', '').toUpperCase();
+        logSys(`Render mode: ${CFG.renderMode}`);
+    };
+});
+
+const modeBtns = ['modeOrbital', 'modeLattice', 'modeQuantum'];
+modeBtns.forEach(id => {
+    document.getElementById(id).onclick = (e) => {
+        modeBtns.forEach(b => document.getElementById(b).classList.remove('active'));
+        e.target.classList.add('active');
+        CFG.mode = id.replace('mode', '').toUpperCase();
+        logSys(`Topology mode: ${CFG.mode}`);
+    };
+});
+
+// --- AUDIO ENGINE ---
+let actx, analyser, srcNode, audioEl, freqData, waveData;
+let isLive = false, isPlaying = false;
+let mBass = 0, mMid = 0, mHigh = 0, mEnergy = 0;
+
+function initAudioContext() {
+    if(!actx) {
+        actx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = actx.createAnalyser();
+        analyser.fftSize = 512;
+        analyser.smoothingTimeConstant = 0.8;
+        freqData = new Uint8Array(analyser.frequencyBinCount);
+        waveData = new Uint8Array(analyser.frequencyBinCount);
+        logSys("AudioContext initialized.", "info");
+    }
+}
+
+function cleanupAudio() {
+    if(audioEl) { audioEl.pause(); audioEl.src = ''; }
+    if(srcNode) { try{srcNode.disconnect()}catch(e){} }
+    isLive = false; isPlaying = false; CFG.mathSynth = false;
+    document.getElementById('btnPlayback').style.display = 'none';
+}
+
+document.getElementById('fileInput').onchange = (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    initAudioContext();
+    cleanupAudio();
+
+    audioEl = new Audio(URL.createObjectURL(file));
+    audioEl.crossOrigin = "anonymous";
+    srcNode = actx.createMediaElementSource(audioEl);
+    srcNode.connect(analyser);
+    analyser.connect(actx.destination);
+
+    audioEl.play();
+    isLive = true; isPlaying = true;
+
+    const btn = document.getElementById('btnPlayback');
+    btn.style.display = 'block';
+    btn.textContent = '[ PAUSE SIGNAL ]';
+
+    logSys(`Ingesting stream: ${file.name}`, "info");
+};
+
+document.getElementById('btnMic').onclick = async () => {
+    initAudioContext();
+    cleanupAudio();
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        srcNode = actx.createMediaStreamSource(stream);
+        srcNode.connect(analyser);
+        isLive = true; isPlaying = true;
+        logSys("Microphone binding SUCCESS.", "info");
+    } catch(err) {
+        logSys(`Microphone binding FAILED: ${err.message}`, "err");
+    }
+};
+
+document.getElementById('btnPlayback').onclick = (e) => {
+    if(!audioEl) return;
+    if(isPlaying) { audioEl.pause(); isPlaying = false; e.target.textContent = '[ RESUME SIGNAL ]'; logSys("Signal PAUSED.", "warn"); }
+    else { audioEl.play(); isPlaying = true; e.target.textContent = '[ PAUSE SIGNAL ]'; logSys("Signal RESUMED.", "info"); }
+};
+
+document.getElementById('btnMathGen').onclick = () => {
+    cleanupAudio();
+    CFG.mathSynth = true; isLive = true; isPlaying = true;
+    logSys("Synthesis Core (Math Mode) ACTIVATED.", "warn");
+};
+
+// --- AUDIO METRICS ---
+function updateMetrics(time) {
+    if(!isLive || (!isPlaying && !CFG.mathSynth)) {
+        mBass *= 0.95; mMid *= 0.95; mHigh *= 0.95; mEnergy *= 0.95;
+        return;
+    }
+
+    if(CFG.mathSynth) {
+        if(!freqData) freqData = new Uint8Array(256);
+        for(let i=0; i<freqData.length; i++) {
+            freqData[i] = Math.abs(Math.sin(i*0.1 + time*2) * Math.cos(i*0.05 - time)*255);
+        }
+    } else {
+        analyser.getByteFrequencyData(freqData);
+    }
+
+    const len = freqData.length;
+    let bSum = 0, mSum = 0, hSum = 0;
+    const bEnd = Math.floor(len * 0.1);
+    const mEnd = Math.floor(len * 0.5);
+
+    for(let i=0; i<len; i++) {
+        if(i < bEnd) bSum += freqData[i];
+        else if(i < mEnd) mSum += freqData[i];
+        else hSum += freqData[i];
+    }
+
+    const nb = bSum / bEnd / 255;
+    const nm = mSum / (mEnd - bEnd) / 255;
+    const nh = hSum / (len - mEnd) / 255;
+
+    mBass = mBass * 0.8 + nb * 0.2;
+    mMid = mMid * 0.8 + nm * 0.2;
+    mHigh = mHigh * 0.8 + nh * 0.2;
+    mEnergy = (mBass + mMid + mHigh) / 3;
+
+    if(Math.random() < 0.1) {
+        document.getElementById('mBass').textContent = mBass.toFixed(2);
+        document.getElementById('mMid').textContent = mMid.toFixed(2);
+        document.getElementById('mHigh').textContent = mHigh.toFixed(2);
+        document.getElementById('mEntr').textContent = mEnergy > 0.6 ? 'CRITICAL' : mEnergy > 0.3 ? 'NOMINAL' : 'IDLE';
+    }
+}
+
+// --- CANVAS 2D ---
+const canvas = document.getElementById('vizCanvas');
+const ctx = canvas.getContext('2d', { alpha: true });
+let W, H, cx, cy;
+
+function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; cx = W/2; cy = H/2; 
+    gl.viewport(0, 0, glslCanvas.width, glslCanvas.height); gl.uniform2f(resolutionLoc, glslCanvas.width, glslCanvas.height);
+}
+window.addEventListener('resize', resize); resize();
+
+function project(x, y, z) {
+    const rotZ = x * Math.cos(Math.PI/4) - y * Math.sin(Math.PI/4);
+    const rotX = x * Math.sin(Math.PI/4) + y * Math.cos(Math.PI/4);
+    const projX = rotZ;
+    const projY = (rotX * Math.sin(Math.PI/6)) - (z * Math.cos(Math.PI/6));
+    return { x: cx + projX, y: cy + projY };
+}
+
+function getBaseColor(band, boost) {
+    let h = CFG.hueShift;
+    let s = 100, l = 50 + boost * 20;
+    if(band === 0) h += 180;
+    else if(band === 1) h += 330;
+    else h += 270;
+    return `hsl(${h}, ${s}%, ${l}%)`;
+}
+
+function drawHexagon(x, y, r, color, glow, fillAlpha=0) {
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+        const angle = (i * Math.PI) / 3 - Math.PI/6;
+        const px = x + r * Math.cos(angle);
+        const py = y + r * Math.sin(angle);
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+
+    if(glow > 0) {
+        ctx.shadowBlur = glow;
+        ctx.shadowColor = color;
+    } else {
+        ctx.shadowBlur = 0;
+    }
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    if(fillAlpha > 0) {
+        ctx.fillStyle = color.replace(')', `, ${fillAlpha})`).replace('hsl', 'hsla');
+        ctx.fill();
+    }
+}
+
+const numNodes = 36;
+const nodes = [];
+for(let i=0; i<numNodes; i++) {
+    const ang = (i / numNodes) * Math.PI * 2;
+    const band = i % 3;
+    nodes.push({ id: i, baseAngle: ang, band: band, r: Math.random() * 0.5 + 0.5 });
+}
+
+let time = 0;
+
+function render() {
+    requestAnimationFrame(render);
+    time += 0.016;
+
+    updateMetrics(time);
+
+    // GLSL Render
+    if(CFG.renderMode === 'HYBRID' || CFG.renderMode === 'GLSL') {
+        const elapsed = time;
+        gl.uniform1f(timeLoc, elapsed);
+        gl.uniform1f(hueShiftLoc, Math.sin(elapsed * 0.3) * 0.3);
+        gl.uniform1f(saturationLoc, 0.85 + Math.sin(elapsed * 0.5) * 0.15);
+        gl.uniform1f(bassLoc, mBass);
+        gl.uniform1f(midLoc, mMid);
+        gl.uniform1f(highLoc, mHigh);
+
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+
+    // 2D Canvas Overlay
+    if(CFG.renderMode === 'HYBRID' || CFG.renderMode === '2D') {
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = `rgba(3, 1, 8, ${1.0 - CFG.decay})`;
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.globalCompositeOperation = 'screen';
+
+        if(CFG.showGrid) {
+            ctx.strokeStyle = `rgba(0, 240, 255, 0.05)`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            const gw = 1000;
+            const step = 50;
+            for(let i=-gw; i<=gw; i+=step) {
+                let p1 = project(i, -gw, -200); let p2 = project(i, gw, -200);
+                ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+                let p3 = project(-gw, i, -200); let p4 = project(gw, i, -200);
+                ctx.moveTo(p3.x, p3.y); ctx.lineTo(p4.x, p4.y);
+            }
+            ctx.stroke();
+        }
+
+        const projectedNodes = [];
+        const sysRotation = time * CFG.velocity;
+
+        for(let i=0; i<numNodes; i++) {
+            const n = nodes[i];
+            const binIndex = Math.floor((i / numNodes) * (freqData ? freqData.length * 0.6 : 10)); 
+            const val = freqData ? (freqData[binIndex] / 255) : 0;
+
+            let targetRadius = CFG.dispersion;
+            let zPos = 0;
+            let angle = n.baseAngle + sysRotation * (n.band === 0 ? 1 : n.band === 1 ? -0.5 : 1.5);
+
+            if (CFG.mode === 'ORBITAL') {
+                targetRadius += val * 150 * CFG.coreResonance;
+                zPos = (Math.sin(angle * 3 + time) * 50) + (val * 100);
+            } else if (CFG.mode === 'LATTICE') {
+                const row = Math.floor(i / 6);
+                const col = i % 6;
+                const space = 80 + val * 20;
+                const lx = (col - 2.5) * space;
+                const ly = (row - 2.5) * space;
+                angle = Math.atan2(ly, lx) + sysRotation * 0.2;
+                targetRadius = Math.sqrt(lx*lx + ly*ly) * (1 + val*0.2 * CFG.coreResonance);
+                zPos = val * 150;
+            } else if (CFG.mode === 'QUANTUM') {
+                const phi = Math.acos(1 - 2 * (i + 0.5) / numNodes);
+                const theta = Math.PI * (1 + Math.sqrt(5)) * i + sysRotation;
+                const rSphere = CFG.dispersion * 1.5 + (val * 100 * CFG.coreResonance);
+                const qx = rSphere * Math.sin(phi) * Math.cos(theta);
+                const qy = rSphere * Math.sin(phi) * Math.sin(theta);
+                zPos = rSphere * Math.cos(phi);
+                angle = Math.atan2(qy, qx);
+                targetRadius = Math.sqrt(qx*qx + qy*qy);
+            }
+
+            const nx = Math.cos(angle) * targetRadius;
+            const ny = Math.sin(angle) * targetRadius;
+
+            const proj = project(nx, ny, zPos);
+            projectedNodes.push({ x: proj.x, y: proj.y, val: val, band: n.band, z: zPos });
+        }
+
+        projectedNodes.sort((a,b) => a.z - b.z);
+
+        ctx.lineWidth = 1;
+        for(let i=0; i<projectedNodes.length; i++) {
+            for(let j=i+1; j<projectedNodes.length; j++) {
+                const p1 = projectedNodes[i];
+                const p2 = projectedNodes[j];
+                const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+                if(dist < CFG.tetherThresh) {
+                    const intensity = (1 - dist/CFG.tetherThresh) * (p1.val + p2.val);
+                    if(intensity > 0.1) {
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        const col = getBaseColor(p1.band, intensity);
+                        ctx.strokeStyle = col.replace(')', `, ${intensity * 0.5})`).replace('hsl', 'hsla');
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        for(let i=0; i<projectedNodes.length; i++) {
+            const p = projectedNodes[i];
+            if(p.val < 0.05 && CFG.mode !== 'LATTICE') continue;
+
+            const col = getBaseColor(p.band, p.val);
+            const hexSize = 5 + p.val * 30 * CFG.coreResonance;
+            const glow = p.val > 0.5 ? CFG.bloom * p.val : 0;
+
+            drawHexagon(p.x, p.y, hexSize, col, glow, p.val * 0.4);
+
+            if(p.val > 0.4) {
+                drawHexagon(p.x, p.y, hexSize * 0.4, '#ffffff', CFG.bloom);
+            }
+
+            if(p.val > 0.7) {
+                const centerProj = project(0,0,0);
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(centerProj.x, centerProj.y);
+                ctx.strokeStyle = col.replace(')', `, ${p.val * 0.3})`).replace('hsl', 'hsla');
+                ctx.stroke();
+            }
+        }
+
+        const cProj = project(0,0,0);
+        const coreColor = `hsl(${180 + CFG.hueShift}, 100%, 70%)`;
+        const coreR = 40 + mBass * 100 * CFG.coreResonance;
+
+        ctx.beginPath();
+        ctx.arc(cProj.x, cProj.y, coreR * 1.5, 0, Math.PI*2);
+        ctx.fillStyle = coreColor.replace(')', `, ${0.1 + mEnergy*0.2})`).replace('hsl', 'hsla');
+        ctx.fill();
+
+        ctx.shadowBlur = CFG.bloom * 2;
+        ctx.shadowColor = coreColor;
+        drawHexagon(cProj.x, cProj.y, coreR, coreColor, 0, 0.2);
+        drawHexagon(cProj.x, cProj.y - (mBass*50), coreR, '#fff', CFG.bloom, 0.5);
+
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+            const angle = (i * Math.PI) / 3 - Math.PI/6;
+            const bx = cProj.x + coreR * Math.cos(angle);
+            const by = cProj.y + coreR * Math.sin(angle);
+            const tx = cProj.x + coreR * Math.cos(angle);
+            const ty = cProj.y - (mBass*50) + coreR * Math.sin(angle);
+            ctx.moveTo(bx, by); ctx.lineTo(tx, ty);
+        }
+        ctx.strokeStyle = coreColor.replace(')', `, 0.5)`).replace('hsl', 'hsla');
+        ctx.stroke();
+
+        ctx.shadowBlur = 0;
+    }
+}
+
+logSys("NEXUS Hex-Mapper v2.0 INITIALIZED (HYBRID MODE).", "info");
+logSys("GLSL Backend + Canvas 2D Overlay Active", "warn");
+
+render();
+
+</script>
+</body>
+</html>
