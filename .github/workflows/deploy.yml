@@ -1,10 +1,17 @@
-name: Deploy to GitHub Pages
+name: AI File Update & Deploy
 
+# Triggered automatically when AI pushes files via GitHub API (create_or_update_file / push_files)
+# Also supports manual trigger from GitHub Actions UI
 on:
   push:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      message:
+        description: 'Optional deploy note'
+        required: false
+        default: 'Manual AI deploy'
 
 permissions:
   contents: write
@@ -12,30 +19,35 @@ permissions:
   id-token: write
 
 jobs:
-  deploy:
+  update-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Checkout latest main
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
+          # Always pulls the latest commit including AI-pushed files
+          ref: main
 
-      - name: Configure Git
+      - name: Show what changed
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          echo "======================================="
+          echo "Triggered by: ${{ github.actor }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Message: ${{ github.event.head_commit.message }}"
+          echo "======================================="
+          echo "Files in repo:"
+          find . -not -path './.git/*' -type f | sort
 
-      - name: List changed files
+      - name: Validate HTML files
         run: |
-          echo "=== Files in repo ==="
-          ls -la
-          echo "=== Last commit ==="
-          git log -1 --oneline
-
-      - name: Verify HTML files
-        run: |
-          echo "=== HTML files found ==="
-          find . -name "*.html" -not -path "./.git/*" | sort
+          echo "--- HTML files ---"
+          find . -name '*.html' -not -path './.git/*' | sort
+          echo "--- JS files ---"
+          find . -name '*.js' -not -path './.git/*' | sort
+          echo "--- CSS files ---"
+          find . -name '*.css' -not -path './.git/*' | sort
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
@@ -43,5 +55,13 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./
           publish_branch: gh-pages
-          exclude_assets: '.github,*.md,*.yml,*.yaml'
-          commit_message: 'deploy: ${{ github.event.head_commit.message }}'
+          # Exclude CI/meta files from the live site
+          exclude_assets: '.github,*.md,*.yml,*.yaml,*.json,LICENSE'
+          commit_message: 'deploy: ${{ github.event.head_commit.message || github.event.inputs.message }}'
+          # Keep full history on gh-pages so rollback is possible
+          keep_files: false
+          full_commit_message: |
+            deploy: ${{ github.event.head_commit.message || github.event.inputs.message }}
+            
+            Pushed by: ${{ github.actor }}
+            Source SHA: ${{ github.sha }}
