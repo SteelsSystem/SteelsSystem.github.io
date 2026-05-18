@@ -313,6 +313,52 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:9px;height
 const PI = Math.PI;
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// AXIAL / CUBE HEX COORDINATES
+//   Pointy-top orientation (matches existing renderer: width=R·√3, height=R·1.5)
+//   q,r are axial coordinates; cube coords satisfy x+y+z=0 with x=q, z=r, y=-q-r.
+//   Six unit neighbours align to 60° radial symmetry. All vertex placement and
+//   pathing through the manifold is derived from these primitives so transitions
+//   are fluid and non-anomalous across sectors.
+// ═══════════════════════════════════════════════════════════════════════════════
+const SQRT3 = Math.sqrt(3);
+const AXIAL_DIRS = [
+  {q: 1, r: 0}, {q: 1, r:-1}, {q: 0, r:-1},
+  {q:-1, r: 0}, {q:-1, r: 1}, {q: 0, r: 1}
+];
+function axialToPixel(q, r, R){
+  return { x: R * SQRT3 * (q + r/2), y: R * 1.5 * r };
+}
+function pixelToAxial(px, py, R){
+  const q = (SQRT3/3 * px - py/3) / R;
+  const r = (2/3 * py) / R;
+  return axialRound(q, r);
+}
+function axialRound(qf, rf){
+  // round via cube coords so q+r+s = 0 is preserved
+  const sf = -qf - rf;
+  let q = Math.round(qf), r = Math.round(rf), s = Math.round(sf);
+  const dq = Math.abs(q - qf), dr = Math.abs(r - rf), ds = Math.abs(s - sf);
+  if(dq > dr && dq > ds) q = -r - s;
+  else if(dr > ds)        r = -q - s;
+  // else s is recomputed implicitly
+  return { q, r };
+}
+function axialNeighbor(q, r, dir){
+  const d = AXIAL_DIRS[((dir % 6) + 6) % 6];
+  return { q: q + d.q, r: r + d.r };
+}
+function axialDistance(aq, ar, bq, br){
+  const ax = aq, az = ar, ay = -aq - ar;
+  const bx = bq, bz = br, by = -bq - br;
+  return (Math.abs(ax-bx) + Math.abs(ay-by) + Math.abs(az-bz)) / 2;
+}
+// Centre pixel of axial (q,r) placed around (cx,cy). Used by every layer.
+function axialCentre(q, r, R){
+  const p = axialToPixel(q, r, R);
+  return { x: cx + p.x, y: cy + p.y };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // DATA
 // ═══════════════════════════════════════════════════════════════════════════════
 const NLP12 = [
@@ -758,24 +804,19 @@ function updateArkSystem(t){
   arkCtx.clearRect(0, 0, W, H);
 
   if(SHOW.arks){
-    const R=VS.hexR, gw=R*Math.sqrt(3), gh=R*1.5;
-    for(let row=-1; row*gh<H+R; row++){
-      const shift=(row%2===0?0:gw/2);
-      for(let col=-1; col*gw<W+R; col++){
-        const hx=col*gw+shift, hy=row*gh;
-        const sid=sectorOf(hx,hy);
-        const bright = isStarted&&!isPaused ? sectorEnergy(sid) : mathBright(sid,t)*0.6;
-        if(bright < 0.30) continue;
-        const weight = bright*bright*bright;
-        if(Math.random() < VS.arkRate * weight){
-          const hue = getHue(NLP12[sid].hue);
-          const color = `hsl(${hue},100%,65%)`;
-          spawnArkPacket(hx, hy, color, sid);
-          if(SHOW.auraWaves && Math.random() < 0.04)
-            spawnAuraWave(hx, hy, color);
-        }
+    forEachAxialCell(VS.hexR, (q, r, hx, hy) => {
+      const sid = sectorOf(hx, hy);
+      const bright = isStarted && !isPaused ? sectorEnergy(sid) : mathBright(sid, t) * 0.6;
+      if(bright < 0.30) return;
+      const weight = bright * bright * bright;
+      if(Math.random() < VS.arkRate * weight){
+        const hue   = getHue(NLP12[sid].hue);
+        const color = `hsl(${hue},100%,65%)`;
+        spawnArkPacket(hx, hy, color, sid);
+        if(SHOW.auraWaves && Math.random() < 0.04)
+          spawnAuraWave(hx, hy, color);
       }
-    }
+    });
   }
 
   if(beatImpact > 0.5 && SHOW.auraWaves){
@@ -964,41 +1005,55 @@ function sectorOf(x,y){ return Math.floor((((Math.atan2(y-cy,x-cx)*180/PI)+360)%
 // ═══════════════════════════════════════════════════════════════════════════════
 // RENDER LAYERS
 // ═══════════════════════════════════════════════════════════════════════════════
-function drawHexField(t){
-  const R=VS.hexR, gw=R*Math.sqrt(3), gh=R*1.5;
-  const maxDist=Math.sqrt(cx*cx+cy*cy)*1.05;
-  for(let row=-1;row*gh<H+R;row++){
-    const hy0=row*gh, shift=(row%2===0?0:gw/2);
-    for(let col=-1;col*gw<W+R;col++){
-      const hx=col*gw+shift, hy=hy0;
-      const dist=Math.hypot(hx-cx,hy-cy);
-      const sid=sectorOf(hx,hy);
-      let bright = isStarted&&!isPaused ? sectorBright[sid] : mathBright(sid,t);
-      if(!activePlanes.has(sid)){ bright*=0.12; }
-      const fade=Math.max(0,1-dist/maxDist);
-      const base=0.04+fade*0.06;
-      const react=bright*(0.55+fade*0.35)*VS.bloom;
-      const alpha=Math.min(1,base+react);
-      if(alpha<0.012) continue;
-      const hue=getHue(NLP12[sid].hue);
-      const light=28+bright*38;
-      const rot=t*0.003*VS.spin*(dist/maxDist)+sid*0.12;
-      hexPath(hx,hy,R-1.5,rot);
-      ctx.strokeStyle=`hsla(${hue},${VS.sat}%,${light}%,${alpha})`;
-      ctx.lineWidth=0.5+bright*3.5;
-      ctx.stroke();
-      if(bright>0.38){
-        hexPath(hx,hy,R-1.5,rot);
-        ctx.fillStyle=`hsla(${hue},100%,${light+10}%,${(bright-0.38)*0.16*VS.bloom})`;
-        ctx.fill();
-        hexPath(hx,hy,(R-1.5)*0.52,-rot*1.4);
-        ctx.strokeStyle=`hsla(${hue},100%,80%,${(bright-0.38)*0.4*VS.bloom})`;
-        ctx.lineWidth=0.5; ctx.stroke();
-      }
-      if(SHOW.sparks&&bright>0.62&&Math.random()<VS.sparkRate&&parts.length<PMAX)
-        spawnParticle(hx,hy,hue,bright);
+// Iterate every axial (q,r) cell whose pixel centre is on (or just off) screen.
+// Yields {q, r, x, y, dist} so render layers share one traversal contract.
+function forEachAxialCell(R, fn){
+  const maxDist = Math.sqrt(cx*cx + cy*cy) * 1.05;
+  // Bound q,r ranges by inverting axial->pixel for the screen rectangle.
+  const margin = R;
+  const qMax = Math.ceil((W/2 + margin) / (R * SQRT3)) + 2;
+  const rMax = Math.ceil((H/2 + margin) / (R * 1.5))   + 2;
+  for(let r = -rMax; r <= rMax; r++){
+    for(let q = -qMax; q <= qMax; q++){
+      const c = axialCentre(q, r, R);
+      if(c.x < -R || c.x > W + R || c.y < -R || c.y > H + R) continue;
+      const dist = Math.hypot(c.x - cx, c.y - cy);
+      fn(q, r, c.x, c.y, dist, maxDist);
     }
   }
+}
+
+function drawHexField(t){
+  const R = VS.hexR;
+  forEachAxialCell(R, (q, r, hx, hy, dist, maxDist) => {
+    const sid = sectorOf(hx, hy);
+    let bright = isStarted && !isPaused ? sectorBright[sid] : mathBright(sid, t);
+    if(!activePlanes.has(sid)){ bright *= 0.12; }
+    const fade  = Math.max(0, 1 - dist/maxDist);
+    const base  = 0.04 + fade * 0.06;
+    const react = bright * (0.55 + fade * 0.35) * VS.bloom;
+    const alpha = Math.min(1, base + react);
+    if(alpha < 0.012) return;
+    const hue   = getHue(NLP12[sid].hue);
+    const light = 28 + bright * 38;
+    // Per-cell rotation now also keys off axial ring distance for 60° symmetry.
+    const ringD = axialDistance(0, 0, q, r);
+    const rot   = t * 0.003 * VS.spin * (dist/maxDist) + sid * 0.12 + ringD * 0.04;
+    hexPath(hx, hy, R - 1.5, rot);
+    ctx.strokeStyle = `hsla(${hue},${VS.sat}%,${light}%,${alpha})`;
+    ctx.lineWidth   = 0.5 + bright * 3.5;
+    ctx.stroke();
+    if(bright > 0.38){
+      hexPath(hx, hy, R - 1.5, rot);
+      ctx.fillStyle = `hsla(${hue},100%,${light+10}%,${(bright-0.38)*0.16*VS.bloom})`;
+      ctx.fill();
+      hexPath(hx, hy, (R-1.5)*0.52, -rot*1.4);
+      ctx.strokeStyle = `hsla(${hue},100%,80%,${(bright-0.38)*0.4*VS.bloom})`;
+      ctx.lineWidth   = 0.5; ctx.stroke();
+    }
+    if(SHOW.sparks && bright > 0.62 && Math.random() < VS.sparkRate && parts.length < PMAX)
+      spawnParticle(hx, hy, hue, bright);
+  });
 }
 
 function drawSectors(t){
