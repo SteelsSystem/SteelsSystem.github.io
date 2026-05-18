@@ -32,6 +32,409 @@
       ::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,rgba(0,229,255,.6),rgba(123,47,255,.6))}
       img,video,iframe{max-width:100%}
     </style>
+<style id="lf-a11y-readability">
+/* ═════════════════════════════════════════════════════════════════
+   LEX FORENSICA · READABILITY LAYER
+   Lifts text contrast toward WCAG AA on the dark Lex Forensica palette
+   while preserving blob parameters, audio/visual semantics, and hues.
+   Default = brighter text + softer interference. html.lf-hc = high contrast.
+   ═════════════════════════════════════════════════════════════════ */
+
+/* 1. Brightened fusion token defaults */
+:root {
+  --lf-text: rgba(238,246,255,.96);
+  --lf-muted: rgba(196,220,232,.85);
+  --lf-text-strong: #f6faff;
+  --lf-link: #6fefff;
+  --lf-amber-strong: #ffd066;
+  --lf-rose-strong: #ff9ec2;
+  --lf-purple-strong: #b694ff;
+  --lf-green-strong: #4be0b8;
+  --lf-red-strong: #ff7a7a;
+}
+
+/* 2. Lift the legacy palette tokens used by index/introspect/controlroom/etc.
+      These names are reused across files — overriding them here propagates. */
+:root {
+  --text: #e8ecf6;
+  --dim:  #a9b0c4;
+  --bright: #f6faff;
+}
+
+/* 3. Reduce visual interference from the lava layer so body copy reads.
+      Blob shapes, animations and colors are PRESERVED — only the wrap-level
+      filter strength and opacity are softened. */
+.lava-wrap {
+  opacity: .07 !important;
+  filter: blur(80px) contrast(1.15) saturate(.9) !important;
+}
+/* Grain layer: keep texture but lessen veil over text */
+body::after { opacity: .18 !important; }
+
+/* 4. Body text crispness on dark backgrounds */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* 5. Lift the most common low-contrast copy selectors.
+      Each rule keeps the original hue family but pushes alpha into
+      a legible band (>= ~.82) on the #03070b / #05050f base. */
+
+/* HERO + LEAD COPY */
+.hero-lead { color: #d4d8e6 !important; }
+.hero-lead span { color: #6fefff !important; }
+.hero-eyebrow,
+.hero-version,
+.scroll-hint { color: rgba(0,229,255,.78) !important; }
+
+/* ARCHIVE NAV + TOP CONTROLS */
+.arc-nav-item { color: rgba(255,255,255,.55) !important; }
+.arc-nav-item:hover, .arc-nav-item.active { color: var(--lf-link, #6fefff) !important; }
+.back-link { color: rgba(255,255,255,.62) !important; }
+.lang-btn { color: rgba(0,229,255,.78) !important; border-color: rgba(0,229,255,.45) !important; }
+.lang-btn.active { color: #aff7ff !important; }
+
+/* ARCHIVE INDEX */
+.arc-index-title { color: #9be8ff !important; }
+.arc-index-count { color: rgba(255,255,255,.6) !important; }
+.arc-tag { color: rgba(255,255,255,.72) !important; border-color: rgba(255,255,255,.35) !important; }
+.arc-entry-id { color: rgba(255,255,255,.55) !important; }
+.arc-entry-title { color: #c8ccda !important; }
+.arc-entry-tag { color: rgba(255,255,255,.6) !important; border-color: rgba(255,255,255,.25) !important; }
+.arc-entry-tag.cyan { color: #8ee8ff !important; border-color: rgba(0,229,255,.5) !important; }
+.arc-entry-tag.red { color: #ff9c9c !important; border-color: rgba(255,68,68,.55) !important; }
+.arc-entry-tag.amber { color: #ffd99c !important; border-color: rgba(255,179,0,.55) !important; }
+.arc-entry-tag.purple { color: #c5a8ff !important; border-color: rgba(123,47,255,.55) !important; }
+.arc-entry-tag.green { color: #79e7c4 !important; border-color: rgba(0,200,150,.55) !important; }
+
+/* SECTION DIVIDERS */
+.sec-div-label { color: #8ee8ff !important; }
+.sec-div-line { background: linear-gradient(to right,transparent,rgba(0,229,255,.45),transparent) !important; }
+
+/* META CARDS */
+.meta-card-icon { color: #8ee8ff !important; }
+.meta-card-title { color: #f0f3ff !important; }
+.meta-card-body { color: #c1c6d6 !important; }
+.meta-card-body em { color: #6fefff !important; }
+.meta-card-body .accent-red { color: #ff9c9c !important; }
+.meta-card-body .accent-amber { color: #ffd99c !important; }
+.meta-card-body .accent-green { color: #79e7c4 !important; }
+.meta-card-body .accent-purple { color: #c5a8ff !important; }
+
+/* POEM */
+.stanza-label { color: #8ee8ff !important; }
+.stanza p { color: #d4d8e6 !important; }
+.ln-red { color: #ff9c9c !important; }
+.ln-amber { color: #ffd99c !important; }
+.ln-dim { color: #b8bdd0 !important; }
+.ln-bright { color: #f6faff !important; }
+
+/* AXIOMS */
+.axiom-name { color: #f0f3ff !important; }
+.axiom-body { color: #c1c6d6 !important; }
+.axiom-body em.c { color: #ff9c9c !important; }
+.axiom-body em.a { color: #ffd99c !important; }
+.axiom-body em.g { color: #79e7c4 !important; }
+.axiom-body em.p { color: #c5a8ff !important; }
+.axiom-body em.b { color: #6fefff !important; }
+.axiom-code.c { color: #6fefff !important; }
+.axiom-code.r { color: #ff9c9c !important; }
+.axiom-code.a { color: #ffd99c !important; }
+.axiom-code.p { color: #c5a8ff !important; }
+.axiom-code.g { color: #79e7c4 !important; }
+
+/* PROTOCOLS */
+.protocol-num { color: #8ee8ff !important; }
+.protocol-name { color: #d6daea !important; }
+.protocol-body { color: #c1c6d6 !important; }
+.protocol-body em { color: #6fefff !important; }
+.status-active { color: #79e7c4 !important; border-color: rgba(0,200,150,.55) !important; }
+.status-pending { color: #ffd99c !important; border-color: rgba(255,179,0,.55) !important; }
+.status-locked { color: #ff9c9c !important; border-color: rgba(255,68,68,.55) !important; }
+
+/* CASE FILES */
+.case-id { color: rgba(255,255,255,.65) !important; }
+.case-title { color: #d6daea !important; }
+.case-stat-val.up { color: #79e7c4 !important; }
+.case-stat-val.dn { color: #ff9c9c !important; }
+.case-stat-val.nt { color: rgba(255,255,255,.7) !important; }
+.case-stat-label { color: rgba(255,255,255,.6) !important; }
+
+/* FIELD NOTES */
+.field-note-ts { color: rgba(255,255,255,.62) !important; }
+.field-note-body { color: #c8ccda !important; }
+.field-note-body strong { color: #f0f3ff !important; }
+.field-note-body .mark { color: #6fefff !important; }
+
+/* SIGNAL LOG */
+.signal-log { color: #b8bdd0 !important; background: rgba(0,0,0,.78) !important; }
+.sig-ts { color: rgba(0,229,255,.6) !important; }
+.sig-type.ok { color: #79e7c4 !important; }
+.sig-type.warn { color: #ffd99c !important; }
+.sig-type.crit { color: #ff9c9c !important; }
+.sig-type.info { color: #c5a8ff !important; }
+.sig-msg { color: #c1c6d6 !important; }
+.sig-msg .hl { color: #aff7ff !important; }
+
+/* THERMAL */
+.thermal-title { color: #8ee8ff !important; }
+
+/* SCORE */
+.score-tag { color: #8ee8ff !important; }
+.sub-bar-label { color: rgba(255,255,255,.7) !important; }
+#score-context { color: #b8bdd0 !important; }
+
+/* CLOSING + FOOTER */
+.closing p { color: #c8ccda !important; }
+.final-stamp { color: #8ee8ff !important; border-color: rgba(0,229,255,.45) !important; }
+footer { color: rgba(255,255,255,.55) !important; }
+
+/* TARGET OVERLAY */
+.tg-title { color: #ffd99c !important; }
+.tg-label { color: #ffd99c !important; }
+.tg-val { color: #d4d8e6 !important; }
+.tg-val.hl { color: #6fefff !important; }
+.tg-val.warn { color: #ffd99c !important; }
+.tg-btn { color: rgba(255,255,255,.78) !important; border-color: rgba(255,255,255,.35) !important; }
+.tg-btn.primary { color: #6fefff !important; border-color: rgba(0,229,255,.6) !important; }
+#targetBox { background: #0a1118 !important; }
+
+/* INTROSPECT / CONTROLROOM SHARED PANELS */
+.entry-tag { /* defaults; per-card variants below win */ }
+.entry-card.a .entry-tag { color: #8ee8ff !important; }
+.entry-card.b .entry-tag { color: #ff9ec2 !important; }
+.entry-name { color: #d6daea !important; }
+.entry-card.active .entry-name { color: #f0f3ff !important; }
+.entry-desc { color: #b8bdd0 !important; }
+.entry-card.active .entry-desc { color: #d4d8e6 !important; }
+.entry-status { color: rgba(255,255,255,.55) !important; }
+.entry-card.active .entry-status { color: #8ee8ff !important; }
+.merge-arrow, .entry-merge { color: #8ee8ff !important; }
+
+.stage-num { color: rgba(255,255,255,.55) !important; }
+.stage-type-tag { color: rgba(255,255,255,.6) !important; }
+.stage-label { color: #c8ccda !important; }
+.stage-sublabel { color: #b8bdd0 !important; }
+.stage-btn.active .stage-sublabel { color: #d4d8e6 !important; }
+.stage-ops { color: #a9b0c4 !important; }
+.stage-btn.active .stage-ops { color: #c1c6d6 !important; }
+.sig-state { color: rgba(255,255,255,.55) !important; }
+
+.dp-title, .file-panel-title, .axiom-panel-title, .provider-reg-title {
+  color: #8ee8ff !important;
+}
+.dp-state { color: #c8ccda !important; }
+.dp-body { color: #c1c6d6 !important; }
+.dp-body .hl { color: #6fefff !important; }
+.dp-body .warn { color: #ffd99c !important; }
+.dp-body .crit { color: #ff9c9c !important; }
+.dp-body .pass { color: #79e7c4 !important; }
+.dp-body .inf { color: #c5a8ff !important; }
+.symb-ts { color: rgba(0,229,255,.55) !important; }
+.symb-msg { color: #b8bdd0 !important; }
+
+.file-name .indent { color: rgba(255,255,255,.4) !important; }
+.file-lines { color: rgba(255,255,255,.65) !important; }
+.file-desc { color: #b0b6c8 !important; }
+.svc-c .file-name { color: #8ee8ff !important; }
+.lib-c .file-name { color: #ffd99c !important; }
+.cmp-c .file-name { color: #79e7c4 !important; }
+.hk-c .file-name { color: #c5a8ff !important; }
+.tp-c .file-name { color: rgba(255,255,255,.7) !important; }
+.provider-key { color: #8ee8ff !important; }
+.provider-val { color: #c1c6d6 !important; }
+
+.loop-icon { color: #79e7c4 !important; }
+.loop-label { color: #79e7c4 !important; }
+.loop-desc { color: #b8bdd0 !important; }
+.loop-return.active .loop-desc { color: #d4d8e6 !important; }
+
+/* HEADER (controlroom) */
+.site-header { background: rgba(5,5,15,.92) !important; }
+.header-version { color: #8ee8ff !important; }
+.header-nav a { color: rgba(255,255,255,.65) !important; }
+.header-nav a:hover { color: #f0f3ff !important; }
+.header-status { color: #79e7c4 !important; }
+
+/* SCANLINE — keep but soften */
+.scanline { opacity: .08 !important; }
+
+/* 6. A11y toggle button */
+#lf-a11y-toggle{
+  position: fixed; right: 18px; bottom: 18px; z-index: 9999;
+  font: 600 11px/1 'JetBrains Mono','Space Mono',ui-monospace,monospace;
+  letter-spacing: 2px; text-transform: uppercase;
+  background: rgba(8,12,20,.92); color: #c8ccda;
+  border: 1px solid rgba(0,229,255,.55); border-radius: 4px;
+  padding: 9px 11px; cursor: pointer;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  transition: background .2s, color .2s, border-color .2s;
+  box-shadow: 0 2px 14px rgba(0,0,0,.5);
+}
+#lf-a11y-toggle:hover, #lf-a11y-toggle:focus-visible {
+  color: #f6faff; border-color: #6fefff; background: rgba(0,40,55,.96);
+  outline: none;
+}
+#lf-a11y-toggle .lf-a11y-on,
+#lf-a11y-toggle .lf-a11y-off { display: inline; }
+html.lf-hc #lf-a11y-toggle .lf-a11y-on { display: none; }
+html:not(.lf-hc) #lf-a11y-toggle .lf-a11y-off { display: none; }
+@media (max-width: 640px) {
+  #lf-a11y-toggle { right: 10px; bottom: 10px; padding: 8px 9px; font-size: 10px; }
+}
+
+/* 7. HIGH-CONTRAST MODE — opt-in */
+html.lf-hc body { color: #f4f6ff !important; cursor: default !important; }
+html.lf-hc .lava-wrap { display: none !important; }
+html.lf-hc body::after { opacity: 0 !important; }
+html.lf-hc .scanline { display: none !important; }
+
+/* All body/copy text → near-white in HC */
+html.lf-hc .hero-lead,
+html.lf-hc .stanza p,
+html.lf-hc .meta-card-body,
+html.lf-hc .axiom-body,
+html.lf-hc .field-note-body,
+html.lf-hc .closing p,
+html.lf-hc .arc-entry-title,
+html.lf-hc .protocol-body,
+html.lf-hc .protocol-name,
+html.lf-hc .case-title,
+html.lf-hc .meta-card-title,
+html.lf-hc .axiom-name,
+html.lf-hc .entry-name,
+html.lf-hc .entry-desc,
+html.lf-hc .stage-label,
+html.lf-hc .stage-sublabel,
+html.lf-hc .stage-ops,
+html.lf-hc .stage-btn.active .stage-sublabel,
+html.lf-hc .stage-btn.active .stage-ops,
+html.lf-hc .symb-msg,
+html.lf-hc .file-desc,
+html.lf-hc .file-name,
+html.lf-hc .provider-val,
+html.lf-hc .dp-body,
+html.lf-hc .dp-state,
+html.lf-hc .tg-val,
+html.lf-hc .sig-msg,
+html.lf-hc .signal-log,
+html.lf-hc .loop-desc,
+html.lf-hc .header-nav a,
+html.lf-hc .arc-nav-item,
+html.lf-hc .back-link {
+  color: #f4f6ff !important;
+}
+
+/* Accents in HC: saturated */
+html.lf-hc .hero-lead span,
+html.lf-hc .meta-card-body em,
+html.lf-hc .axiom-body em.b,
+html.lf-hc .field-note-body .mark,
+html.lf-hc .protocol-body em,
+html.lf-hc .tg-val.hl,
+html.lf-hc .sig-msg .hl,
+html.lf-hc .dp-body .hl { color: #00f0ff !important; }
+
+html.lf-hc .axiom-body em.c,
+html.lf-hc .meta-card-body .accent-red,
+html.lf-hc .ln-red,
+html.lf-hc .dp-body .crit,
+html.lf-hc .status-locked,
+html.lf-hc .case-stat-val.dn,
+html.lf-hc .sig-type.crit { color: #ff8a8a !important; }
+
+html.lf-hc .axiom-body em.a,
+html.lf-hc .meta-card-body .accent-amber,
+html.lf-hc .ln-amber,
+html.lf-hc .dp-body .warn,
+html.lf-hc .status-pending,
+html.lf-hc .tg-val.warn,
+html.lf-hc .tg-title,
+html.lf-hc .tg-label,
+html.lf-hc .sig-type.warn { color: #ffd066 !important; }
+
+html.lf-hc .axiom-body em.g,
+html.lf-hc .meta-card-body .accent-green,
+html.lf-hc .dp-body .pass,
+html.lf-hc .status-active,
+html.lf-hc .case-stat-val.up,
+html.lf-hc .sig-type.ok,
+html.lf-hc .loop-label,
+html.lf-hc .loop-icon,
+html.lf-hc .header-status { color: #4be0b8 !important; }
+
+html.lf-hc .axiom-body em.p,
+html.lf-hc .meta-card-body .accent-purple,
+html.lf-hc .dp-body .inf,
+html.lf-hc .arc-entry-tag.purple,
+html.lf-hc .sig-type.info { color: #b694ff !important; }
+
+/* Solid panels for HC: turn glassy borders into readable cards */
+html.lf-hc .meta-card,
+html.lf-hc .archive-index,
+html.lf-hc .signal-log,
+html.lf-hc .case-card,
+html.lf-hc .entry-card,
+html.lf-hc .stage-btn,
+html.lf-hc .deduction-panel,
+html.lf-hc .file-panel,
+html.lf-hc .axiom-panel,
+html.lf-hc .provider-reg,
+html.lf-hc .loop-return,
+html.lf-hc #targetBox,
+html.lf-hc .protocol-item {
+  background: #0c1018 !important;
+  border-color: rgba(180,200,220,.45) !important;
+}
+html.lf-hc .site-header { background: #06090f !important; border-bottom-color: rgba(180,200,220,.4) !important; }
+html.lf-hc .stage-btn.active { background: #0d1822 !important; border-color: #6fefff !important; }
+html.lf-hc .arc-tag,
+html.lf-hc .lang-btn,
+html.lf-hc .tg-btn,
+html.lf-hc .header-nav a { border-color: rgba(180,200,220,.45) !important; color: #f4f6ff !important; }
+html.lf-hc .lang-btn.active,
+html.lf-hc .header-nav a.active { color: #00f0ff !important; border-color: #00f0ff !important; }
+html.lf-hc .sec-div-line { background: linear-gradient(to right,transparent,#6fefff,transparent) !important; }
+html.lf-hc .sec-div-label { color: #00f0ff !important; }
+
+/* Subtle text shadow only at default mode for hero on lava */
+.hero-title { text-shadow: 0 0 24px rgba(0,229,255,.4), 0 1px 0 rgba(0,0,0,.6) !important; }
+html.lf-hc .hero-title { text-shadow: 0 1px 0 rgba(0,0,0,.85) !important; }
+
+/* Reduce blur of glassy headers for legibility */
+html.lf-hc .site-header { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+</style>
+<script id="lf-a11y-toggle-script">
+(function(){
+  try{
+    var KEY='lf-a11y-hc';
+    var html=document.documentElement;
+    var stored=null;
+    try{ stored=localStorage.getItem(KEY); }catch(_){}
+    if(stored==='1') html.classList.add('lf-hc');
+    function mkBtn(){
+      if(document.getElementById('lf-a11y-toggle')) return;
+      var b=document.createElement('button');
+      b.id='lf-a11y-toggle';
+      b.type='button';
+      b.setAttribute('aria-label','Přepnout vysoký kontrast / Toggle high contrast');
+      b.setAttribute('title','Vysoký kontrast / High contrast (A11Y)');
+      b.innerHTML='<span class="lf-a11y-off">A++ KONTRAST</span><span class="lf-a11y-on">A− NORMÁL</span>';
+      b.addEventListener('click',function(){
+        var on=html.classList.toggle('lf-hc');
+        try{ localStorage.setItem(KEY,on?'1':'0'); }catch(_){}
+      });
+      document.body.appendChild(b);
+    }
+    if(document.readyState==='loading'){
+      document.addEventListener('DOMContentLoaded',mkBtn,{once:true});
+    } else { mkBtn(); }
+  }catch(_){}
+})();
+</script>
+
     <script>
     (function(){
       try{
