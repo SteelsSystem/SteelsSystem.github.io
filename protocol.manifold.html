@@ -261,29 +261,45 @@ footer { color: rgba(255,255,255,.55) !important; }
 /* SCANLINE — keep but soften */
 .scanline { opacity: .08 !important; }
 
-/* 6. A11y toggle button */
+/* 6. A11y toggle button — compact, safe-area-aware, single-label */
+body { padding-bottom: max(56px, env(safe-area-inset-bottom, 0px)); }
 #lf-a11y-toggle{
-  position: fixed; right: 18px; bottom: 18px; z-index: 9999;
-  font: 600 11px/1 'JetBrains Mono','Space Mono',ui-monospace,monospace;
-  letter-spacing: 2px; text-transform: uppercase;
-  background: rgba(8,12,20,.92); color: #c8ccda;
-  border: 1px solid rgba(0,229,255,.55); border-radius: 4px;
-  padding: 9px 11px; cursor: pointer;
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right, 0px));
+  bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  z-index: 9999;
+  display: inline-flex; align-items: center; justify-content: center;
+  white-space: nowrap; line-height: 1;
+  font: 600 10px/1 'JetBrains Mono','Space Mono',ui-monospace,monospace;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  background: rgba(6,10,16,.78); color: #d6dbe8;
+  border: 1px solid rgba(0,229,255,.45); border-radius: 999px;
+  padding: 6px 10px; min-height: 28px; cursor: pointer;
   backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-  transition: background .2s, color .2s, border-color .2s;
-  box-shadow: 0 2px 14px rgba(0,0,0,.5);
+  transition: background .2s, color .2s, border-color .2s, box-shadow .2s;
+  box-shadow: 0 2px 10px rgba(0,0,0,.45);
+  opacity: .82;
 }
-#lf-a11y-toggle:hover, #lf-a11y-toggle:focus-visible {
-  color: #f6faff; border-color: #6fefff; background: rgba(0,40,55,.96);
-  outline: none;
+#lf-a11y-toggle:hover { opacity: 1; color: #f6faff; border-color: #6fefff; background: rgba(0,30,42,.92); }
+#lf-a11y-toggle:focus-visible {
+  opacity: 1; outline: none; color: #f6faff;
+  border-color: #6fefff;
+  box-shadow: 0 0 0 2px rgba(6,10,16,.95), 0 0 0 4px #6fefff, 0 2px 10px rgba(0,0,0,.45);
 }
-#lf-a11y-toggle .lf-a11y-on,
+html.lf-hc #lf-a11y-toggle:focus-visible {
+  box-shadow: 0 0 0 2px #03070b, 0 0 0 4px #ff5e8a, 0 2px 10px rgba(0,0,0,.45);
+  border-color: #ff5e8a;
+}
+/* single visible label — JS toggles aria-pressed; CSS picks the right span */
+#lf-a11y-toggle .lf-a11y-on { display: none; }
 #lf-a11y-toggle .lf-a11y-off { display: inline; }
-html.lf-hc #lf-a11y-toggle .lf-a11y-on { display: none; }
-html:not(.lf-hc) #lf-a11y-toggle .lf-a11y-off { display: none; }
+html.lf-hc #lf-a11y-toggle .lf-a11y-off { display: none; }
+html.lf-hc #lf-a11y-toggle .lf-a11y-on { display: inline; }
 @media (max-width: 640px) {
-  #lf-a11y-toggle { right: 10px; bottom: 10px; padding: 8px 9px; font-size: 10px; }
+  #lf-a11y-toggle { font-size: 9px; letter-spacing: 1.2px; padding: 5px 9px; min-height: 26px; }
+  body { padding-bottom: max(48px, env(safe-area-inset-bottom, 0px)); }
 }
+@media print { #lf-a11y-toggle { display: none !important; } }
 
 /* 7. HIGH-CONTRAST MODE — opt-in */
 html.lf-hc body { color: #f4f6ff !important; cursor: default !important; }
@@ -414,19 +430,28 @@ html.lf-hc .site-header { backdrop-filter: none !important; -webkit-backdrop-fil
     var stored=null;
     try{ stored=localStorage.getItem(KEY); }catch(_){}
     if(stored==='1') html.classList.add('lf-hc');
+    function sync(b){
+      var on=html.classList.contains('lf-hc');
+      b.setAttribute('aria-pressed', on?'true':'false');
+    }
     function mkBtn(){
-      if(document.getElementById('lf-a11y-toggle')) return;
+      // Defensive: remove any duplicate/stale toggles
+      var existing=document.querySelectorAll('#lf-a11y-toggle');
+      for(var i=1;i<existing.length;i++){ existing[i].parentNode&&existing[i].parentNode.removeChild(existing[i]); }
+      if(existing.length>=1) { sync(existing[0]); return; }
       var b=document.createElement('button');
       b.id='lf-a11y-toggle';
       b.type='button';
       b.setAttribute('aria-label','Přepnout vysoký kontrast / Toggle high contrast');
       b.setAttribute('title','Vysoký kontrast / High contrast (A11Y)');
-      b.innerHTML='<span class="lf-a11y-off">A++ KONTRAST</span><span class="lf-a11y-on">A− NORMÁL</span>';
+      b.innerHTML='<span class="lf-a11y-off" aria-hidden="false">A++ KONTRAST</span><span class="lf-a11y-on" aria-hidden="false">A− NORMÁL</span>';
       b.addEventListener('click',function(){
         var on=html.classList.toggle('lf-hc');
         try{ localStorage.setItem(KEY,on?'1':'0'); }catch(_){}
+        sync(b);
       });
       document.body.appendChild(b);
+      sync(b);
     }
     if(document.readyState==='loading'){
       document.addEventListener('DOMContentLoaded',mkBtn,{once:true});
