@@ -1,0 +1,47 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: List changed files
+        run: |
+          echo "=== Files in repo ==="
+          ls -la
+          echo "=== Last commit ==="
+          git log -1 --oneline
+
+      - name: Verify HTML files
+        run: |
+          echo "=== HTML files found ==="
+          find . -name "*.html" -not -path "./.git/*" | sort
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./
+          publish_branch: gh-pages
+          exclude_assets: '.github,*.md,*.yml,*.yaml'
+          commit_message: 'deploy: ${{ github.event.head_commit.message }}'
