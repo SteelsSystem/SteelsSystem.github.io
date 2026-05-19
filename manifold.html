@@ -754,6 +754,9 @@ html.lf-hc #panelToggle{
       <button class="btn active" id="tGrain">GRAIN</button>
       <button class="btn active" id="tGlyph">GLYPHS</button>
     </div>
+    <div class="btn-row">
+      <button class="btn active" id="tMagnets" title="Repulsive vibration entities anchored on hex cells">MAGNETS</button>
+    </div>
   </div>
 
   <div class="section">
@@ -859,7 +862,7 @@ const BEAT_GLYPHS = ['HEX','RING','AXIS','MESH','NODE','SYNC','LATTICE','FLOW'];
 const HEX_DIRS = [[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]];
 
 const VS = {gain:1.2,hexR:30,trail:0.18,hueShift:0,sat:92,edgeGlow:0.95,axisWave:1.0,voronoi:0.55,ark:0.026,mathFreq:1.2,mathAmp:1.0};
-const SHOW = {hex:true,edges:true,rings:true,axes:true,interference:true,voronoi:true,arks:true,grain:true,glyph:true};
+const SHOW = {hex:true,edges:true,rings:true,axes:true,interference:true,voronoi:true,arks:true,grain:true,glyph:true,magnets:true};
 let currentMode='HONEYCOMB', currentMath='SINE';
 let activePlanes=new Set(NLP12.map(x=>x.id));
 let activeAxes=new Set([0,1,2,3,4,5]);
@@ -913,6 +916,7 @@ function resize(){
   // pixel-coordinate math elsewhere stays correct.
   cx=W/2; cy=H/2;
   buildHexLattice();
+  buildMagnets();
 }
 let _resizeRAF=0;
 addEventListener('resize',()=>{
@@ -1498,6 +1502,246 @@ function updateArks(){
     }
   }
 }
+// ────────────────────────────────────────────────────────────────────────
+// MAGNETS · repulsive vibration entities on the hex lattice
+//  Entities are anchored to specific axial cells (their "home"). They orbit
+//  around the home with a small spring + audio-modulated vibration, and
+//  repel each other along the six AXIAL_DIRS so the interaction stays in
+//  the hex paradigm rather than producing arbitrary Cartesian particles.
+//  Each magnet emits ripples along its hex edges when a beat lands, and
+//  visualises its repulsion as faint lines toward its nearest neighbour.
+//  All sizing/caps scale with PERF.quality and IS_MOBILE; the layer is
+//  skipped entirely under prefers-reduced-motion or when the toggle is off.
+// ────────────────────────────────────────────────────────────────────────
+const MAG_CAP = IS_MOBILE ? 10 : 18;
+const MAG_BASE_RADIUS = 4; // axial ring radius for home anchors
+const MAG_REPULSE_K = 1.4; // softened-inverse-square strength
+const MAG_DAMPING = 0.88;
+const MAG_MAX_V = 0.42;    // px/frame in DPR-normalised units
+const MAG_SPRING = 0.012;  // pull magnets back toward their home cell
+const MAG_NEIGHBOUR_R2_FACTOR = 9; // softening constant (× home size²)
+const magnets = [];
+const magRipples = [];
+const MAG_RIPPLE_CAP = IS_MOBILE ? 14 : 28;
+function buildMagnets(){
+  // Static anchor set — pick axial cells around the centre on a small ring,
+  // alternating polarity. Built once per resize so we never allocate in the
+  // hot loop. Each magnet carries its home (qx,qy) so the repulsion stays
+  // bounded by a spring back to the lattice.
+  magnets.length = 0;
+  magRipples.length = 0;
+  if(!hexes.length) return;
+  // Use rings 2 and 4 around origin for anchors — both rings exist in any
+  // reasonably-sized lattice and give a balanced 6-fold layout.
+  const candidates = [];
+  for(const radius of [2, 4]){
+    for(const a of axialRing(0,0,radius)) candidates.push(a);
+  }
+  // Filter to anchors that actually exist in the current hexMap (the lattice
+  // is cropped to canvas); pick up to MAG_CAP, prioritising the lower ring
+  // first so a small viewport still gets some magnets.
+  const cap = Math.min(MAG_CAP, Math.max(4, Math.round(MAG_CAP * PERF.quality)));
+  const size = VS.hexR*DPR;
+  for(const a of candidates){
+    if(magnets.length>=cap) break;
+    const h = hexMap.get(keyQR(a.q,a.r));
+    if(!h) continue;
+    const polarity = ((a.q + a.r) & 1) ? 1 : -1; // checkerboard-like sign
+    const hue = NLP12[h.sector].hue;
+    magnets.push({
+      q:a.q, r:a.r,
+      homeX:h.x, homeY:h.y,
+      x:h.x, y:h.y,
+      vx:0, vy:0,
+      polarity, hue,
+      phase: Math.random()*PI*2,
+      size,
+    });
+  }
+}
+function updateMagnets(){
+  if(!SHOW.magnets || !magnets.length) return;
+  // Audio-reactive vibration scalars. Bass drives radial amplitude; mids/high
+  // drive jitter; beatImpact triggers ripples on a per-magnet probability.
+  const vibAmp = (0.18 + bassNorm*1.6 + midsNorm*0.7) * DPR;
+  const jitter = (0.06 + highNorm*0.9) * DPR;
+  const r2soft = (VS.hexR*DPR) * (VS.hexR*DPR) * MAG_NEIGHBOUR_R2_FACTOR;
+  // Pairwise softened inverse-square repulsion. N is small (≤18) so the
+  // O(N²) double loop is cheap — no spatial hash needed.
+  for(let i=0;i<magnets.length;i++){
+    const a = magnets[i];
+    let fx=0, fy=0;
+    for(let j=0;j<magnets.length;j++){
+      if(i===j) continue;
+      const b = magnets[j];
+      const dx = a.x - b.x, dy = a.y - b.y;
+      const d2 = dx*dx + dy*dy + r2soft; // softened to avoid singularities
+      // Like-polarity → repulse; opposite → mild attraction (still bounded
+      // by spring, so opposite pairs orbit instead of merging).
+      const sign = (a.polarity===b.polarity) ? 1 : -0.35;
+      const inv = MAG_REPULSE_K * sign * (a.size*a.size) / d2;
+      fx += dx * inv;
+      fy += dy * inv;
+    }
+    // Spring back to the lattice home cell.
+    fx += (a.homeX - a.x) * MAG_SPRING;
+    fy += (a.homeY - a.y) * MAG_SPRING;
+    // Audio vibration nudge — directed along a 6-fold hex axis chosen by
+    // the magnet's stored phase, so the motion looks lattice-aligned.
+    const dirIdx = ((Math.floor(a.phase*1.91)%6)+6)%6;
+    const dxh = AXIAL_DIRS[dirIdx].q, dyh = AXIAL_DIRS[dirIdx].r;
+    // Convert hex direction to pixel direction (pointy-top axial→px without cx,cy).
+    const hxPx = SQRT3*(dxh + dyh/2);
+    const hyPx = 1.5*dyh;
+    const wob = Math.sin(t*6.2 + a.phase + bassNorm*4) * vibAmp;
+    fx += hxPx * wob * 0.08;
+    fy += hyPx * wob * 0.08;
+    // Random jitter scaled by treble; cheap pseudo-noise.
+    fx += (Math.sin(t*9.1 + a.phase*1.7) ) * jitter * 0.5;
+    fy += (Math.cos(t*7.3 + a.phase*2.3) ) * jitter * 0.5;
+    a.vx = a.vx * MAG_DAMPING + fx;
+    a.vy = a.vy * MAG_DAMPING + fy;
+    // Velocity clamp keeps the simulation stable even under bursts.
+    const vmag2 = a.vx*a.vx + a.vy*a.vy;
+    const vmax = MAG_MAX_V * DPR * (1 + bassNorm*2);
+    if(vmag2 > vmax*vmax){
+      const k = vmax / Math.sqrt(vmag2);
+      a.vx *= k; a.vy *= k;
+    }
+    a.x += a.vx;
+    a.y += a.vy;
+    a.phase += 0.011 + midsNorm*0.04;
+  }
+  // Emit ripples on beats; throttled by cap and quality.
+  if(beatImpact > 0.32 && magRipples.length < MAG_RIPPLE_CAP){
+    // Spawn from the magnet with the largest excursion from its home so
+    // visually the magnet visibly pushes the field.
+    let best=-1, bestD2=0;
+    for(let i=0;i<magnets.length;i++){
+      const m = magnets[i];
+      const dx = m.x-m.homeX, dy=m.y-m.homeY;
+      const d2 = dx*dx+dy*dy;
+      if(d2>bestD2){ bestD2=d2; best=i; }
+    }
+    if(best>=0){
+      const m = magnets[best];
+      magRipples.push({x:m.x, y:m.y, life:0, maxLife: 36, hue:m.hue, amp: beatImpact});
+    }
+  }
+  for(let i=magRipples.length-1;i>=0;i--){
+    const rp = magRipples[i];
+    rp.life++;
+    if(rp.life>=rp.maxLife){ magRipples.splice(i,1); }
+  }
+}
+function drawMagnets(){
+  if(!SHOW.magnets || !magnets.length) return;
+  ctx.save();
+  ctx.lineCap='round';
+  ctx.lineJoin='round';
+  const useShadow = !IS_MOBILE && PERF.quality > 0.7;
+  // Pass A — ripple rings expanding along the hex field at each beat.
+  for(const rp of magRipples){
+    const u = rp.life / rp.maxLife;
+    const rad = safeRadius((VS.hexR*DPR) * (0.6 + u*5.5));
+    if(rad<=0) continue;
+    const a = (1-u) * 0.35 * (0.3 + rp.amp);
+    ctx.beginPath();
+    // Trace as a hex outline (rot=0) — keeps the ripple lattice-aligned.
+    for(let i=0;i<6;i++){
+      const px = rp.x + HEX_UNIT[i*2]*rad;
+      const py = rp.y + HEX_UNIT[i*2+1]*rad;
+      i ? ctx.lineTo(px,py) : ctx.moveTo(px,py);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = `hsla(${rp.hue},92%,${56 + u*20}%,${a})`;
+    ctx.lineWidth = (1.2 + (1-u)*2.4) * DPR;
+    ctx.stroke();
+  }
+  // Pass B — repulsion field lines between near magnet pairs. Drawn as
+  // short hex-step segments so the field reads as lattice-bound.
+  const maxLinkD2 = (VS.hexR*DPR * 8) * (VS.hexR*DPR * 8);
+  for(let i=0;i<magnets.length;i++){
+    const a = magnets[i];
+    for(let j=i+1;j<magnets.length;j++){
+      const b = magnets[j];
+      const dx = b.x-a.x, dy = b.y-a.y;
+      const d2 = dx*dx+dy*dy;
+      if(d2 > maxLinkD2 || d2 < 1) continue;
+      const same = (a.polarity===b.polarity);
+      const mix = (energyNorm + beatImpact)*0.5;
+      // Quantise the line into hex-aligned waypoints by stepping along the
+      // primary axial direction between the two cells.
+      const hue = same ? (a.hue+b.hue)*0.5 : 18; // amber for attractor pairs
+      const alpha = same ? (0.04 + mix*0.18) : (0.06 + mix*0.22);
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      // Midpoint pulled along the perpendicular by the audio energy so the
+      // line breathes — gives the visual cue of a magnetic field bowing.
+      const midX = (a.x+b.x)*0.5;
+      const midY = (a.y+b.y)*0.5;
+      const perpX = -dy, perpY = dx;
+      const plen = Math.sqrt(perpX*perpX + perpY*perpY) || 1;
+      const bow = (same?1:-1) * (8*DPR + mix*22*DPR) * Math.sin(t*2 + (a.phase+b.phase)*0.5);
+      const cpx = midX + (perpX/plen)*bow;
+      const cpy = midY + (perpY/plen)*bow;
+      ctx.quadraticCurveTo(cpx, cpy, b.x, b.y);
+      ctx.strokeStyle = `hsla(${hue},92%,${same?62:70}%,${alpha})`;
+      ctx.lineWidth = (0.6 + mix*1.4) * DPR;
+      ctx.stroke();
+    }
+  }
+  // Pass C — magnet nodes themselves, drawn as a small inner hex with a
+  // polarity ring; vibrates visibly with audio.
+  for(const m of magnets){
+    const vibe = 1 + bassNorm*0.7 + Math.sin(t*5 + m.phase)*0.18;
+    const innerR = safeRadius(VS.hexR*DPR * 0.36 * vibe);
+    if(innerR<=0) continue;
+    // Polarity ring — open hex outline.
+    pathHex(ctx, m.x, m.y, innerR, t*0.15 + m.phase);
+    const lit = 60 + Math.min(40, beatImpact*60 + bassNorm*20);
+    ctx.strokeStyle = `hsla(${m.hue},96%,${lit}%,${0.6 + bassNorm*0.3})`;
+    ctx.lineWidth = (1.0 + bassNorm*1.6) * DPR;
+    if(useShadow){
+      ctx.shadowBlur = 10 + beatImpact*16;
+      ctx.shadowColor = `hsl(${m.hue},96%,68%)`;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    } else {
+      ctx.stroke();
+    }
+    // Core dot encodes polarity: + = filled bright, − = ring with dark core.
+    const coreR = safeRadius(innerR*0.32);
+    if(coreR>0){
+      ctx.beginPath();
+      ctx.arc(m.x, m.y, coreR, 0, PI*2);
+      if(m.polarity>0){
+        ctx.fillStyle = `hsla(${m.hue},100%,82%,${0.7 + beatImpact*0.3})`;
+        ctx.fill();
+      } else {
+        ctx.fillStyle = `hsla(${m.hue},100%,18%,0.7)`;
+        ctx.fill();
+        ctx.strokeStyle = `hsla(${m.hue},100%,75%,${0.7 + beatImpact*0.3})`;
+        ctx.lineWidth = 0.9*DPR;
+        ctx.stroke();
+      }
+    }
+    // Six tiny tick marks along the AXIAL_DIRS — visually anchors the
+    // magnet inside the hex paradigm.
+    const tick = innerR * (1.35 + 0.15*Math.sin(t*4 + m.phase));
+    for(let i=0;i<6;i++){
+      const tx = m.x + HEX_UNIT[i*2]*tick;
+      const ty = m.y + HEX_UNIT[i*2+1]*tick;
+      const tr = safeRadius(0.9*DPR + bassNorm*1.6*DPR);
+      if(tr<=0) continue;
+      ctx.beginPath();
+      ctx.arc(tx, ty, tr, 0, PI*2);
+      ctx.fillStyle = `hsla(${m.hue},100%,72%,${0.35 + midsNorm*0.4})`;
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
 // Glyph field is throttled to ~10fps and grid-stepped wider when quality
 // drops. Canvas text rendering is one of the slowest 2D paths on GPU —
 // drawing it every frame at full density is wasteful and visually
@@ -1608,14 +1852,16 @@ function loop(now){
   drawHexField();
   drawEdgeLinks();
   drawInterference();
+  updateMagnets();
+  drawMagnets();
   drawGrain();
   updateArks();
 }
 
-function bindSlider(id,key,valId,parse=parseFloat){ const el=document.getElementById(id); el.oninput=()=>{VS[key]=parse(el.value); document.getElementById(valId).textContent=el.value; if(key==='hexR') buildHexLattice();}; }
+function bindSlider(id,key,valId,parse=parseFloat){ const el=document.getElementById(id); el.oninput=()=>{VS[key]=parse(el.value); document.getElementById(valId).textContent=el.value; if(key==='hexR'){ buildHexLattice(); buildMagnets(); }}; }
 bindSlider('sGain','gain','vGain'); bindSlider('sHexR','hexR','vHexR',parseInt); bindSlider('sTrail','trail','vTrail'); bindSlider('sHue','hueShift','vHue',parseInt); bindSlider('sSat','sat','vSat',parseInt); bindSlider('sEdge','edgeGlow','vEdge'); bindSlider('sAxis','axisWave','vAxis'); bindSlider('sVoronoi','voronoi','vVoronoi'); bindSlider('sArk','ark','vArk'); bindSlider('sMathFreq','mathFreq','vMathFreq'); bindSlider('sMathAmp','mathAmp','vMathAmp');
 function bindToggle(id,key,on,off){ document.getElementById(id).onclick=function(){ SHOW[key]=!SHOW[key]; this.classList.toggle('active',SHOW[key]); this.textContent=SHOW[key]?on:off; }; }
-bindToggle('tHex','hex','HEX FIELD','HEX OFF'); bindToggle('tEdges','edges','EDGE LINKS','EDGES OFF'); bindToggle('tRings','rings','RING WAVE','RINGS OFF'); bindToggle('tAxes','axes','AXIS FLOW','AXES OFF'); bindToggle('tInterference','interference','INTERFERENCE','INTERF OFF'); bindToggle('tVoronoi','voronoi','DUAL MESH','MESH OFF'); bindToggle('tArks','arks','ARKS','ARKS OFF'); bindToggle('tGrain','grain','GRAIN','GRAIN OFF'); bindToggle('tGlyph','glyph','GLYPHS','GLYPHS OFF');
+bindToggle('tHex','hex','HEX FIELD','HEX OFF'); bindToggle('tEdges','edges','EDGE LINKS','EDGES OFF'); bindToggle('tRings','rings','RING WAVE','RINGS OFF'); bindToggle('tAxes','axes','AXIS FLOW','AXES OFF'); bindToggle('tInterference','interference','INTERFERENCE','INTERF OFF'); bindToggle('tVoronoi','voronoi','DUAL MESH','MESH OFF'); bindToggle('tArks','arks','ARKS','ARKS OFF'); bindToggle('tGrain','grain','GRAIN','GRAIN OFF'); bindToggle('tGlyph','glyph','GLYPHS','GLYPHS OFF'); bindToggle('tMagnets','magnets','MAGNETS','MAGNETS OFF');
 
 MODES.forEach(m=>{ const b=document.createElement('button'); b.className='mode-pill'+(m===currentMode?' active':''); b.textContent=m; b.onclick=()=>{ currentMode=m; topMode.textContent='MODE: '+m; [...modeRow.children].forEach(x=>x.classList.remove('active')); b.classList.add('active'); }; modeRow.appendChild(b); });
 AXES.forEach((label,i)=>{ const b=document.createElement('button'); b.className='axis-pill active'; b.textContent=label; b.onclick=()=>{ if(activeAxes.has(i)){ activeAxes.delete(i); b.classList.remove('active'); } else { activeAxes.add(i); b.classList.add('active'); } }; axisRow.appendChild(b); });
@@ -1756,9 +2002,11 @@ if(REDUCED_MOTION){
   SHOW.arks = false;
   SHOW.grain = false;
   SHOW.glyph = false;
+  SHOW.magnets = false;
   document.getElementById('tArks').classList.remove('active');
   document.getElementById('tGrain').classList.remove('active');
   document.getElementById('tGlyph').classList.remove('active');
+  document.getElementById('tMagnets').classList.remove('active');
 }
 loop();
 </script>
