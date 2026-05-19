@@ -101,3 +101,17 @@ forenzní jazyk (LOGIC_ERR, SYS_ERR, REG_ERR, ANOMALY, OVERRIDE),
 režimy výstupu (PUBLIC OUTPUT, INTERNAL PREVIEW, BLOCKED, CRITICAL ANOMALY, O>FALSE OVERRIDE). �
 (A dál můžeš nechat stejnou českou verzi, kterou jsme právě upravili – sekce 3–9 jsou 1:1 s anglickou částí.)
  bilingual README.
+
+---
+
+## Install as an app (PWA)
+
+The site is an installable Progressive Web App. No store required.
+
+- **Android (Chrome / Edge):** open https://steelssystem.github.io/manifold.html → menu (⋮) → **Install app** (or **Add to Home screen**). An "Install app" hint also appears in the bottom‑right when the browser allows it.
+- **Linux / Windows (Chrome / Edge):** open the site → address‑bar install icon (a tiny monitor with a down arrow) → **Install**. Or use the in‑page "Install app" button when shown.
+- **iOS (Safari):** Share → **Add to Home Screen** (Safari does not surface beforeinstallprompt).
+
+Installed app launches standalone, works offline (cached shell + assets), and uses the hex‑mark icon.
+
+> Note: a true native APK / `.exe` / AppImage is a separate packaging step (e.g. Bubblewrap / PWABuilder / Tauri) and is not produced here.

@@ -6,6 +6,17 @@
 <meta name="description" content="Lex Forensica — Steel Auras forensic manifold · axial hex lattice · O-Gate kernel · Czech-first živý archiv">
 <meta name="theme-color" content="#03070b">
 <meta name="color-scheme" content="dark">
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="application-name" content="Lex Manifold">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lex Manifold">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="dns-prefetch" href="https://fonts.googleapis.com">
@@ -2009,6 +2020,54 @@ if(REDUCED_MOTION){
   document.getElementById('tMagnets').classList.remove('active');
 }
 loop();
+</script>
+<script>
+/* PWA · service worker registration + non-intrusive install hint */
+(function(){
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js', { scope: './' })
+        .catch(function(err){ console.warn('SW registration failed:', err); });
+    });
+  }
+  var deferred = null;
+  var btn = null;
+  function makeBtn(){
+    if (btn) return btn;
+    btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = 'Install app';
+    btn.setAttribute('aria-label', 'Install Lex Manifold as app');
+    btn.style.cssText = [
+      'position:fixed','right:10px','bottom:10px','z-index:9999',
+      'padding:8px 12px','font:600 11px/1 ui-monospace,JetBrains Mono,monospace',
+      'letter-spacing:1px','text-transform:uppercase',
+      'color:#00e5ff','background:rgba(4,10,18,.78)',
+      'border:1px solid rgba(0,229,255,.45)','border-radius:6px',
+      'backdrop-filter:blur(6px)','-webkit-backdrop-filter:blur(6px)',
+      'cursor:pointer','box-shadow:0 0 14px rgba(0,229,255,.18)'
+    ].join(';');
+    btn.addEventListener('click', async function(){
+      if (!deferred) return;
+      btn.disabled = true;
+      try { deferred.prompt(); await deferred.userChoice; } catch(_){}
+      deferred = null;
+      btn.remove();
+      btn = null;
+    });
+    document.body.appendChild(btn);
+    return btn;
+  }
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    deferred = e;
+    makeBtn();
+  });
+  window.addEventListener('appinstalled', function(){
+    deferred = null;
+    if (btn) { btn.remove(); btn = null; }
+  });
+})();
 </script>
 </body>
 </html>
