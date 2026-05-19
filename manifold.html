@@ -607,6 +607,52 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:10px;heigh
   #topBar{width:calc(100% - 280px)}
   #centreGlyph{left:calc(50% - 140px)}
 }
+@media (max-width:640px){
+  #panel{width:min(86vw,310px)}
+  #topBar{width:100%; padding:10px 12px}
+  #topTitle{font-size:8px}
+  #centreGlyph{left:50%}
+  #panelToggle{font-size:8px;padding:10px 5px}
+}
+/* High-contrast overrides for the manifold canvas UI. The lattice itself
+   keeps its hues so the audio-reactive layers stay intact; only the
+   panel/HUD chrome lifts to readable values. */
+html.lf-hc #topTitle{color:#9be8ff!important}
+html.lf-hc #topMode{color:#aff7ff!important}
+html.lf-hc #panel{
+  background:#06090f!important;
+  border-left:1px solid rgba(180,200,220,.45)!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+html.lf-hc .sec-title{color:#9be8ff!important}
+html.lf-hc .slider-label{color:#dfe6f3!important}
+html.lf-hc .slider-val{color:#aff7ff!important}
+html.lf-hc .btn{
+  color:#f4f6ff!important;border-color:rgba(180,200,220,.5)!important;
+  background:#0c1018!important;
+}
+html.lf-hc .btn.active{
+  color:#00f0ff!important;border-color:#00f0ff!important;
+  background:#0d1822!important;box-shadow:none!important;
+}
+html.lf-hc .mode-pill,html.lf-hc .axis-pill,html.lf-hc .nlp-pill{
+  color:#f4f6ff!important;border-color:rgba(180,200,220,.5)!important;
+  background:#0c1018!important;
+}
+html.lf-hc .mode-pill.active,html.lf-hc .axis-pill.active{
+  color:#00f0ff!important;border-color:#00f0ff!important;
+  background:#0d1822!important;
+}
+html.lf-hc #axiomTicker{color:#dfe6f3!important;background:#0c1018!important}
+html.lf-hc .metric-val{color:#aff7ff!important}
+html.lf-hc .metric-lbl{color:#dfe6f3!important}
+html.lf-hc .small-note{color:#dfe6f3!important}
+html.lf-hc #fileLabel{color:#f4f6ff!important;border-color:rgba(180,200,220,.5)!important}
+html.lf-hc #statusChip{color:#dfe6f3!important}
+html.lf-hc #panelToggle{
+  color:#00f0ff!important;background:#06090f!important;
+  border-color:#00f0ff!important;backdrop-filter:none!important;
+}
 </style>
 </head>
 <body>
@@ -752,10 +798,89 @@ function resize(){
 }
 addEventListener('resize',resize);
 
+// ════════════════════════════════════════════════════════════════════════
+// AXIAL / CUBE HEX MATH  (pointy-top orientation)
+//   Axial (q,r) <-> Cube (x,y,z) where x=q, z=r, y=-q-r, with x+y+z=0.
+//   Six AXIAL_DIRS / CUBE_DIRS provide 60° radial symmetry. All vertex
+//   placement, neighbour lookup, ring iteration and pathing route through
+//   these primitives so transitions stay fluid and non-anomalous.
+// ════════════════════════════════════════════════════════════════════════
+const AXIAL_DIRS = [
+  {q: 1,r: 0},{q: 1,r:-1},{q: 0,r:-1},
+  {q:-1,r: 0},{q:-1,r: 1},{q: 0,r: 1}
+];
+const CUBE_DIRS = [
+  {x: 1,y:-1,z: 0},{x: 1,y: 0,z:-1},{x: 0,y: 1,z:-1},
+  {x:-1,y: 1,z: 0},{x:-1,y: 0,z: 1},{x: 0,y:-1,z: 1}
+];
+// Legacy alias retained for any read sites; refers to the same 6 vectors.
+const HEX_DIRS_AXIAL = AXIAL_DIRS;
+function axialToCube(q,r){ return {x:q, z:r, y:-q-r}; }
+function cubeToAxial(x,_y,z){ return {q:x, r:z}; }
+function cubeRound(xf,yf,zf){
+  let rx=Math.round(xf), ry=Math.round(yf), rz=Math.round(zf);
+  const dx=Math.abs(rx-xf), dy=Math.abs(ry-yf), dz=Math.abs(rz-zf);
+  if(dx>dy && dx>dz) rx=-ry-rz;
+  else if(dy>dz)     ry=-rx-rz;
+  else               rz=-rx-ry;
+  return {x:rx,y:ry,z:rz};
+}
+function axialRound(qf,rf){
+  const c=cubeRound(qf,-qf-rf,rf);
+  return {q:c.x, r:c.z};
+}
 function keyQR(q,r){ return q+','+r; }
-function hexDistance(q,r){ const s=-q-r; return Math.max(Math.abs(q),Math.abs(r),Math.abs(s)); }
+// Cube distance; identical to the hex grid step distance.
+function cubeDistance(a,b){
+  return (Math.abs(a.x-b.x)+Math.abs(a.y-b.y)+Math.abs(a.z-b.z))/2;
+}
+function axialDistance(aq,ar,bq,br){
+  return cubeDistance(axialToCube(aq,ar), axialToCube(bq,br));
+}
+// Distance from origin — used as ring index throughout the lattice.
+function hexDistance(q,r){ return axialDistance(0,0,q,r); }
+function axialNeighbor(q,r,dir){
+  const d=AXIAL_DIRS[((dir%6)+6)%6];
+  return {q:q+d.q, r:r+d.r};
+}
+// Pointy-top axial -> pixel (relative to canvas centre cx,cy).
 function axialToPixel(q,r,size){
   return {x: cx + size*SQRT3*(q + r/2), y: cy + size*1.5*r};
+}
+// Pixel -> axial via cube rounding. Inverse of axialToPixel.
+function pixelToAxial(px,py,size){
+  const x=px-cx, y=py-cy;
+  const qf=(SQRT3/3*x - y/3)/size;
+  const rf=(2/3*y)/size;
+  return axialRound(qf,rf);
+}
+// Cube linear interp + line — used by pathing/ark trajectories.
+function cubeLerp(a,b,t){
+  return {x:a.x+(b.x-a.x)*t, y:a.y+(b.y-a.y)*t, z:a.z+(b.z-a.z)*t};
+}
+function axialLine(aq,ar,bq,br){
+  const A=axialToCube(aq,ar), B=axialToCube(bq,br);
+  const N=Math.max(1, cubeDistance(A,B));
+  const out=[];
+  for(let i=0;i<=N;i++){
+    const p=cubeLerp(A,B,i/N);
+    const c=cubeRound(p.x,p.y,p.z);
+    out.push({q:c.x, r:c.z});
+  }
+  return out;
+}
+// All axial coordinates exactly `radius` rings from (cq,cr). 60° symmetric.
+function axialRing(cq,cr,radius){
+  if(radius<=0) return [{q:cq,r:cr}];
+  const out=[];
+  let q=cq+AXIAL_DIRS[4].q*radius, r=cr+AXIAL_DIRS[4].r*radius;
+  for(let side=0; side<6; side++){
+    for(let step=0; step<radius; step++){
+      out.push({q,r});
+      const d=AXIAL_DIRS[side]; q+=d.q; r+=d.r;
+    }
+  }
+  return out;
 }
 function hexCorner(x,y,size,i,rot=0){
   const a = PI/3*i + PI/6 + rot;
@@ -777,6 +902,12 @@ function buildHexLattice(){
       if(!rings[d]) rings[d]=[];
       rings[d].push(hex);
     }
+  }
+  // Pre-sort each ring by polar angle so drawRingWaves traces a clean
+  // 6-fold-symmetric polygon instead of insertion-order zig-zags.
+  for(const ring of rings){
+    if(!ring) continue;
+    ring.sort((a,b)=>Math.atan2(a.y-cy,a.x-cx)-Math.atan2(b.y-cy,b.x-cx));
   }
 }
 
@@ -1015,7 +1146,16 @@ function drawVoronoiDual(){
 }
 function spawnArk(h){
   const hue=getHue(NLP12[h.sector].hue);
-  arks.push({x:h.x,y:h.y,q:h.q,r:h.r,targetQ:0,targetR:0,progress:0,speed:0.008 + h.energy*0.012 + bassNorm*0.006,hue,size:1.5+h.energy*3.5,phase:Math.random()*PI*2});
+  // Pre-compute an axial line from (h.q,h.r) -> origin so the ark traces the
+  // true hex path. Pixel positions are derived from axialToPixel each frame.
+  const path=axialLine(h.q,h.r,0,0);
+  arks.push({
+    x:h.x, y:h.y, q:h.q, r:h.r,
+    targetQ:0, targetR:0, path,
+    progress:0,
+    speed:0.008 + h.energy*0.012 + bassNorm*0.006,
+    hue, size:1.5+h.energy*3.5, phase:Math.random()*PI*2
+  });
 }
 function updateArks(){
   fx.clearRect(0,0,W,H);
@@ -1029,8 +1169,16 @@ function updateArks(){
       for(let s=0;s<4;s++) sparks.push({x:cx,y:cy,vx:Math.cos(Math.random()*PI*2)*(1+Math.random()*4),vy:Math.sin(Math.random()*PI*2)*(1+Math.random()*4),life:24+Math.random()*20,hue:a.hue,size:1+Math.random()*2});
       arks.splice(i,1); flashGlyph(); continue;
     }
-    const px = a.x + (cx-a.x)*a.progress;
-    const py = a.y + (cy-a.y)*a.progress;
+    // Sample the axial hex line between (q,r) and origin; this enforces
+    // 60° radial symmetry on the trajectory instead of a Cartesian shortcut.
+    const path=a.path;
+    const fpos=a.progress*(path.length-1);
+    const i0=Math.floor(fpos), i1=Math.min(path.length-1,i0+1);
+    const tt=fpos-i0;
+    const p0=axialToPixel(path[i0].q, path[i0].r, VS.hexR);
+    const p1=axialToPixel(path[i1].q, path[i1].r, VS.hexR);
+    const px=p0.x+(p1.x-p0.x)*tt;
+    const py=p0.y+(p1.y-p0.y)*tt;
     const wob = Math.sin(t*10 + a.phase + a.progress*12)*(6 + beatImpact*18)*Math.sin(a.progress*PI);
     const ang = Math.atan2(cy-a.y,cx-a.x);
     const fxX = px - Math.sin(ang)*wob;
@@ -1115,7 +1263,12 @@ btnPlay.onclick=function(){
 btnSystem.onclick=initFromSystem;
 panelToggle.onclick=()=>panel.classList.toggle('hidden');
 
-resize(); setStatus('Idle · Waiting source',''); loop();
+resize();
+// Auto-collapse the controls panel on narrow viewports so the lattice
+// fills the screen on phones; user can re-open via the side toggle.
+if(innerWidth < 720) panel.classList.add('hidden');
+setStatus('Idle · Waiting source','');
+loop();
 </script>
 </body>
 </html>
