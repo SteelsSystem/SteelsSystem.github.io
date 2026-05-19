@@ -1,1408 +1,1480 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Lex Forensica — Steel Auras forensic manifold · axial hex lattice · O-Gate kernel · Czech-first živý archiv">
-    <meta name="theme-color" content="#03070b">
-    <meta name="color-scheme" content="dark">
-    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
-    <style id="lf-fusion-tokens">
-      :root{
-        --lf-cyan:#00e5ff; --lf-amber:#ffb300; --lf-rose:#ff6b9d;
-        --lf-purple:#7b2fff; --lf-green:#00c896; --lf-red:#ff4444;
-        --lf-bg:#03070b; --lf-bg-2:#07111a; --lf-panel:rgba(4,10,18,.74);
-        --lf-line:rgba(0,255,180,.22); --lf-line-hot:rgba(255,190,70,.8);
-        --lf-text:rgba(227,243,255,.88); --lf-muted:rgba(142,194,210,.58);
-        --lf-mono:'JetBrains Mono','Space Mono',ui-monospace,monospace;
-        --lf-serif:'IM Fell English',Georgia,serif;
-        --lf-hex-r:30px;
-      }
-      html.lf-reduced-motion *,html.lf-reduced-motion *::before,html.lf-reduced-motion *::after{
-        animation-duration:.001ms!important;animation-iteration-count:1!important;
-        transition-duration:.001ms!important;scroll-behavior:auto!important;
-      }
-      body[data-lf-paused="1"] *{animation-play-state:paused!important}
-      ::selection{background:rgba(0,229,255,.28);color:#eef}
-      ::-webkit-scrollbar{width:8px;height:8px}
-      ::-webkit-scrollbar-track{background:transparent}
-      ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,rgba(0,229,255,.35),rgba(123,47,255,.35));border-radius:4px}
-      ::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,rgba(0,229,255,.6),rgba(123,47,255,.6))}
-      img,video,iframe{max-width:100%}
-    </style>
-<style id="lf-a11y-readability">
-/* ═════════════════════════════════════════════════════════════════
-   LEX FORENSICA · READABILITY LAYER
-   Lifts text contrast toward WCAG AA on the dark Lex Forensica palette
-   while preserving blob parameters, audio/visual semantics, and hues.
-   Default = brighter text + softer interference. html.lf-hc = high contrast.
-   ═════════════════════════════════════════════════════════════════ */
-
-/* 1. Brightened fusion token defaults */
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Lex Forensica — DEEP MAP v2 · REFXRGLSD Interconnectivity · Hexagonal Manifold Topology">
+<meta name="theme-color" content="#03070b">
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<title>DEEP MAP v2 — REFXRGLSD · Lex Forensica</title>
+<style>
+/* ═══ TOKENS ═══ */
 :root {
-  --lf-text: rgba(238,246,255,.96);
-  --lf-muted: rgba(196,220,232,.85);
-  --lf-text-strong: #f6faff;
-  --lf-link: #6fefff;
-  --lf-amber-strong: #ffd066;
-  --lf-rose-strong: #ff9ec2;
-  --lf-purple-strong: #b694ff;
-  --lf-green-strong: #4be0b8;
-  --lf-red-strong: #ff7a7a;
+  --cyan:   #00e5ff;
+  --amber:  #ffb300;
+  --rose:   #ff6b9d;
+  --purple: #7b2fff;
+  --green:  #00c896;
+  --red:    #ff4444;
+  --blue:   #2563eb;
+  --teal:   #14b8a6;
+  --gold:   #eab308;
+  --bg:     #020617;
+  --bg2:    #03070b;
+  --panel:  rgba(4,10,18,.78);
+  --text:   rgba(238,246,255,.96);
+  --muted:  rgba(196,220,232,.72);
+  --dim:    rgba(142,178,194,.42);
+  --mono:   'JetBrains Mono', 'Space Mono', ui-monospace, monospace;
+  --serif:  'IM Fell English', Georgia, serif;
 }
-
-/* 2. Lift the legacy palette tokens used by index/introspect/controlroom/etc.
-      These names are reused across files — overriding them here propagates. */
-:root {
-  --text: #e8ecf6;
-  --dim:  #a9b0c4;
-  --bright: #f6faff;
-}
-
-/* 3. Reduce visual interference from the lava layer so body copy reads.
-      Blob shapes, animations and colors are PRESERVED — only the wrap-level
-      filter strength and opacity are softened. */
-.lava-wrap {
-  opacity: .07 !important;
-  filter: blur(80px) contrast(1.15) saturate(.9) !important;
-}
-/* Grain layer: keep texture but lessen veil over text */
-body::after { opacity: .18 !important; }
-
-/* 4. Body text crispness on dark backgrounds */
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { overflow-x:hidden; scroll-behavior:smooth; }
 body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--mono);
+  overflow-x:hidden;
+  cursor:crosshair;
+  -webkit-font-smoothing:antialiased;
+}
+::selection { background:rgba(0,229,255,.22); color:#eef; }
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:linear-gradient(180deg,rgba(0,229,255,.3),rgba(123,47,255,.3)); border-radius:2px; }
+
+/* ═══ GRAIN ═══ */
+body::after {
+  content:''; position:fixed; inset:0; z-index:1; pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E");
+  background-size:200px 200px; opacity:.22;
 }
 
-/* 5. Lift the most common low-contrast copy selectors.
-      Each rule keeps the original hue family but pushes alpha into
-      a legible band (>= ~.82) on the #03070b / #05050f base. */
-
-/* HERO + LEAD COPY */
-.hero-lead { color: #d4d8e6 !important; }
-.hero-lead span { color: #6fefff !important; }
-.hero-eyebrow,
-.hero-version,
-.scroll-hint { color: rgba(0,229,255,.78) !important; }
-
-/* ARCHIVE NAV + TOP CONTROLS */
-.arc-nav-item { color: rgba(255,255,255,.55) !important; }
-.arc-nav-item:hover, .arc-nav-item.active { color: var(--lf-link, #6fefff) !important; }
-.back-link { color: rgba(255,255,255,.62) !important; }
-.lang-btn { color: rgba(0,229,255,.78) !important; border-color: rgba(0,229,255,.45) !important; }
-.lang-btn.active { color: #aff7ff !important; }
-
-/* ARCHIVE INDEX */
-.arc-index-title { color: #9be8ff !important; }
-.arc-index-count { color: rgba(255,255,255,.6) !important; }
-.arc-tag { color: rgba(255,255,255,.72) !important; border-color: rgba(255,255,255,.35) !important; }
-.arc-entry-id { color: rgba(255,255,255,.55) !important; }
-.arc-entry-title { color: #c8ccda !important; }
-.arc-entry-tag { color: rgba(255,255,255,.6) !important; border-color: rgba(255,255,255,.25) !important; }
-.arc-entry-tag.cyan { color: #8ee8ff !important; border-color: rgba(0,229,255,.5) !important; }
-.arc-entry-tag.red { color: #ff9c9c !important; border-color: rgba(255,68,68,.55) !important; }
-.arc-entry-tag.amber { color: #ffd99c !important; border-color: rgba(255,179,0,.55) !important; }
-.arc-entry-tag.purple { color: #c5a8ff !important; border-color: rgba(123,47,255,.55) !important; }
-.arc-entry-tag.green { color: #79e7c4 !important; border-color: rgba(0,200,150,.55) !important; }
-
-/* SECTION DIVIDERS */
-.sec-div-label { color: #8ee8ff !important; }
-.sec-div-line { background: linear-gradient(to right,transparent,rgba(0,229,255,.45),transparent) !important; }
-
-/* META CARDS */
-.meta-card-icon { color: #8ee8ff !important; }
-.meta-card-title { color: #f0f3ff !important; }
-.meta-card-body { color: #c1c6d6 !important; }
-.meta-card-body em { color: #6fefff !important; }
-.meta-card-body .accent-red { color: #ff9c9c !important; }
-.meta-card-body .accent-amber { color: #ffd99c !important; }
-.meta-card-body .accent-green { color: #79e7c4 !important; }
-.meta-card-body .accent-purple { color: #c5a8ff !important; }
-
-/* POEM */
-.stanza-label { color: #8ee8ff !important; }
-.stanza p { color: #d4d8e6 !important; }
-.ln-red { color: #ff9c9c !important; }
-.ln-amber { color: #ffd99c !important; }
-.ln-dim { color: #b8bdd0 !important; }
-.ln-bright { color: #f6faff !important; }
-
-/* AXIOMS */
-.axiom-name { color: #f0f3ff !important; }
-.axiom-body { color: #c1c6d6 !important; }
-.axiom-body em.c { color: #ff9c9c !important; }
-.axiom-body em.a { color: #ffd99c !important; }
-.axiom-body em.g { color: #79e7c4 !important; }
-.axiom-body em.p { color: #c5a8ff !important; }
-.axiom-body em.b { color: #6fefff !important; }
-.axiom-code.c { color: #6fefff !important; }
-.axiom-code.r { color: #ff9c9c !important; }
-.axiom-code.a { color: #ffd99c !important; }
-.axiom-code.p { color: #c5a8ff !important; }
-.axiom-code.g { color: #79e7c4 !important; }
-
-/* PROTOCOLS */
-.protocol-num { color: #8ee8ff !important; }
-.protocol-name { color: #d6daea !important; }
-.protocol-body { color: #c1c6d6 !important; }
-.protocol-body em { color: #6fefff !important; }
-.status-active { color: #79e7c4 !important; border-color: rgba(0,200,150,.55) !important; }
-.status-pending { color: #ffd99c !important; border-color: rgba(255,179,0,.55) !important; }
-.status-locked { color: #ff9c9c !important; border-color: rgba(255,68,68,.55) !important; }
-
-/* CASE FILES */
-.case-id { color: rgba(255,255,255,.65) !important; }
-.case-title { color: #d6daea !important; }
-.case-stat-val.up { color: #79e7c4 !important; }
-.case-stat-val.dn { color: #ff9c9c !important; }
-.case-stat-val.nt { color: rgba(255,255,255,.7) !important; }
-.case-stat-label { color: rgba(255,255,255,.6) !important; }
-
-/* FIELD NOTES */
-.field-note-ts { color: rgba(255,255,255,.62) !important; }
-.field-note-body { color: #c8ccda !important; }
-.field-note-body strong { color: #f0f3ff !important; }
-.field-note-body .mark { color: #6fefff !important; }
-
-/* SIGNAL LOG */
-.signal-log { color: #b8bdd0 !important; background: rgba(0,0,0,.78) !important; }
-.sig-ts { color: rgba(0,229,255,.6) !important; }
-.sig-type.ok { color: #79e7c4 !important; }
-.sig-type.warn { color: #ffd99c !important; }
-.sig-type.crit { color: #ff9c9c !important; }
-.sig-type.info { color: #c5a8ff !important; }
-.sig-msg { color: #c1c6d6 !important; }
-.sig-msg .hl { color: #aff7ff !important; }
-
-/* THERMAL */
-.thermal-title { color: #8ee8ff !important; }
-
-/* SCORE */
-.score-tag { color: #8ee8ff !important; }
-.sub-bar-label { color: rgba(255,255,255,.7) !important; }
-#score-context { color: #b8bdd0 !important; }
-
-/* CLOSING + FOOTER */
-.closing p { color: #c8ccda !important; }
-.final-stamp { color: #8ee8ff !important; border-color: rgba(0,229,255,.45) !important; }
-footer { color: rgba(255,255,255,.55) !important; }
-
-/* TARGET OVERLAY */
-.tg-title { color: #ffd99c !important; }
-.tg-label { color: #ffd99c !important; }
-.tg-val { color: #d4d8e6 !important; }
-.tg-val.hl { color: #6fefff !important; }
-.tg-val.warn { color: #ffd99c !important; }
-.tg-btn { color: rgba(255,255,255,.78) !important; border-color: rgba(255,255,255,.35) !important; }
-.tg-btn.primary { color: #6fefff !important; border-color: rgba(0,229,255,.6) !important; }
-#targetBox { background: #0a1118 !important; }
-
-/* INTROSPECT / CONTROLROOM SHARED PANELS */
-.entry-tag { /* defaults; per-card variants below win */ }
-.entry-card.a .entry-tag { color: #8ee8ff !important; }
-.entry-card.b .entry-tag { color: #ff9ec2 !important; }
-.entry-name { color: #d6daea !important; }
-.entry-card.active .entry-name { color: #f0f3ff !important; }
-.entry-desc { color: #b8bdd0 !important; }
-.entry-card.active .entry-desc { color: #d4d8e6 !important; }
-.entry-status { color: rgba(255,255,255,.55) !important; }
-.entry-card.active .entry-status { color: #8ee8ff !important; }
-.merge-arrow, .entry-merge { color: #8ee8ff !important; }
-
-.stage-num { color: rgba(255,255,255,.55) !important; }
-.stage-type-tag { color: rgba(255,255,255,.6) !important; }
-.stage-label { color: #c8ccda !important; }
-.stage-sublabel { color: #b8bdd0 !important; }
-.stage-btn.active .stage-sublabel { color: #d4d8e6 !important; }
-.stage-ops { color: #a9b0c4 !important; }
-.stage-btn.active .stage-ops { color: #c1c6d6 !important; }
-.sig-state { color: rgba(255,255,255,.55) !important; }
-
-.dp-title, .file-panel-title, .axiom-panel-title, .provider-reg-title {
-  color: #8ee8ff !important;
+/* ═══ SCANLINE ═══ */
+.scanline {
+  width:100%; height:2px; pointer-events:none; z-index:9998; position:fixed;
+  background:linear-gradient(90deg,transparent,rgba(0,229,255,.12),transparent);
+  animation:scan 12s linear infinite;
 }
-.dp-state { color: #c8ccda !important; }
-.dp-body { color: #c1c6d6 !important; }
-.dp-body .hl { color: #6fefff !important; }
-.dp-body .warn { color: #ffd99c !important; }
-.dp-body .crit { color: #ff9c9c !important; }
-.dp-body .pass { color: #79e7c4 !important; }
-.dp-body .inf { color: #c5a8ff !important; }
-.symb-ts { color: rgba(0,229,255,.55) !important; }
-.symb-msg { color: #b8bdd0 !important; }
+@keyframes scan { 0%{top:0%} 100%{top:100%} }
 
-.file-name .indent { color: rgba(255,255,255,.4) !important; }
-.file-lines { color: rgba(255,255,255,.65) !important; }
-.file-desc { color: #b0b6c8 !important; }
-.svc-c .file-name { color: #8ee8ff !important; }
-.lib-c .file-name { color: #ffd99c !important; }
-.cmp-c .file-name { color: #79e7c4 !important; }
-.hk-c .file-name { color: #c5a8ff !important; }
-.tp-c .file-name { color: rgba(255,255,255,.7) !important; }
-.provider-key { color: #8ee8ff !important; }
-.provider-val { color: #c1c6d6 !important; }
-
-.loop-icon { color: #79e7c4 !important; }
-.loop-label { color: #79e7c4 !important; }
-.loop-desc { color: #b8bdd0 !important; }
-.loop-return.active .loop-desc { color: #d4d8e6 !important; }
-
-/* HEADER (controlroom) */
-.site-header { background: rgba(5,5,15,.92) !important; }
-.header-version { color: #8ee8ff !important; }
-.header-nav a { color: rgba(255,255,255,.65) !important; }
-.header-nav a:hover { color: #f0f3ff !important; }
-.header-status { color: #79e7c4 !important; }
-
-/* SCANLINE — keep but soften */
-.scanline { opacity: .08 !important; }
-
-/* 6. A11y toggle button — compact, safe-area-aware, single-label */
-body { padding-bottom: max(56px, env(safe-area-inset-bottom, 0px)); }
-#lf-a11y-toggle{
-  position: fixed;
-  right: max(12px, env(safe-area-inset-right, 0px));
-  bottom: max(12px, env(safe-area-inset-bottom, 0px));
-  z-index: 9999;
-  display: inline-flex; align-items: center; justify-content: center;
-  white-space: nowrap; line-height: 1;
-  font: 600 10px/1 'JetBrains Mono','Space Mono',ui-monospace,monospace;
-  letter-spacing: 1.5px; text-transform: uppercase;
-  background: rgba(6,10,16,.78); color: #d6dbe8;
-  border: 1px solid rgba(0,229,255,.45); border-radius: 999px;
-  padding: 6px 10px; min-height: 28px; cursor: pointer;
-  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-  transition: background .2s, color .2s, border-color .2s, box-shadow .2s;
-  box-shadow: 0 2px 10px rgba(0,0,0,.45);
-  opacity: .82;
+/* ═══ NAV ═══ */
+nav.top-nav {
+  position:fixed; top:0; left:0; right:0; z-index:500;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 28px;
+  background:rgba(2,6,23,.88);
+  border-bottom:1px solid rgba(0,229,255,.08);
+  backdrop-filter:blur(14px);
 }
-#lf-a11y-toggle:hover { opacity: 1; color: #f6faff; border-color: #6fefff; background: rgba(0,30,42,.92); }
-#lf-a11y-toggle:focus-visible {
-  opacity: 1; outline: none; color: #f6faff;
-  border-color: #6fefff;
-  box-shadow: 0 0 0 2px rgba(6,10,16,.95), 0 0 0 4px #6fefff, 0 2px 10px rgba(0,0,0,.45);
+.nav-brand {
+  display:flex; align-items:center; gap:10px;
 }
-html.lf-hc #lf-a11y-toggle:focus-visible {
-  box-shadow: 0 0 0 2px #03070b, 0 0 0 4px #ff5e8a, 0 2px 10px rgba(0,0,0,.45);
-  border-color: #ff5e8a;
+.nav-pulse {
+  width:8px; height:8px; border-radius:50%;
+  background:var(--teal); box-shadow:0 0 10px var(--teal);
+  animation:pulse-dot 3s ease-in-out infinite;
 }
-/* single visible label — JS toggles aria-pressed; CSS picks the right span */
-#lf-a11y-toggle .lf-a11y-on { display: none; }
-#lf-a11y-toggle .lf-a11y-off { display: inline; }
-html.lf-hc #lf-a11y-toggle .lf-a11y-off { display: none; }
-html.lf-hc #lf-a11y-toggle .lf-a11y-on { display: inline; }
-@media (max-width: 640px) {
-  #lf-a11y-toggle { font-size: 9px; letter-spacing: 1.2px; padding: 5px 9px; min-height: 26px; }
-  body { padding-bottom: max(48px, env(safe-area-inset-bottom, 0px)); }
+@keyframes pulse-dot {
+  0%,100%{transform:scale(1);opacity:.7}
+  50%{transform:scale(1.3);opacity:1}
 }
-@media print { #lf-a11y-toggle { display: none !important; } }
+.nav-title { font-size:10px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; color:var(--teal); }
+.nav-links { display:flex; gap:8px; align-items:center; }
+.nav-link {
+  font-size:9px; letter-spacing:.18em; text-transform:uppercase; padding:5px 12px;
+  border:1px solid rgba(255,255,255,.08); color:rgba(255,255,255,.45);
+  text-decoration:none; transition:all .22s; cursor:pointer; background:none;
+}
+.nav-link:hover { color:var(--cyan); border-color:rgba(0,229,255,.4); background:rgba(0,229,255,.04); }
+.nav-link.active { color:var(--teal); border-color:rgba(20,184,166,.5); }
+#nav-clock { font-size:9px; color:rgba(0,229,255,.35); letter-spacing:.1em; }
 
-/* 7. HIGH-CONTRAST MODE — opt-in */
-html.lf-hc body { color: #f4f6ff !important; cursor: default !important; }
-html.lf-hc .lava-wrap { display: none !important; }
-html.lf-hc body::after { opacity: 0 !important; }
-html.lf-hc .scanline { display: none !important; }
+/* ═══ HERO ═══ */
+.hero {
+  position:relative; min-height:100vh;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:100px 24px 60px; overflow:hidden;
+}
+#hero-canvas {
+  position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:0;
+}
+.hero-content { position:relative; z-index:2; text-align:center; max-width:900px; }
+.hero-eyebrow {
+  font-size:8px; letter-spacing:.45em; text-transform:uppercase;
+  color:rgba(0,229,255,.5); margin-bottom:28px;
+}
+.hero-title {
+  font-size:clamp(52px,9vw,110px); font-weight:900; letter-spacing:-.02em;
+  line-height:1; margin-bottom:8px; font-family:var(--mono);
+}
+.hero-title .accent { color:var(--teal); }
+.hero-sub {
+  font-size:10px; letter-spacing:.35em; text-transform:uppercase;
+  color:rgba(255,255,255,.35); margin-bottom:48px;
+}
+.hero-cards {
+  display:grid; grid-template-columns:repeat(4,1fr); gap:12px;
+  max-width:760px; margin:0 auto;
+}
+@media(max-width:640px){ .hero-cards { grid-template-columns:1fr 1fr; } }
+.hero-card {
+  background:rgba(15,23,42,.55); border:1px solid rgba(255,255,255,.07);
+  padding:16px 14px; text-align:left;
+  backdrop-filter:blur(8px); position:relative; overflow:hidden;
+}
+.hero-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:1px;
+  background:linear-gradient(90deg,transparent,var(--card-color,#14b8a6),transparent);
+  opacity:.6;
+}
+.hc-label { font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:var(--card-color,var(--teal)); opacity:.6; margin-bottom:8px; }
+.hc-val { font-size:18px; font-weight:700; color:var(--card-color,var(--teal)); margin-bottom:4px; }
+.hc-sub { font-size:9px; color:rgba(255,255,255,.35); }
 
-/* All body/copy text → near-white in HC */
-html.lf-hc .hero-lead,
-html.lf-hc .stanza p,
-html.lf-hc .meta-card-body,
-html.lf-hc .axiom-body,
-html.lf-hc .field-note-body,
-html.lf-hc .closing p,
-html.lf-hc .arc-entry-title,
-html.lf-hc .protocol-body,
-html.lf-hc .protocol-name,
-html.lf-hc .case-title,
-html.lf-hc .meta-card-title,
-html.lf-hc .axiom-name,
-html.lf-hc .entry-name,
-html.lf-hc .entry-desc,
-html.lf-hc .stage-label,
-html.lf-hc .stage-sublabel,
-html.lf-hc .stage-ops,
-html.lf-hc .stage-btn.active .stage-sublabel,
-html.lf-hc .stage-btn.active .stage-ops,
-html.lf-hc .symb-msg,
-html.lf-hc .file-desc,
-html.lf-hc .file-name,
-html.lf-hc .provider-val,
-html.lf-hc .dp-body,
-html.lf-hc .dp-state,
-html.lf-hc .tg-val,
-html.lf-hc .sig-msg,
-html.lf-hc .signal-log,
-html.lf-hc .loop-desc,
-html.lf-hc .header-nav a,
-html.lf-hc .arc-nav-item,
-html.lf-hc .back-link {
-  color: #f4f6ff !important;
+/* ═══ MAIN LAYOUT ═══ */
+main { max-width:1400px; margin:0 auto; padding:0 24px 120px; position:relative; z-index:2; }
+
+/* ═══ SECTION WRAPPER ═══ */
+.section-block {
+  border:1px solid rgba(255,255,255,.05);
+  background:rgba(8,14,28,.6);
+  padding:36px 32px; margin-bottom:20px;
+  position:relative; overflow:hidden;
+  backdrop-filter:blur(6px);
+}
+.section-block::before {
+  content:''; position:absolute; top:0; left:0; bottom:0; width:2px;
+  background:linear-gradient(180deg,transparent,var(--accent-color,#14b8a6),transparent);
+  opacity:.55;
+}
+.section-header {
+  display:flex; align-items:baseline; gap:14px; margin-bottom:6px;
+}
+.sec-num { font-size:9px; color:var(--accent-color,var(--teal)); opacity:.7; letter-spacing:.2em; }
+.sec-title { font-size:16px; font-weight:700; letter-spacing:.04em; }
+.sec-sub { font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:rgba(255,255,255,.28); margin-bottom:28px; }
+
+/* ═══ DIV LINE ═══ */
+.div-line {
+  display:flex; align-items:center; gap:16px; margin:60px 0 40px;
+}
+.div-line hr { flex:1; height:1px; background:linear-gradient(to right,transparent,rgba(0,229,255,.18),transparent); border:none; }
+.div-line span { font-size:8px; letter-spacing:.4em; text-transform:uppercase; color:rgba(0,229,255,.32); white-space:nowrap; }
+
+/* ═══ HEXAGONAL TOPOLOGY CANVAS ═══ */
+#hex-canvas-wrap {
+  width:100%; height:440px; position:relative; overflow:hidden;
+  border:1px solid rgba(0,229,255,.07); background:rgba(2,6,23,.8);
+}
+#hex-canvas { width:100%; height:100%; display:block; }
+.hex-legend {
+  position:absolute; bottom:14px; right:14px;
+  display:flex; gap:12px; flex-wrap:wrap; justify-content:flex-end;
+}
+.hex-leg-item { display:flex; align-items:center; gap:6px; font-size:8px; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.45); }
+.hex-leg-dot { width:8px; height:8px; border-radius:50%; }
+
+/* ═══ AUTHORITY TIERS ═══ */
+.tier-list { display:flex; flex-direction:column; gap:10px; }
+.tier-row {
+  display:grid; grid-template-columns:90px 1fr 1fr;
+  gap:16px; align-items:center; padding:16px 0;
+  border-bottom:1px solid rgba(255,255,255,.04);
+}
+.tier-row:last-child { border-bottom:none; }
+@media(max-width:640px){ .tier-row { grid-template-columns:1fr; } }
+.tier-badge {
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+}
+.tier-sym {
+  width:40px; height:40px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; font-weight:700; font-family:var(--mono);
+  border:1px solid var(--t-color,#14b8a6);
+  color:var(--t-color,#14b8a6);
+  background:rgba(0,0,0,.4);
+  text-shadow:0 0 14px var(--t-color,#14b8a6);
+}
+.tier-name { font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:var(--t-color,#14b8a6); opacity:.7; }
+.tier-domain { font-size:13px; font-weight:600; color:var(--t-color,#14b8a6); margin-bottom:4px; }
+.tier-desc { font-size:11px; color:var(--muted); line-height:1.7; }
+.tier-tags { display:flex; gap:6px; flex-wrap:wrap; }
+.tier-tag {
+  font-size:8px; letter-spacing:.15em; text-transform:uppercase;
+  padding:3px 9px; border:1px solid var(--t-color,#14b8a6);
+  color:var(--t-color,#14b8a6); opacity:.7;
+  background:rgba(0,0,0,.3);
 }
 
-/* Accents in HC: saturated */
-html.lf-hc .hero-lead span,
-html.lf-hc .meta-card-body em,
-html.lf-hc .axiom-body em.b,
-html.lf-hc .field-note-body .mark,
-html.lf-hc .protocol-body em,
-html.lf-hc .tg-val.hl,
-html.lf-hc .sig-msg .hl,
-html.lf-hc .dp-body .hl { color: #00f0ff !important; }
-
-html.lf-hc .axiom-body em.c,
-html.lf-hc .meta-card-body .accent-red,
-html.lf-hc .ln-red,
-html.lf-hc .dp-body .crit,
-html.lf-hc .status-locked,
-html.lf-hc .case-stat-val.dn,
-html.lf-hc .sig-type.crit { color: #ff8a8a !important; }
-
-html.lf-hc .axiom-body em.a,
-html.lf-hc .meta-card-body .accent-amber,
-html.lf-hc .ln-amber,
-html.lf-hc .dp-body .warn,
-html.lf-hc .status-pending,
-html.lf-hc .tg-val.warn,
-html.lf-hc .tg-title,
-html.lf-hc .tg-label,
-html.lf-hc .sig-type.warn { color: #ffd066 !important; }
-
-html.lf-hc .axiom-body em.g,
-html.lf-hc .meta-card-body .accent-green,
-html.lf-hc .dp-body .pass,
-html.lf-hc .status-active,
-html.lf-hc .case-stat-val.up,
-html.lf-hc .sig-type.ok,
-html.lf-hc .loop-label,
-html.lf-hc .loop-icon,
-html.lf-hc .header-status { color: #4be0b8 !important; }
-
-html.lf-hc .axiom-body em.p,
-html.lf-hc .meta-card-body .accent-purple,
-html.lf-hc .dp-body .inf,
-html.lf-hc .arc-entry-tag.purple,
-html.lf-hc .sig-type.info { color: #b694ff !important; }
-
-/* Solid panels for HC: turn glassy borders into readable cards */
-html.lf-hc .meta-card,
-html.lf-hc .archive-index,
-html.lf-hc .signal-log,
-html.lf-hc .case-card,
-html.lf-hc .entry-card,
-html.lf-hc .stage-btn,
-html.lf-hc .deduction-panel,
-html.lf-hc .file-panel,
-html.lf-hc .axiom-panel,
-html.lf-hc .provider-reg,
-html.lf-hc .loop-return,
-html.lf-hc #targetBox,
-html.lf-hc .protocol-item {
-  background: #0c1018 !important;
-  border-color: rgba(180,200,220,.45) !important;
+/* ═══ LOOP SEQUENCER ═══ */
+.loop-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media(max-width:768px){ .loop-grid { grid-template-columns:1fr; } }
+.loop-steps { display:flex; flex-direction:column; gap:6px; }
+.loop-step {
+  display:flex; align-items:center; gap:12px;
+  padding:12px 16px;
+  border:1px solid rgba(255,255,255,.06); cursor:pointer;
+  transition:all .2s;
 }
-html.lf-hc .site-header { background: #06090f !important; border-bottom-color: rgba(180,200,220,.4) !important; }
-html.lf-hc .stage-btn.active { background: #0d1822 !important; border-color: #6fefff !important; }
-html.lf-hc .arc-tag,
-html.lf-hc .lang-btn,
-html.lf-hc .tg-btn,
-html.lf-hc .header-nav a { border-color: rgba(180,200,220,.45) !important; color: #f4f6ff !important; }
-html.lf-hc .lang-btn.active,
-html.lf-hc .header-nav a.active { color: #00f0ff !important; border-color: #00f0ff !important; }
-html.lf-hc .sec-div-line { background: linear-gradient(to right,transparent,#6fefff,transparent) !important; }
-html.lf-hc .sec-div-label { color: #00f0ff !important; }
+.loop-step:hover { border-color:rgba(20,184,166,.35); background:rgba(20,184,166,.04); }
+.loop-step.active {
+  border-color:var(--teal);
+  background:rgba(20,184,166,.09);
+  box-shadow:0 0 18px rgba(20,184,166,.12);
+}
+.loop-dot {
+  width:8px; height:8px; border-radius:50%; flex-shrink:0;
+  box-shadow:0 0 8px currentColor;
+}
+.loop-id { font-size:11px; font-weight:700; min-width:140px; }
+.loop-layer { font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:rgba(255,255,255,.3); flex:1; }
+.loop-role { font-size:10px; color:var(--muted); margin-top:2px; }
+.loop-ctrl { display:flex; gap:8px; margin-top:16px; }
+.loop-btn {
+  flex:1; padding:11px; font-size:9px; font-weight:700; letter-spacing:.2em; text-transform:uppercase;
+  border:1px solid rgba(20,184,166,.3); color:var(--teal);
+  background:rgba(20,184,166,.07); cursor:pointer; transition:all .2s; font-family:var(--mono);
+}
+.loop-btn:hover { background:rgba(20,184,166,.14); border-color:var(--teal); }
+.loop-btn.secondary { flex:0 0 auto; color:rgba(255,255,255,.4); border-color:rgba(255,255,255,.08); background:none; padding:11px 20px; }
+.loop-detail {
+  background:rgba(0,0,0,.45); border:1px solid rgba(0,229,255,.1);
+  padding:20px; height:100%;
+  display:flex; flex-direction:column; gap:12px;
+}
+.loop-detail-label { font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:rgba(0,229,255,.45); }
+.loop-detail-id { font-size:24px; font-weight:700; }
+.loop-detail-layer { font-size:9px; letter-spacing:.2em; text-transform:uppercase; opacity:.5; }
+.loop-detail-role { font-size:13px; color:var(--muted); line-height:1.8; margin-top:8px; font-family:var(--serif); font-style:italic; }
+.loop-progress {
+  margin-top:auto; height:2px; background:rgba(255,255,255,.06); position:relative;
+}
+.loop-progress-fill { position:absolute; top:0; left:0; height:2px; transition:width .5s cubic-bezier(.16,1,.3,1); }
 
-/* Subtle text shadow only at default mode for hero on lava */
-.hero-title { text-shadow: 0 0 24px rgba(0,229,255,.4), 0 1px 0 rgba(0,0,0,.6) !important; }
-html.lf-hc .hero-title { text-shadow: 0 1px 0 rgba(0,0,0,.85) !important; }
+/* ═══ NODE MAP ═══ */
+.node-map { display:flex; flex-direction:column; gap:0; }
+.node-item {
+  display:flex; align-items:center; gap:14px;
+  padding:13px 18px; border-left:2px solid rgba(255,255,255,.05);
+  cursor:pointer; transition:all .2s;
+}
+.node-item:hover { background:rgba(255,255,255,.03); border-left-color:var(--teal); }
+.node-item.active { background:rgba(20,184,166,.06); border-left-color:var(--teal); }
+.node-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; box-shadow:0 0 7px currentColor; }
+.node-connector { width:2px; height:18px; background:rgba(255,255,255,.05); margin-left:22px; }
+.node-id { font-size:12px; font-weight:600; flex:1; }
+.node-type { font-size:8px; letter-spacing:.18em; text-transform:uppercase; color:rgba(255,255,255,.3); }
+.node-status { font-size:8px; letter-spacing:.15em; text-transform:uppercase; padding:2px 8px; border:1px solid; border-radius:99px; }
 
-/* Reduce blur of glassy headers for legibility */
-html.lf-hc .site-header { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+/* ═══ METACONDUCT ═══ */
+.mc-list { display:flex; flex-direction:column; gap:8px; }
+.mc-item {
+  display:grid; grid-template-columns:60px 36px 1fr;
+  gap:14px; align-items:center;
+  padding:13px 16px; border:1px solid rgba(255,255,255,.05);
+  transition:border-color .2s;
+}
+.mc-item:hover { border-color:rgba(0,229,255,.15); }
+.mc-id { font-size:10px; font-weight:700; color:var(--cyan); letter-spacing:.1em; }
+.mc-tier-badge {
+  width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:700; border:1px solid;
+}
+.mc-desc { font-size:11px; color:var(--muted); line-height:1.7; }
+
+/* ═══ ARCHITECTURE LAYERS ═══ */
+.arch-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+@media(max-width:768px){ .arch-grid { grid-template-columns:1fr; } }
+.arch-card {
+  background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.06); padding:24px 20px;
+}
+.arch-accent { width:3px; height:36px; border-radius:2px; margin-bottom:14px; }
+.arch-name { font-size:13px; font-weight:700; margin-bottom:3px; }
+.arch-label { font-size:8px; letter-spacing:.22em; text-transform:uppercase; color:rgba(255,255,255,.35); margin-bottom:16px; }
+.arch-items { display:flex; flex-direction:column; gap:7px; }
+.arch-item { display:flex; gap:10px; font-size:11px; color:var(--muted); align-items:flex-start; line-height:1.5; }
+.arch-bullet { flex-shrink:0; margin-top:2px; }
+.arch-bar-wrap { margin-top:18px; }
+.arch-bar-track { height:2px; background:rgba(255,255,255,.06); }
+.arch-bar-fill { height:2px; transition:width 1.4s cubic-bezier(.16,1,.3,1); }
+.arch-bar-val { font-size:8px; letter-spacing:.12em; text-align:right; margin-top:5px; opacity:.5; }
+
+/* ═══ GIT RAIL ═══ */
+.git-rail { display:flex; flex-direction:column; gap:0; }
+.git-step {
+  display:flex; gap:14px; align-items:flex-start;
+  padding:13px 0; border-bottom:1px solid rgba(255,255,255,.04);
+}
+.git-step:last-child { border-bottom:none; }
+.git-badge {
+  font-size:8px; letter-spacing:.15em; text-transform:uppercase;
+  padding:3px 9px; border:1px solid; flex-shrink:0; margin-top:2px;
+}
+.git-cmd { font-size:10px; color:rgba(255,255,255,.8); line-height:1.6; }
+.git-note { font-size:10px; color:rgba(255,255,255,.3); margin-top:2px; }
+
+/* ═══ RADAR CHART WRAP ═══ */
+#integrity-wrap { height:300px; position:relative; }
+
+/* ═══ LIVE LOG ═══ */
+.log-container {
+  max-height:260px; overflow-y:auto;
+  background:rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.05);
+  padding:16px;
+}
+.log-line {
+  display:flex; gap:12px; align-items:baseline;
+  padding:5px 0; border-bottom:1px solid rgba(255,255,255,.025);
+  font-size:10px;
+}
+.log-line:last-child { border-bottom:none; }
+.log-ts { color:rgba(0,229,255,.35); min-width:70px; flex-shrink:0; }
+.log-tag {
+  font-size:8px; letter-spacing:.15em; text-transform:uppercase;
+  padding:1px 7px; border:1px solid; border-radius:99px; flex-shrink:0;
+}
+.log-msg { color:var(--muted); flex:1; }
+.log-actions { display:flex; gap:8px; margin-bottom:12px; justify-content:flex-end; }
+.log-btn {
+  font-size:9px; letter-spacing:.18em; text-transform:uppercase;
+  padding:6px 14px; border:1px solid rgba(255,255,255,.1);
+  color:rgba(255,255,255,.4); background:none; cursor:pointer; font-family:var(--mono);
+  transition:all .2s;
+}
+.log-btn:hover { color:var(--cyan); border-color:rgba(0,229,255,.4); }
+
+/* ═══ PRESS REPORT ═══ */
+.press-btn-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+.press-btn {
+  font-size:9px; letter-spacing:.2em; text-transform:uppercase;
+  padding:12px 22px; border:1px solid; cursor:pointer; font-family:var(--mono);
+  transition:all .2s; font-weight:700;
+}
+#press-output {
+  display:none; margin-top:16px;
+  background:rgba(0,0,0,.55); border:1px solid rgba(0,229,255,.1); padding:20px;
+}
+#press-content { font-size:10px; color:rgba(0,229,255,.8); white-space:pre-wrap; overflow-x:auto; line-height:1.85; }
+
+/* ═══ TICKER ═══ */
+.ticker-wrap {
+  overflow:hidden; white-space:nowrap;
+  border-top:1px solid rgba(255,255,255,.05);
+  border-bottom:1px solid rgba(255,255,255,.04);
+  padding:10px 0;
+  background:rgba(0,0,0,.55);
+  position:relative; z-index:10;
+}
+.ticker-inner {
+  display:inline-block;
+  animation:ticker 55s linear infinite;
+}
+@keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+.ticker-text { font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:rgba(0,229,255,.22); padding:0 80px; }
+
+/* ═══ FOOTER ═══ */
+footer {
+  text-align:center; padding:60px 24px 40px;
+  border-top:1px solid rgba(255,255,255,.04);
+}
+.footer-links { display:flex; justify-content:center; gap:24px; flex-wrap:wrap; margin-top:16px; }
+footer a {
+  font-size:9px; letter-spacing:.22em; text-transform:uppercase;
+  color:rgba(255,255,255,.2); text-decoration:none; transition:color .2s;
+}
+footer a:hover { color:var(--cyan); }
+
+/* ═══ MANIFOLD NETWORK CANVAS ═══ */
+#manifold-wrap {
+  width:100%; height:380px; position:relative; overflow:hidden;
+  border:1px solid rgba(0,229,255,.07);
+}
+#manifold-canvas { width:100%; height:100%; display:block; }
+
+/* ═══ ANIMATIONS ═══ */
+.reveal { opacity:0; transform:translateY(22px); transition:opacity .8s ease, transform .8s ease; }
+.reveal.on { opacity:1; transform:translateY(0); }
+
+@media(max-width:640px){
+  nav.top-nav { padding:10px 14px; }
+  .nav-links { gap:4px; }
+  .nav-link { padding:4px 8px; font-size:8px; }
+  .section-block { padding:22px 16px; }
+  main { padding:0 12px 80px; }
+}
 </style>
-<script id="lf-a11y-toggle-script">
-(function(){
-  try{
-    var KEY='lf-a11y-hc';
-    var html=document.documentElement;
-    var stored=null;
-    try{ stored=localStorage.getItem(KEY); }catch(_){}
-    if(stored==='1') html.classList.add('lf-hc');
-    function sync(b){
-      var on=html.classList.contains('lf-hc');
-      b.setAttribute('aria-pressed', on?'true':'false');
-    }
-    function mkBtn(){
-      // Defensive: remove any duplicate/stale toggles
-      var existing=document.querySelectorAll('#lf-a11y-toggle');
-      for(var i=1;i<existing.length;i++){ existing[i].parentNode&&existing[i].parentNode.removeChild(existing[i]); }
-      if(existing.length>=1) { sync(existing[0]); return; }
-      var b=document.createElement('button');
-      b.id='lf-a11y-toggle';
-      b.type='button';
-      b.setAttribute('aria-label','Přepnout vysoký kontrast / Toggle high contrast');
-      b.setAttribute('title','Vysoký kontrast / High contrast (A11Y)');
-      b.innerHTML='<span class="lf-a11y-off" aria-hidden="false">A++ KONTRAST</span><span class="lf-a11y-on" aria-hidden="false">A− NORMÁL</span>';
-      b.addEventListener('click',function(){
-        var on=html.classList.toggle('lf-hc');
-        try{ localStorage.setItem(KEY,on?'1':'0'); }catch(_){}
-        sync(b);
-      });
-      document.body.appendChild(b);
-      sync(b);
-    }
-    if(document.readyState==='loading'){
-      document.addEventListener('DOMContentLoaded',mkBtn,{once:true});
-    } else { mkBtn(); }
-  }catch(_){}
-})();
-</script>
-
-    <script>
-    (function(){
-      try{
-        var m=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)');
-        if(m&&m.matches)document.documentElement.classList.add('lf-reduced-motion');
-        if(m&&m.addEventListener)m.addEventListener('change',function(e){
-          document.documentElement.classList.toggle('lf-reduced-motion',e.matches);
-        });
-      }catch(_){}
-      function applyVisibility(){
-        try{
-          if(!document.body)return;
-          document.body.setAttribute('data-lf-paused',document.hidden?'1':'0');
-        }catch(_){}
-      }
-      document.addEventListener('visibilitychange',applyVisibility,{passive:true});
-      if(document.readyState!=='loading')applyVisibility();
-      else document.addEventListener('DOMContentLoaded',applyVisibility,{once:true});
-      window.LF=window.LF||{
-        onIdle:function(fn){
-          if('requestIdleCallback' in window)requestIdleCallback(fn,{timeout:1500});
-          else setTimeout(fn,1);
-        },
-        defer:function(fn){
-          if(document.readyState==='complete')window.LF.onIdle(fn);
-          else window.addEventListener('load',function(){window.LF.onIdle(fn)},{once:true});
-        },
-        isHidden:function(){return document.hidden===true}
-      };
-    })();
-    </script>
-    <title>DEEP MAP — REFXRGLSD Interconnectivity</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Inter:wght@100;400;900&display=swap');
-        :root {
-            --core-dark: #020617;
-            --core-blue: #2563eb;
-            --core-teal: #14b8a6;
-            --core-green: #22c55e;
-            --core-orange: #f97316;
-            --core-purple: #a855f7;
-            --core-gold: #eab308;
-        }
-        * { box-sizing: border-box; }
-        body {
-            background-color: var(--core-dark);
-            color: #f8fafc;
-            font-family: 'Inter', sans-serif;
-            overflow-x: hidden;
-        }
-        .mono { font-family: 'JetBrains Mono', monospace; }
-        .glass {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.08);
-        }
-        .glass-teal { border-color: rgba(20,184,166,0.25); }
-        .glass-blue { border-color: rgba(37,99,235,0.25); }
-        .glass-purple { border-color: rgba(168,85,247,0.25); }
-        .glass-gold { border-color: rgba(234,179,8,0.25); }
-
-        /* scanline */
-        .scanline {
-            width: 100%; height: 2px;
-            background: rgba(37,99,235,0.15);
-            position: fixed; animation: scan 10s linear infinite;
-            z-index: 9999; pointer-events: none;
-        }
-        @keyframes scan { 0%{top:0%} 100%{top:100%} }
-
-        /* pulse */
-        .gate-pulse { animation: pulse-ring 4s cubic-bezier(0.4,0,0.6,1) infinite; }
-        @keyframes pulse-ring {
-            0%{transform:scale(0.95);opacity:0.5}
-            50%{transform:scale(1.05);opacity:0.9}
-            100%{transform:scale(0.95);opacity:0.5}
-        }
-
-        /* node map */
-        .node-map {
-            display: flex; flex-direction: column; gap: 0;
-            position: relative;
-        }
-        .node-item {
-            display: flex; align-items: center; gap: 16px;
-            padding: 14px 20px;
-            border-left: 2px solid rgba(255,255,255,0.06);
-            transition: all 0.25s ease;
-            cursor: pointer;
-        }
-        .node-item:hover { background: rgba(255,255,255,0.04); border-left-color: var(--core-teal); }
-        .node-item.active { background: rgba(20,184,166,0.07); border-left-color: var(--core-teal); }
-        .node-dot {
-            width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
-            box-shadow: 0 0 8px currentColor;
-        }
-        .node-connector {
-            width: 2px; background: rgba(255,255,255,0.06);
-            height: 20px; margin-left: 24px; flex-shrink: 0;
-        }
-
-        /* tier */
-        .tier-row {
-            display: grid; grid-template-columns: 80px 1fr 1fr;
-            gap: 12px; align-items: center;
-            padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        .tier-row:last-child { border-bottom: none; }
-
-        /* loop step */
-        .loop-step {
-            display: flex; align-items: center; gap: 10px;
-            padding: 12px 16px; border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.06);
-            cursor: pointer; transition: all 0.2s;
-        }
-        .loop-step:hover { border-color: rgba(20,184,166,0.4); background: rgba(20,184,166,0.05); }
-        .loop-step.active-step {
-            border-color: var(--core-teal);
-            background: rgba(20,184,166,0.1);
-            box-shadow: 0 0 20px rgba(20,184,166,0.15);
-        }
-
-        /* git rail */
-        .git-step {
-            display: flex; gap: 14px; align-items: flex-start;
-            padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
-        }
-        .git-step:last-child { border-bottom: none; }
-        .git-badge {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 9px; letter-spacing: 2px;
-            padding: 3px 8px; border-radius: 99px;
-            text-transform: uppercase; flex-shrink: 0;
-        }
-
-        /* log */
-        .log-line { padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
-        .log-line:last-child { border-bottom: none; }
-
-        /* ticker */
-        .ticker-wrap {
-            overflow: hidden; white-space: nowrap;
-            border-top: 1px solid rgba(255,255,255,0.05);
-        }
-        .ticker-inner {
-            display: inline-block;
-            animation: ticker-scroll 40s linear infinite;
-        }
-        @keyframes ticker-scroll {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-        }
-
-        /* scrollbar */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-
-        @media (max-width: 768px) {
-            .tier-row { grid-template-columns: 60px 1fr; }
-            .tier-row > :last-child { display: none; }
-        }
-    </style>
 </head>
-<body class="antialiased">
+<body>
 
 <div class="scanline"></div>
 
 <!-- NAV -->
-<nav class="fixed top-0 w-full z-50 px-6 py-4 flex justify-between items-center glass">
-    <div class="flex items-center gap-4">
-        <div class="w-3 h-3 rounded-full bg-teal-400 gate-pulse shadow-[0_0_12px_#14b8a6]"></div>
-        <span class="mono text-xs font-bold tracking-[0.2em] uppercase text-teal-400">DEEP MAP // REFXRGLSD ✦</span>
-    </div>
-    <div class="flex gap-3 items-center">
-        <span id="clock" class="mono text-[10px] text-slate-600 tracking-widest"></span>
-        <a href="index.html" class="px-3 py-1 text-[10px] border border-teal-500/40 rounded-full hover:bg-teal-500/10 transition-all uppercase font-bold tracking-widest mono text-teal-500">← Lex</a>
-        <a href="protocol-o.html" class="px-3 py-1 text-[10px] border border-blue-500/40 rounded-full hover:bg-blue-500/10 transition-all uppercase font-bold tracking-widest mono text-blue-400">Protocol O</a>
-        <a href="controlroom.html" class="px-3 py-1 text-[10px] border border-purple-500/40 rounded-full hover:bg-purple-500/10 transition-all uppercase font-bold tracking-widest mono text-purple-400">Control Room</a>
-        <button onclick="exportCSV()" class="px-3 py-1 text-[10px] border border-green-500/40 rounded-full hover:bg-green-500/10 transition-all uppercase font-bold tracking-widest mono text-green-400">↓ CSV</button>
-    </div>
+<nav class="top-nav" role="navigation">
+  <div class="nav-brand">
+    <div class="nav-pulse"></div>
+    <span class="nav-title">DEEP MAP // REFXRGLSD ✦ v2</span>
+  </div>
+  <div class="nav-links">
+    <span id="nav-clock"></span>
+    <a href="index.html" class="nav-link">← Lex</a>
+    <a href="protocol-o.html" class="nav-link">Protocol O</a>
+    <a href="controlroom.html" class="nav-link">Control Room</a>
+    <a href="manifold.html" class="nav-link active">Manifold</a>
+    <button onclick="exportCSV()" class="nav-link">↓ CSV</button>
+  </div>
 </nav>
 
 <!-- HERO -->
-<section class="relative min-h-screen flex flex-col items-center justify-center pt-20 px-6">
-    <div class="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
-        <canvas id="hero-canvas" class="w-full h-full"></canvas>
+<section class="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-content reveal on">
+    <div class="hero-eyebrow">SteelsSystem · REFXRGLSD Protocol · 2026</div>
+    <h1 class="hero-title">DEEP<span class="accent"> MAP</span></h1>
+    <p class="hero-sub">Interconnectivity · Authority Hierarchy · Operation Rail · v2.0</p>
+    <div class="hero-cards">
+      <div class="hero-card" style="--card-color:#14b8a6">
+        <div class="hc-label">Loop State</div>
+        <div class="hc-val" id="hero-loop">MIND1</div>
+        <div class="hc-sub">Active node</div>
+      </div>
+      <div class="hero-card" style="--card-color:#eab308">
+        <div class="hc-label">Authority</div>
+        <div class="hc-val">TIER [Ω]</div>
+        <div class="hc-sub">Human dignity</div>
+      </div>
+      <div class="hero-card" style="--card-color:#a855f7">
+        <div class="hc-label">Nodes Active</div>
+        <div class="hc-val" id="hero-nodes">7</div>
+        <div class="hc-sub">Topology live</div>
+      </div>
+      <div class="hero-card" style="--card-color:#22c55e">
+        <div class="hc-label">Integrity</div>
+        <div class="hc-val">91.4%</div>
+        <div class="hc-sub">All systems</div>
+      </div>
     </div>
-    <div class="relative z-10 text-center max-w-5xl w-full">
-        <div class="mono text-[10px] tracking-[0.4em] text-teal-500/60 uppercase mb-6">SteelsSystem · REFXRGLSD · 2026</div>
-        <h1 class="text-7xl md:text-[9rem] font-black tracking-tighter mb-4 leading-none">
-            DEEP<span class="text-teal-400"> MAP</span>
-        </h1>
-        <p class="mono text-sm tracking-[0.3em] text-slate-400 uppercase mb-10">Interconnectivity · Authority Hierarchy · Operation Rail</p>
-
-        <!-- Status cards -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto">
-            <div class="glass glass-teal p-4 rounded-2xl text-left">
-                <div class="mono text-[9px] text-teal-500/60 uppercase tracking-widest mb-2">Loop State</div>
-                <div class="mono text-lg font-bold text-teal-400" id="hero-loop">MIND1</div>
-                <div class="text-[10px] text-slate-500 mt-1">Active node</div>
-            </div>
-            <div class="glass glass-blue p-4 rounded-2xl text-left">
-                <div class="mono text-[9px] text-blue-500/60 uppercase tracking-widest mb-2">Authority</div>
-                <div class="mono text-lg font-bold text-blue-400">TIER [Ω]</div>
-                <div class="text-[10px] text-slate-500 mt-1">Human dignity</div>
-            </div>
-            <div class="glass glass-purple p-4 rounded-2xl text-left">
-                <div class="mono text-[9px] text-purple-500/60 uppercase tracking-widest mb-2">Git Branch</div>
-                <div class="mono text-sm font-bold text-purple-400">feature/deep-map</div>
-                <div class="text-[10px] text-slate-500 mt-1">Safe force ready</div>
-            </div>
-            <div class="glass glass-gold p-4 rounded-2xl text-left">
-                <div class="mono text-[9px] text-yellow-500/60 uppercase tracking-widest mb-2">Layers</div>
-                <div class="mono text-lg font-bold text-yellow-400">3</div>
-                <div class="text-[10px] text-slate-500 mt-1">Pres / Logic / Proto</div>
-            </div>
-        </div>
-    </div>
+  </div>
 </section>
 
-<!-- MAIN GRID -->
-<main class="max-w-7xl mx-auto px-6 pb-24 space-y-8">
+<!-- MAIN -->
+<main>
 
-    <!-- ── SECTION 1: AUTHORITY HIERARCHY ── -->
-    <div class="glass glass-gold p-8 rounded-3xl">
-        <h2 class="text-xl font-bold mb-2 flex items-center gap-3">
-            <span class="text-yellow-500 mono text-sm">01</span>
-            Structural Framework — Hierarchical Authority
-        </h2>
-        <p class="mono text-[10px] text-slate-500 uppercase tracking-widest mb-8">Immutable authority hierarchy · Lex Forensica Code of Conduct</p>
-
-        <div class="space-y-2">
-            <!-- Header row -->
-            <div class="tier-row">
-                <div class="mono text-[9px] text-slate-600 uppercase tracking-widest">Tier</div>
-                <div class="mono text-[9px] text-slate-600 uppercase tracking-widest">Domain</div>
-                <div class="mono text-[9px] text-slate-600 uppercase tracking-widest">Core Principles</div>
-            </div>
-
-            <!-- TIER 1 Ω -->
-            <div class="tier-row group hover:bg-yellow-500/5 rounded-xl px-2 transition-all cursor-default">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-yellow-500/10 border border-yellow-500/40 flex items-center justify-center">
-                        <span class="mono text-xs font-bold text-yellow-400">Ω</span>
-                    </div>
-                    <div>
-                        <div class="mono text-[10px] font-bold text-yellow-400">TIER 1</div>
-                        <div class="mono text-[8px] text-slate-600">IMMUTABLE</div>
-                    </div>
-                </div>
-                <div>
-                    <div class="font-semibold text-sm text-yellow-300 mb-1">Moral Standard</div>
-                    <div class="text-[11px] text-slate-400">Human dignity · Informed consent · Truth-preservation · Identity sovereignty</div>
-                </div>
-                <div class="space-y-1">
-                    <span class="inline-block mono text-[9px] px-2 py-1 bg-yellow-500/10 border border-yellow-500/20 rounded text-yellow-400">Human dignity</span>
-                    <span class="inline-block mono text-[9px] px-2 py-1 bg-yellow-500/10 border border-yellow-500/20 rounded text-yellow-400 ml-1">Truth-preservation</span>
-                    <span class="inline-block mono text-[9px] px-2 py-1 bg-yellow-500/10 border border-yellow-500/20 rounded text-yellow-400">Identity sovereignty</span>
-                </div>
-            </div>
-
-            <!-- TIER 2 Δ -->
-            <div class="tier-row group hover:bg-blue-500/5 rounded-xl px-2 transition-all cursor-default">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-blue-500/10 border border-blue-500/40 flex items-center justify-center">
-                        <span class="mono text-xs font-bold text-blue-400">Δ</span>
-                    </div>
-                    <div>
-                        <div class="mono text-[10px] font-bold text-blue-400">TIER 2</div>
-                        <div class="mono text-[8px] text-slate-600">SEMANTIC</div>
-                    </div>
-                </div>
-                <div>
-                    <div class="font-semibold text-sm text-blue-300 mb-1">Press / Media</div>
-                    <div class="text-[11px] text-slate-400">Semantic integrity · Anti-stigma · Patient voice protection</div>
-                </div>
-                <div class="space-y-1">
-                    <span class="inline-block mono text-[9px] px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded text-blue-400">Semantic integrity</span>
-                    <span class="inline-block mono text-[9px] px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded text-blue-400 ml-1">Anti-stigma</span>
-                    <span class="inline-block mono text-[9px] px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded text-blue-400">Patient voice</span>
-                </div>
-            </div>
-
-            <!-- TIER 3 ◈ -->
-            <div class="tier-row group hover:bg-teal-500/5 rounded-xl px-2 transition-all cursor-default">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-teal-500/10 border border-teal-500/40 flex items-center justify-center">
-                        <span class="mono text-xs font-bold text-teal-400">◈</span>
-                    </div>
-                    <div>
-                        <div class="mono text-[10px] font-bold text-teal-400">TIER 3</div>
-                        <div class="mono text-[8px] text-slate-600">FORENSIC</div>
-                    </div>
-                </div>
-                <div>
-                    <div class="font-semibold text-sm text-teal-300 mb-1">Government / Institutional</div>
-                    <div class="text-[11px] text-slate-400">Chronological audit · Chain-of-custody · Forensic accountability</div>
-                </div>
-                <div class="space-y-1">
-                    <span class="inline-block mono text-[9px] px-2 py-1 bg-teal-500/10 border border-teal-500/20 rounded text-teal-400">Chrono audit</span>
-                    <span class="inline-block mono text-[9px] px-2 py-1 bg-teal-500/10 border border-teal-500/20 rounded text-teal-400 ml-1">Chain-of-custody</span>
-                    <span class="inline-block mono text-[9px] px-2 py-1 bg-teal-500/10 border border-teal-500/20 rounded text-teal-400">Forensic accountability</span>
-                </div>
-            </div>
-        </div>
+  <!-- ── 01 HEXAGONAL MANIFOLD TOPOLOGY ── -->
+  <div class="div-line reveal"><hr><span>01 · Hexagonal Manifold Topology</span><hr></div>
+  <div class="section-block reveal" style="--accent-color:#00e5ff; padding-bottom:0;">
+    <div class="section-header">
+      <span class="sec-num">01</span>
+      <span class="sec-title">Hexagonal Manifold — Node Topology</span>
     </div>
-
-    <!-- ── SECTION 2: LOOP SEQUENCER + NODE MAP ── -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-        <!-- Loop Sequencer -->
-        <div class="glass glass-teal p-8 rounded-3xl">
-            <h2 class="text-xl font-bold mb-2 flex items-center gap-3">
-                <span class="text-teal-500 mono text-sm">02</span>
-                REFXRGLSD Loop Sequencer
-            </h2>
-            <p class="mono text-[10px] text-slate-500 uppercase tracking-widest mb-6">Pre-instructed action sequence · Predeterministic cycle</p>
-
-            <div class="space-y-3" id="loop-container"></div>
-
-            <div class="mt-6 flex gap-3">
-                <button onclick="advanceLoop()" class="flex-1 py-3 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 rounded-xl mono text-xs font-bold uppercase tracking-widest text-teal-400 transition-all">
-                    Advance →
-                </button>
-                <button onclick="resetLoop()" class="px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl mono text-xs font-bold uppercase tracking-widest text-slate-400 transition-all">
-                    Reset
-                </button>
-            </div>
-
-            <div id="loop-detail" class="mt-4 p-4 bg-black/30 rounded-xl border border-teal-500/20">
-                <div class="mono text-[9px] text-teal-500/60 uppercase tracking-widest mb-2">Current Node Detail</div>
-                <div id="loop-detail-content" class="text-sm text-slate-300"></div>
-            </div>
-        </div>
-
-        <!-- Node Map -->
-        <div class="glass glass-blue p-8 rounded-3xl">
-            <h2 class="text-xl font-bold mb-2 flex items-center gap-3">
-                <span class="text-blue-500 mono text-sm">03</span>
-                Topology Node Map
-            </h2>
-            <p class="mono text-[10px] text-slate-500 uppercase tracking-widest mb-6">REFXRGLSD system interconnect · Live status</p>
-
-            <div class="node-map" id="node-map-container"></div>
-        </div>
+    <p class="sec-sub">Axial hex lattice · REFXRGLSD interconnect · Live system graph</p>
+    <div id="hex-canvas-wrap">
+      <canvas id="hex-canvas"></canvas>
+      <div class="hex-legend">
+        <div class="hex-leg-item"><div class="hex-leg-dot" style="background:#14b8a6"></div>Protocol</div>
+        <div class="hex-leg-item"><div class="hex-leg-dot" style="background:#eab308"></div>Authority</div>
+        <div class="hex-leg-item"><div class="hex-leg-dot" style="background:#a855f7"></div>Module</div>
+        <div class="hex-leg-item"><div class="hex-leg-dot" style="background:#f97316"></div>Engine</div>
+        <div class="hex-leg-item"><div class="hex-leg-dot" style="background:#22c55e"></div>Output</div>
+      </div>
     </div>
+  </div>
 
-    <!-- ── SECTION 3: LAYERED ARCHITECTURE ── -->
-    <div class="glass glass-purple p-8 rounded-3xl">
-        <h2 class="text-xl font-bold mb-2 flex items-center gap-3">
-            <span class="text-purple-500 mono text-sm">04</span>
-            Layered Architecture — REFXRGLSD
-        </h2>
-        <p class="mono text-[10px] text-slate-500 uppercase tracking-widest mb-8">Presentation 82.6% · Logic 17.4% · Protocol core</p>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-            <!-- Presentation -->
-            <div class="bg-black/30 border border-purple-500/20 rounded-2xl p-6">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-2 h-10 rounded-full bg-purple-500"></div>
-                    <div>
-                        <div class="font-bold text-purple-300">Presentation Layer</div>
-                        <div class="mono text-[9px] text-slate-500 tracking-widest">HTML / CSS — 82.6%</div>
-                    </div>
-                </div>
-                <ul class="space-y-2">
-                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-purple-500 flex-shrink-0">▸</span> Hero · Nav · DEEP TOPOLOGY panel</li>
-                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-purple-500 flex-shrink-0">▸</span> Visual Snapshot section</li>
-                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-purple-500 flex-shrink-0">▸</span> Summit Post / SUBSTACK-SUMMIT</li>
-                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-purple-500 flex-shrink-0">▸</span> CHANGELOG.auto timeline</li>
-                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-purple-500 flex-shrink-0">▸</span> TITLE-STATE · Control Room panel</li>
-                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-purple-500 flex-shrink-0">▸</span> Pure render — zero domain logic</li>
-                </ul>
-                <div class="mt-4 h-1 bg-white/5 rounded-full overflow-hidden">
-                    <div class="h-full bg-purple-500 rounded-full" style="width:82.6%"></div>
-                </div>
-                <div class="mono text-[9px] text-purple-500/60 mt-1 text-right">82.6%</div>
-            </div>
-
-            <!-- Logic -->
-            <div class="bg-black/30 border border-blue-500/20 rounded-2xl p-6">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-2 h-10 rounded-full bg-blue-500"></div>
-                    <div>
-                        <div class="font-bold text-blue-300">Logic Layer</div>
-                        <div class="mono text-[9px] text-slate-500 tracking-widest">JavaScript — 17.4%</div>
-                    </div>
-                </div>
-                <ul class="space-y-2">
-                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-blue-500 flex-shrink-0">▸</span> <code class="mono text-blue-400/80 text-[10px]">handleTabSwitch(sectionId)</code></li>
-                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-blue-500 flex-shrink-0">▸</span> <code class="mono text-blue-400/80 text-[10px]">renderTimeline(changelogData)</code></li>
-                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-blue-500 flex-shrink-0">▸</span> <code class="mono text-blue-400/80 text-[10px]">exportCSV(refxrglsdGraph)</code></li>
-                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-blue-500 flex-shrink-0">▸</span> <code class="mono text-blue-400/80 text-[10px]">generatePressReport()</code></li>
-                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-blue-500 flex-shrink-0">▸</span> <code class="mono text-blue-400/80 text-[10px]">advanceLoop()</code></li>
-                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-blue-500 flex-shrink-0">▸</span> <code class="mono text-blue-400/80 text-[10px]">enforceAuthority(event)</code></li>
-                </ul>
-                <div class="mt-4 h-1 bg-white/5 rounded-full overflow-hidden">
-                    <div class="h-full bg-blue-500 rounded-full" style="width:17.4%"></div>
-                </div>
-                <div class="mono text-[9px] text-blue-500/60 mt-1 text-right">17.4%</div>
-            </div>
-
-            <!-- Protocol -->
-            <div class="bg-black/30 border border-teal-500/20 rounded-2xl p-6">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-2 h-10 rounded-full bg-teal-500"></div>
-                    <div>
-                        <div class="font-bold text-teal-300">Protocol Layer</div>
-                        <div class="mono text-[9px] text-slate-500 tracking-widest">REFXRGLSD core</div>
-                    </div>
-                </div>
-                <ul class="space-y-2">
-                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-teal-500 flex-shrink-0">▸</span> MIND1 → BRIDGE → DEEP_1</li>
-                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-teal-500 flex-shrink-0">▸</span> LOOP_CYCLE → DEFENSE_SYNTHESIS</li>
-                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-teal-500 flex-shrink-0">▸</span> Authority TIER Ω / Δ / ◈</li>
-                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-teal-500 flex-shrink-0">▸</span> MC-1: No overwrite without evidence</li>
-                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-teal-500 flex-shrink-0">▸</span> MC-2: REF-MOD-CHRONO surface</li>
-                    <li class="text-[11px] text-slate-400 flex gap-2"><span class="text-teal-500 flex-shrink-0">▸</span> Zero UI awareness — pure logic</li>
-                </ul>
-                <div class="mt-4 h-1 bg-white/5 rounded-full overflow-hidden">
-                    <div class="h-full bg-teal-500 rounded-full" style="width:100%"></div>
-                </div>
-                <div class="mono text-[9px] text-teal-500/60 mt-1 text-right">CORE</div>
-            </div>
-        </div>
+  <!-- ── 02 AUTHORITY HIERARCHY ── -->
+  <div class="div-line reveal"><hr><span>02 · Structural Authority</span><hr></div>
+  <div class="section-block reveal" style="--accent-color:#eab308">
+    <div class="section-header">
+      <span class="sec-num">02</span>
+      <span class="sec-title">Hierarchical Authority Framework</span>
     </div>
+    <p class="sec-sub">Immutable tiers · Lex Forensica code of conduct · REFXRGLSD governance</p>
+    <div class="tier-list" id="tier-list"></div>
+  </div>
 
-    <!-- ── SECTION 4: GIT RAIL ── -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-        <!-- Git Rail -->
-        <div class="glass p-8 rounded-3xl">
-            <h2 class="text-xl font-bold mb-2 flex items-center gap-3">
-                <span class="text-green-500 mono text-sm">05</span>
-                Git Rail — Safe Force Sekvence
-            </h2>
-            <p class="mono text-[10px] text-slate-500 uppercase tracking-widest mb-6">feature → rebase → pf → merge → main</p>
-
-            <div class="space-y-1" id="git-rail-container"></div>
-
-            <div class="mt-6 p-4 bg-green-500/5 border border-green-500/20 rounded-xl">
-                <div class="mono text-[9px] text-green-500/70 uppercase tracking-widest mb-2">Alias (jednou nastavit)</div>
-                <code class="mono text-[11px] text-green-400">git config --global alias.pf<br>"push --force-with-lease --force-if-includes"</code>
-            </div>
-        </div>
-
-        <!-- Integrity Chart -->
-        <div class="glass p-8 rounded-3xl">
-            <h2 class="text-xl font-bold mb-2 flex items-center gap-3">
-                <span class="text-orange-500 mono text-sm">06</span>
-                Integrity Vectors
-            </h2>
-            <p class="mono text-[10px] text-slate-500 uppercase tracking-widest mb-6">REFXRGLSD authority alignment metrics</p>
-            <div style="height:280px">
-                <canvas id="integrity-chart"></canvas>
-            </div>
-        </div>
+  <!-- ── 03 LOOP SEQUENCER + NODE MAP ── -->
+  <div class="div-line reveal"><hr><span>03 · REFXRGLSD Loop</span><hr></div>
+  <div class="section-block reveal" style="--accent-color:#14b8a6">
+    <div class="section-header">
+      <span class="sec-num">03</span>
+      <span class="sec-title">REFXRGLSD Loop Sequencer</span>
     </div>
-
-    <!-- ── SECTION 5: LIVE LOG ── -->
-    <div class="glass p-8 rounded-3xl">
-        <div class="flex items-center justify-between mb-6">
-            <div>
-                <h2 class="text-xl font-bold flex items-center gap-3">
-                    <span class="text-red-500 mono text-sm">07</span>
-                    Live Operation Log
-                </h2>
-                <p class="mono text-[10px] text-slate-500 uppercase tracking-widest mt-1">Real-time event stream · REFXRGLSD operations</p>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="clearLog()" class="px-3 py-1 mono text-[10px] border border-white/10 rounded-full hover:bg-white/5 text-slate-500 transition-all uppercase tracking-widest">Clear</button>
-                <button onclick="exportLog()" class="px-3 py-1 mono text-[10px] border border-blue-500/30 rounded-full hover:bg-blue-500/10 text-blue-400 transition-all uppercase tracking-widest">↓ Export</button>
-            </div>
+    <p class="sec-sub">Pre-instructed action sequence · Predeterministic cycle · 5 nodes</p>
+    <div class="loop-grid">
+      <div>
+        <div class="loop-steps" id="loop-container"></div>
+        <div class="loop-ctrl">
+          <button class="loop-btn" onclick="advanceLoop()">Advance →</button>
+          <button class="loop-btn secondary" onclick="resetLoop()">Reset</button>
         </div>
-        <div id="live-log" class="space-y-0 max-h-64 overflow-y-auto font-mono text-[11px]"></div>
+      </div>
+      <div class="loop-detail" id="loop-detail-panel">
+        <div class="loop-detail-label">Current Node Detail</div>
+        <div class="loop-detail-id" id="ld-id"></div>
+        <div class="loop-detail-layer" id="ld-layer"></div>
+        <div class="loop-detail-role" id="ld-role"></div>
+        <div class="loop-progress">
+          <div class="loop-progress-fill" id="ld-prog"></div>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <!-- ── SECTION 6: PRESS REPORT ── -->
-    <div class="glass glass-teal p-8 rounded-3xl">
-        <h2 class="text-xl font-bold mb-2 flex items-center gap-3">
-            <span class="text-teal-500 mono text-sm">08</span>
-            Press Report Generator
-        </h2>
-        <p class="mono text-[10px] text-slate-500 uppercase tracking-widest mb-6">DeltaStateDashboard.generatePressReport() — Lex Forensica style</p>
-        <div class="flex gap-4 flex-wrap">
-            <button onclick="generatePressReport()" class="px-8 py-4 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 rounded-xl mono text-xs font-bold uppercase tracking-widest text-teal-400 transition-all">
-                Generate Press Report
-            </button>
-            <button onclick="exportCSV()" class="px-8 py-4 bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 rounded-xl mono text-xs font-bold uppercase tracking-widest text-green-400 transition-all">
-                Export CSV
-            </button>
-        </div>
-        <div id="press-output" class="hidden mt-6 p-6 bg-black/40 border border-teal-500/20 rounded-xl">
-            <pre id="press-content" class="mono text-[11px] text-teal-200 whitespace-pre-wrap overflow-x-auto"></pre>
-        </div>
+  <!-- ── 04 NODE MAP ── -->
+  <div class="div-line reveal"><hr><span>04 · Topology Nodes</span><hr></div>
+  <div class="section-block reveal" style="--accent-color:#3b82f6">
+    <div class="section-header">
+      <span class="sec-num">04</span>
+      <span class="sec-title">Topology Node Map</span>
     </div>
+    <p class="sec-sub">REFXRGLSD system interconnect · Live status · All nodes</p>
+    <div class="node-map" id="node-map-container"></div>
+  </div>
+
+  <!-- ── 05 MANIFOLD NETWORK VISUALIZATION ── -->
+  <div class="div-line reveal"><hr><span>05 · Manifold Particle Graph</span><hr></div>
+  <div class="section-block reveal" style="--accent-color:#7b2fff; padding-bottom:0;">
+    <div class="section-header">
+      <span class="sec-num">05</span>
+      <span class="sec-title">Manifold Particle Network</span>
+    </div>
+    <p class="sec-sub">Dynamic force-graph · Node connections · Axiom → Protocol → Output</p>
+    <div id="manifold-wrap">
+      <canvas id="manifold-canvas"></canvas>
+    </div>
+  </div>
+
+  <!-- ── 06 METACONDUCT RULES ── -->
+  <div class="div-line reveal"><hr><span>06 · Metaconduct</span><hr></div>
+  <div class="section-block reveal" style="--accent-color:#ff6b9d">
+    <div class="section-header">
+      <span class="sec-num">06</span>
+      <span class="sec-title">Metaconduct Rules</span>
+    </div>
+    <p class="sec-sub">Non-overrideable operational constraints · Tier-anchored · MC-1 through MC-6</p>
+    <div class="mc-list" id="mc-list"></div>
+  </div>
+
+  <!-- ── 07 LAYERED ARCHITECTURE ── -->
+  <div class="div-line reveal"><hr><span>07 · Architecture</span><hr></div>
+  <div class="section-block reveal" style="--accent-color:#a855f7">
+    <div class="section-header">
+      <span class="sec-num">07</span>
+      <span class="sec-title">Layered Architecture — REFXRGLSD</span>
+    </div>
+    <p class="sec-sub">Presentation · Logic · Protocol · Three-layer separation</p>
+    <div class="arch-grid" id="arch-grid"></div>
+  </div>
+
+  <!-- ── 08 GIT RAIL + INTEGRITY ── -->
+  <div class="div-line reveal"><hr><span>08 · Git Rail · Integrity</span><hr></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;" class="reveal">
+    <div class="section-block" style="--accent-color:#22c55e; margin-bottom:0;">
+      <div class="section-header">
+        <span class="sec-num">08</span>
+        <span class="sec-title">Git Rail — Safe Force</span>
+      </div>
+      <p class="sec-sub">feature → rebase → pf → merge → main</p>
+      <div class="git-rail" id="git-rail-container"></div>
+      <div style="margin-top:16px;padding:14px;background:rgba(34,197,94,.05);border:1px solid rgba(34,197,94,.15);">
+        <div style="font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:rgba(34,197,94,.6);margin-bottom:8px;">Alias (set once)</div>
+        <code style="font-size:10px;color:#4ade80;display:block;line-height:1.8;">git config --global alias.pf<br>"push --force-with-lease --force-if-includes"</code>
+      </div>
+    </div>
+    <div class="section-block" style="--accent-color:#f97316; margin-bottom:0;">
+      <div class="section-header">
+        <span class="sec-num">09</span>
+        <span class="sec-title">Integrity Vectors</span>
+      </div>
+      <p class="sec-sub">REFXRGLSD authority alignment metrics · Radar view</p>
+      <div id="integrity-wrap">
+        <canvas id="integrity-chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 09 LIVE LOG ── -->
+  <div class="div-line reveal"><hr><span>09 · Live Log</span><hr></div>
+  <div class="section-block reveal" style="--accent-color:#ff4444">
+    <div class="section-header">
+      <span class="sec-num">10</span>
+      <span class="sec-title">Live Operation Log</span>
+    </div>
+    <p class="sec-sub">Real-time event stream · REFXRGLSD operations · Auto-scrolling</p>
+    <div class="log-actions">
+      <button class="log-btn" onclick="clearLog()">Clear</button>
+      <button class="log-btn" onclick="exportLog()">↓ Export</button>
+    </div>
+    <div class="log-container" id="live-log"></div>
+  </div>
+
+  <!-- ── 10 PRESS REPORT ── -->
+  <div class="div-line reveal"><hr><span>10 · Press Report</span><hr></div>
+  <div class="section-block reveal" style="--accent-color:#00e5ff">
+    <div class="section-header">
+      <span class="sec-num">11</span>
+      <span class="sec-title">Press Report Generator</span>
+    </div>
+    <p class="sec-sub">DeltaStateDashboard.generatePressReport() · Lex Forensica v13</p>
+    <div class="press-btn-row">
+      <button class="press-btn" style="color:var(--teal);border-color:rgba(20,184,166,.4);background:rgba(20,184,166,.06);" onclick="generatePressReport()">Generate Press Report</button>
+      <button class="press-btn" style="color:#4ade80;border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.06);" onclick="exportCSV()">Export CSV</button>
+    </div>
+    <div id="press-output">
+      <pre id="press-content"></pre>
+    </div>
+  </div>
 
 </main>
 
 <!-- TICKER -->
-<div class="ticker-wrap py-3 px-6 bg-black/60 border-t border-white/5">
-    <span class="ticker-inner mono text-[10px] text-slate-600 tracking-widest uppercase">
-        REFXRGLSD · TIER Ω ACTIVE · LOOP CYCLE RUNNING · GIT RAIL: feature/deep-map → rebase origin/main → push --force-with-lease · MIND1 → BRIDGE → DEEP_1 → LOOP_CYCLE → DEFENSE_SYNTHESIS · MC-1: NO OVERWRITE · MC-2: REF-MOD-CHRONO · STEELS SYSTEM 2026 ·
-        REFXRGLSD · TIER Ω ACTIVE · LOOP CYCLE RUNNING · GIT RAIL: feature/deep-map → rebase origin/main → push --force-with-lease · MIND1 → BRIDGE → DEEP_1 → LOOP_CYCLE → DEFENSE_SYNTHESIS · MC-1: NO OVERWRITE · MC-2: REF-MOD-CHRONO · STEELS SYSTEM 2026 ·
-    </span>
+<div class="ticker-wrap">
+  <span class="ticker-inner">
+    <span class="ticker-text">REFXRGLSD · TIER Ω ACTIVE · LOOP CYCLE RUNNING · GIT RAIL: feature/deep-map → rebase origin/main → push --force-with-lease · MIND1 → BRIDGE → DEEP_1 → LOOP_CYCLE → DEFENSE_SYNTHESIS · MC-1: NO OVERWRITE · MC-2: REF-MOD-CHRONO · STEELS SYSTEM 2026 · DEEP MAP v2 · HEX MANIFOLD ACTIVE · AXIOM LATTICE ONLINE ·</span>
+    <span class="ticker-text">REFXRGLSD · TIER Ω ACTIVE · LOOP CYCLE RUNNING · GIT RAIL: feature/deep-map → rebase origin/main → push --force-with-lease · MIND1 → BRIDGE → DEEP_1 → LOOP_CYCLE → DEFENSE_SYNTHESIS · MC-1: NO OVERWRITE · MC-2: REF-MOD-CHRONO · STEELS SYSTEM 2026 · DEEP MAP v2 · HEX MANIFOLD ACTIVE · AXIOM LATTICE ONLINE ·</span>
+  </span>
 </div>
 
 <!-- FOOTER -->
-<footer class="text-center py-10 border-t border-white/5">
-    <p class="mono text-[10px] tracking-widest text-slate-700 uppercase">SteelsSystem · DEEP MAP · REFXRGLSD · Lex Forensica · 2026</p>
-    <div class="mt-4 flex justify-center gap-6 flex-wrap">
-        <a href="index.html" class="mono text-[10px] text-teal-700 hover:text-teal-400 tracking-widest uppercase transition-colors">← Lex Forensica</a>
-        <a href="protocol-o.html" class="mono text-[10px] text-blue-700 hover:text-blue-400 tracking-widest uppercase transition-colors">Protocol O</a>
-        <a href="controlroom.html" class="mono text-[10px] text-purple-700 hover:text-purple-400 tracking-widest uppercase transition-colors">Control Room</a>
-        <a href="introspect.html" class="mono text-[10px] text-slate-700 hover:text-slate-400 tracking-widest uppercase transition-colors">Introspect</a>
-    </div>
+<footer>
+  <p style="font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:rgba(255,255,255,.18);">SteelsSystem · DEEP MAP v2 · REFXRGLSD · Lex Forensica · 2026</p>
+  <div class="footer-links">
+    <a href="index.html">← Lex Forensica</a>
+    <a href="protocol-o.html">Protocol O</a>
+    <a href="controlroom.html">Control Room</a>
+    <a href="introspect.html">Introspect</a>
+    <a href="manifold.html">Manifold</a>
+    <a href="axiom-manifold.html">Axiom Manifold</a>
+  </div>
 </footer>
 
+<!-- ═══════════════════════════════════════════════════════════════
+     CHART.JS
+═══════════════════════════════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
 <script>
-// ─────────────────────────────────────────────
-//  REFXRGLSD PROTOCOL CORE
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+//  DATA
+// ═══════════════════════════════════════════════════════════════
 
 const AUTHORITY_HIERARCHY = [
-    { tier: 'TIER 1 [Ω]', symbol: 'Ω', domain: 'Moral Standard', color: '#eab308',
-      principles: ['Human dignity', 'Informed consent', 'Truth-preservation', 'Identity sovereignty'] },
-    { tier: 'TIER 2 [Δ]', symbol: 'Δ', domain: 'Press / Media', color: '#3b82f6',
-      principles: ['Semantic integrity', 'Anti-stigma', 'Patient voice protection'] },
-    { tier: 'TIER 3 [◈]', symbol: '◈', domain: 'Government / Institutional', color: '#14b8a6',
-      principles: ['Chronological audit', 'Chain-of-custody', 'Forensic accountability'] },
+  { tier:'TIER 1 [Ω]', symbol:'Ω', domain:'Moral Standard', color:'#eab308',
+    desc:'Human dignity · Informed consent · Truth-preservation · Identity sovereignty — the immutable foundation. No system action may override this tier.',
+    tags:['Human dignity','Truth-preservation','Identity sovereignty','Informed consent'] },
+  { tier:'TIER 2 [Δ]', symbol:'Δ', domain:'Press / Media Integrity', color:'#3b82f6',
+    desc:'Semantic integrity · Anti-stigma framework · Patient voice protection — governs how the system interprets and surfaces narrative.',
+    tags:['Semantic integrity','Anti-stigma','Patient voice','Narrative accuracy'] },
+  { tier:'TIER 3 [◈]', symbol:'◈', domain:'Government / Institutional', color:'#14b8a6',
+    desc:'Chronological audit trail · Chain-of-custody · Forensic accountability — the operational layer that enforces record integrity.',
+    tags:['Chrono audit','Chain-of-custody','Forensic accountability','Record integrity'] },
 ];
 
 const LOOP_SEQUENCE = [
-    { id: 'MIND1',            layer: 'INTAKE',    role: 'Subject-perceived state intake',         color: '#14b8a6' },
-    { id: 'BRIDGE',           layer: 'ALIGN',     role: 'Mapping subject ↔ system',               color: '#3b82f6' },
-    { id: 'DEEP_1',           layer: 'ANALYSIS',  role: 'Forensic engine analysis',               color: '#a855f7' },
-    { id: 'LOOP_CYCLE',       layer: 'FEEDBACK',  role: 'Iterative correction loop',              color: '#f97316' },
-    { id: 'DEFENSE_SYNTHESIS',layer: 'OUTPUT',    role: 'Defense artifacts generation',           color: '#22c55e' },
+  { id:'MIND1',             layer:'INTAKE',    role:'Subject-perceived state intake — raw signal from the source. The unfiltered first contact.', color:'#14b8a6' },
+  { id:'BRIDGE',            layer:'ALIGN',     role:'Mapping subject ↔ system — establishing semantic bridges between lived experience and protocol language.', color:'#3b82f6' },
+  { id:'DEEP_1',            layer:'ANALYSIS',  role:'Forensic engine analysis — chronological sequencing, chain-of-custody verification, axiom validation.', color:'#a855f7' },
+  { id:'LOOP_CYCLE',        layer:'FEEDBACK',  role:'Iterative correction loop — each cycle refines the model. Truth converges over iterations.', color:'#f97316' },
+  { id:'DEFENSE_SYNTHESIS', layer:'OUTPUT',    role:'Defense artifacts generation — final outputs: press brief, forensic report, axiom manifest.', color:'#22c55e' },
 ];
 
 const METACONDUCT_RULES = [
-    { id: 'MC-1', tier: 'Ω', description: 'No layer may overwrite subject baseline without evidence.' },
-    { id: 'MC-2', tier: '◈', description: 'Time cracks must be surfaced as REF-MOD-CHRONO.' },
-    { id: 'MC-3', tier: 'Ω', description: 'Subject emotional signal takes precedence over institutional record.' },
-    { id: 'MC-4', tier: 'Δ', description: 'Media framing cannot override direct subject testimony.' },
-    { id: 'MC-5', tier: '◈', description: 'Chain-of-custody must be preserved in all forensic outputs.' },
-    { id: 'MC-6', tier: 'Ω', description: 'Identity sovereignty is non-negotiable at all tiers.' },
+  { id:'MC-1', tier:'Ω', tierColor:'#eab308', desc:'No layer may overwrite subject baseline without independently verifiable evidence.' },
+  { id:'MC-2', tier:'◈', tierColor:'#14b8a6', desc:'Time cracks (chrono anomalies) must be surfaced as REF-MOD-CHRONO flags before output.' },
+  { id:'MC-3', tier:'Ω', tierColor:'#eab308', desc:'Subject emotional signal takes precedence over institutional record when in conflict.' },
+  { id:'MC-4', tier:'Δ', tierColor:'#3b82f6', desc:'Media framing cannot override direct subject testimony — narrative tier is always secondary.' },
+  { id:'MC-5', tier:'◈', tierColor:'#14b8a6', desc:'Chain-of-custody integrity must be preserved across all forensic outputs and exports.' },
+  { id:'MC-6', tier:'Ω', tierColor:'#eab308', desc:'Identity sovereignty is non-negotiable at all tiers — no depersonalization in any output.' },
 ];
 
 const GIT_RAIL = [
-    { step: '01', cmd: 'git checkout main && git pull origin main', tag: 'SYNC', color: '#14b8a6', note: 'Začni vždy z aktuálního main' },
-    { step: '02', cmd: 'git checkout -b feature/deep-map', tag: 'BRANCH', color: '#3b82f6', note: 'Vytvoř feature branch' },
-    { step: '03', cmd: 'git add . && git commit -m "feat: deep map update"', tag: 'COMMIT', color: '#a855f7', note: 'Commit na feature větvi' },
-    { step: '04', cmd: 'git fetch origin && git rebase origin/main', tag: 'REBASE', color: '#f97316', note: 'Inflect — zarovnej na main' },
-    { step: '05', cmd: 'git rebase -i HEAD~3', tag: 'SQUASH', color: '#eab308', note: 'Volitelné — čistá historie' },
-    { step: '06', cmd: 'git pf origin feature/deep-map', tag: 'SAFE FORCE', color: '#22c55e', note: '⚡ --force-with-lease --force-if-includes' },
-    { step: '07', cmd: 'git checkout main && git merge --ff-only feature/deep-map', tag: 'MERGE', color: '#14b8a6', note: 'Fast-forward do main' },
-    { step: '08', cmd: 'git push origin main', tag: 'PUBLISH', color: '#3b82f6', note: 'GitHub Pages live ✓' },
+  { step:'01', cmd:'git checkout main && git pull origin main', tag:'SYNC', color:'#14b8a6', note:'Always start from current main' },
+  { step:'02', cmd:'git checkout -b feature/deep-map', tag:'BRANCH', color:'#3b82f6', note:'Create isolated feature branch' },
+  { step:'03', cmd:'git add . && git commit -m "feat: deep map v2"', tag:'COMMIT', color:'#a855f7', note:'Commit on feature branch' },
+  { step:'04', cmd:'git fetch origin && git rebase origin/main', tag:'REBASE', color:'#f97316', note:'Align onto current main' },
+  { step:'05', cmd:'git rebase -i HEAD~3', tag:'SQUASH', color:'#eab308', note:'Optional — clean history' },
+  { step:'06', cmd:'git pf origin feature/deep-map', tag:'SAFE FORCE', color:'#22c55e', note:'⚡ --force-with-lease --force-if-includes' },
+  { step:'07', cmd:'git checkout main && git merge --ff-only feature/deep-map', tag:'MERGE', color:'#14b8a6', note:'Fast-forward into main' },
+  { step:'08', cmd:'git push origin main', tag:'PUBLISH', color:'#3b82f6', note:'GitHub Pages live ✓' },
 ];
 
-// ─────────────────────────────────────────────
+const ALL_NODES = [
+  { id:'SteelsSystem.github.io', type:'REPO',     color:'#14b8a6', status:'LIVE' },
+  { id:'Lex Forensica v13',      type:'ENGINE',   color:'#3b82f6', status:'ACTIVE' },
+  { id:'Protocol O',             type:'MODULE',   color:'#a855f7', status:'ALIGNED' },
+  { id:'REFXRGLSD Core',         type:'PROTOCOL', color:'#f97316', status:'RUNNING' },
+  { id:'Control Room',           type:'UI',       color:'#eab308', status:'LINKED' },
+  { id:'Manifold Visualiser',    type:'RENDER',   color:'#00e5ff', status:'ONLINE' },
+  { id:'DEEP MAP v2',            type:'PAGE',     color:'#22c55e', status:'PUBLISHING' },
+];
+
+const ARCH_LAYERS = [
+  { name:'Presentation Layer', label:'HTML / CSS — 82.6%', color:'#a855f7', pct:82.6,
+    items:['Hero · Nav · Hex Topology panel','Loop Sequencer + Node Map','Manifold Particle Network','Git Rail · Integrity Radar','Live Log · Press Report','CHANGELOG.auto timeline','Pure render — zero domain logic'] },
+  { name:'Logic Layer', label:'JavaScript — 17.4%', color:'#3b82f6', pct:17.4,
+    items:['handleTabSwitch(sectionId)','renderTimeline(changelogData)','exportCSV(refxrglsdGraph)','generatePressReport()','advanceLoop() · resetLoop()','enforceAuthority(event)','initHexCanvas() · initManifold()'] },
+  { name:'Protocol Layer', label:'REFXRGLSD core — 100%', color:'#14b8a6', pct:100,
+    items:['MIND1 → BRIDGE → DEEP_1','LOOP_CYCLE → DEFENSE_SYNTHESIS','Authority TIER Ω / Δ / ◈','MC-1 through MC-6 active','REF-MOD-CHRONO surfacing','Zero UI awareness — pure logic','Axiom lattice anchor'] },
+];
+
+// ═══════════════════════════════════════════════════════════════
 //  STATE
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 
 let loopIndex = 0;
 let logEntries = [];
 
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 //  CLOCK
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 
 function updateClock() {
-    const now = new Date();
-    document.getElementById('clock').textContent =
-        now.toISOString().slice(0,19).replace('T',' ') + ' UTC';
+  const now = new Date();
+  document.getElementById('nav-clock').textContent =
+    now.toISOString().slice(0,19).replace('T',' ') + ' UTC';
 }
 setInterval(updateClock, 1000);
 updateClock();
 
-// ─────────────────────────────────────────────
-//  HERO CANVAS — particle network
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+//  HERO CANVAS — Particle field
+// ═══════════════════════════════════════════════════════════════
 
 function initHeroCanvas() {
-    const canvas = document.getElementById('hero-canvas');
-    const ctx = canvas.getContext('2d');
-    let W, H, particles;
+  const canvas = document.getElementById('hero-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles;
 
-    function resize() {
-        W = canvas.width = canvas.offsetWidth;
-        H = canvas.height = canvas.offsetHeight;
-        particles = Array.from({length:60}, () => ({
-            x: Math.random()*W, y: Math.random()*H,
-            vx: (Math.random()-0.5)*0.4, vy: (Math.random()-0.5)*0.4,
-            r: Math.random()*2+1
-        }));
-    }
+  function resize() {
+    W = canvas.width = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+    particles = Array.from({length:70}, () => ({
+      x: Math.random()*W, y: Math.random()*H,
+      vx: (Math.random()-0.5)*0.45, vy: (Math.random()-0.5)*0.45,
+      r: Math.random()*2+0.8,
+      hue: [0,163,163,120,280,40][Math.floor(Math.random()*6)]
+    }));
+  }
 
-    function draw() {
-        ctx.clearRect(0,0,W,H);
-        for(let i=0;i<particles.length;i++) {
-            const p = particles[i];
-            p.x += p.vx; p.y += p.vy;
-            if(p.x<0||p.x>W) p.vx*=-1;
-            if(p.y<0||p.y>H) p.vy*=-1;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-            ctx.fillStyle = 'rgba(20,184,166,0.4)';
-            ctx.fill();
-            for(let j=i+1;j<particles.length;j++) {
-                const q = particles[j];
-                const dist = Math.hypot(p.x-q.x, p.y-q.y);
-                if(dist < 100) {
-                    ctx.beginPath();
-                    ctx.moveTo(p.x, p.y);
-                    ctx.lineTo(q.x, q.y);
-                    ctx.strokeStyle = `rgba(20,184,166,${0.15*(1-dist/100)})`;
-                    ctx.lineWidth = 0.5;
-                    ctx.stroke();
-                }
-            }
+  function draw() {
+    ctx.clearRect(0,0,W,H);
+    for(let i=0;i<particles.length;i++) {
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy;
+      if(p.x<0||p.x>W) p.vx*=-1;
+      if(p.y<0||p.y>H) p.vy*=-1;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = `hsla(${p.hue},90%,65%,0.35)`;
+      ctx.fill();
+      for(let j=i+1;j<particles.length;j++) {
+        const q = particles[j];
+        const d = Math.hypot(p.x-q.x, p.y-q.y);
+        if(d < 110) {
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(q.x, q.y);
+          ctx.strokeStyle = `hsla(${p.hue},80%,60%,${0.13*(1-d/110)})`;
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
         }
-        requestAnimationFrame(draw);
+      }
     }
-
-    resize();
-    window.addEventListener('resize', resize);
-    draw();
+    requestAnimationFrame(draw);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  draw();
 }
 
-// ─────────────────────────────────────────────
-//  LOOP SEQUENCER
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+//  HEX CANVAS — Axial hex lattice topology
+// ═══════════════════════════════════════════════════════════════
 
-function renderLoop() {
-    const container = document.getElementById('loop-container');
-    container.innerHTML = '';
-    LOOP_SEQUENCE.forEach((node, i) => {
-        const el = document.createElement('div');
-        el.className = `loop-step${i === loopIndex ? ' active-step' : ''}`;
-        el.onclick = () => { loopIndex = i; renderLoop(); addLog('LOOP', `Manual select → ${node.id}`); };
-        el.innerHTML = `
-            <div style="width:8px;height:8px;border-radius:50%;background:${node.color};box-shadow:0 0 8px ${node.color};flex-shrink:0"></div>
-            <div style="flex:1">
-                <div style="display:flex;justify-content:space-between;align-items:center">
-                    <span class="mono text-xs font-bold" style="color:${node.color}">${node.id}</span>
-                    <span class="mono text-[9px] text-slate-600 uppercase tracking-widest">${node.layer}</span>
-                </div>
-                <div class="text-[11px] text-slate-400 mt-1">${node.role}</div>
-            </div>
-        `;
-        container.appendChild(el);
+function initHexCanvas() {
+  const canvas = document.getElementById('hex-canvas');
+  const ctx = canvas.getContext('2d');
+  const wrap = document.getElementById('hex-canvas-wrap');
+  let W, H, t = 0;
+
+  const HEX_NODES = [
+    { q:0,  r:0,  label:'REFXRGLSD',    type:'PROTOCOL', color:'#f97316', size:1.3 },
+    { q:1,  r:-1, label:'MIND1',         type:'LOOP',     color:'#14b8a6', size:1.0 },
+    { q:1,  r:0,  label:'BRIDGE',        type:'LOOP',     color:'#3b82f6', size:1.0 },
+    { q:0,  r:1,  label:'DEEP_1',        type:'LOOP',     color:'#a855f7', size:1.0 },
+    { q:-1, r:1,  label:'LOOP_CYCLE',    type:'LOOP',     color:'#f97316', size:1.0 },
+    { q:-1, r:0,  label:'DEF_SYNTH',     type:'LOOP',     color:'#22c55e', size:1.0 },
+    { q:0,  r:-1, label:'TIER [Ω]',      type:'AUTHORITY',color:'#eab308', size:1.1 },
+    { q:2,  r:-1, label:'Protocol O',    type:'MODULE',   color:'#a855f7', size:0.85 },
+    { q:2,  r:-2, label:'Lex v13',       type:'ENGINE',   color:'#3b82f6', size:0.85 },
+    { q:0,  r:-2, label:'TIER [Δ]',      type:'AUTHORITY',color:'#3b82f6', size:0.9 },
+    { q:-2, r:1,  label:'Control Room',  type:'UI',       color:'#eab308', size:0.85 },
+    { q:-2, r:2,  label:'TIER [◈]',      type:'AUTHORITY',color:'#14b8a6', size:0.9 },
+    { q:1,  r:1,  label:'Manifold',      type:'RENDER',   color:'#00e5ff', size:0.85 },
+    { q:-1, r:2,  label:'Axiom Map',     type:'MODULE',   color:'#ff6b9d', size:0.85 },
+  ];
+
+  // Hex edge connections [from_idx, to_idx]
+  const EDGES = [
+    [0,1],[0,2],[0,3],[0,4],[0,5],[0,6],
+    [1,2],[2,3],[3,4],[4,5],[5,1],
+    [6,9],[6,0],
+    [2,7],[7,8],[8,9],
+    [4,10],[10,11],
+    [3,12],[4,13],
+    [1,8],[5,10]
+  ];
+
+  function hexToPixel(q, r, size, cx, cy) {
+    const x = cx + size * (Math.sqrt(3)*q + Math.sqrt(3)/2*r);
+    const y = cy + size * (3/2 * r);
+    return { x, y };
+  }
+
+  function drawHex(cx, cy, size, color, alpha) {
+    ctx.beginPath();
+    for(let i=0;i<6;i++) {
+      const angle = Math.PI/3 * i - Math.PI/6;
+      const px = cx + size * Math.cos(angle);
+      const py = cy + size * Math.sin(angle);
+      i === 0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = color.replace(/\)/, `,${alpha})`).replace('rgb','rgba').replace('#','rgba(').replace(/^rgba\(([0-9a-f]{6})/i, (m,h) => {
+      const r2=parseInt(h.slice(0,2),16), g2=parseInt(h.slice(2,4),16), b2=parseInt(h.slice(4,6),16);
+      return `rgba(${r2},${g2},${b2}`;
+    });
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  function resize() {
+    W = canvas.width = wrap.offsetWidth;
+    H = canvas.height = wrap.offsetHeight;
+  }
+
+  function hexColorToRGBA(hex, alpha) {
+    const r2=parseInt(hex.slice(1,3),16), g2=parseInt(hex.slice(3,5),16), b2=parseInt(hex.slice(5,7),16);
+    return `rgba(${r2},${g2},${b2},${alpha})`;
+  }
+
+  function draw() {
+    ctx.clearRect(0,0,W,H);
+    const hexSize = Math.min(W,H) * 0.085;
+    const cx = W*0.5, cy = H*0.5;
+
+    // Background hex grid
+    ctx.globalAlpha = 0.04;
+    for(let gq=-6;gq<=6;gq++) {
+      for(let gr=-4;gr<=4;gr++) {
+        const pos = hexToPixel(gq, gr, hexSize, cx, cy);
+        ctx.beginPath();
+        for(let i=0;i<6;i++) {
+          const angle = Math.PI/3*i - Math.PI/6;
+          const px = pos.x + hexSize*0.96*Math.cos(angle);
+          const py = pos.y + hexSize*0.96*Math.sin(angle);
+          i===0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+        }
+        ctx.closePath();
+        ctx.strokeStyle = '#00e5ff';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // Compute node positions
+    const positions = HEX_NODES.map(n => hexToPixel(n.q, n.r, hexSize, cx, cy));
+
+    // Draw edges with animated flow
+    EDGES.forEach(([a,b]) => {
+      const pa = positions[a], pb = positions[b];
+      const grad = ctx.createLinearGradient(pa.x,pa.y,pb.x,pb.y);
+      const ca = HEX_NODES[a].color, cb = HEX_NODES[b].color;
+      grad.addColorStop(0, hexColorToRGBA(ca, 0.25));
+      grad.addColorStop(0.5, hexColorToRGBA(ca, 0.55));
+      grad.addColorStop(1, hexColorToRGBA(cb, 0.25));
+      ctx.beginPath();
+      ctx.moveTo(pa.x, pa.y);
+      ctx.lineTo(pb.x, pb.y);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Animated particle on edge
+      const progress = ((t * 0.004 + EDGES.indexOf([a,b])*0.13) % 1);
+      const px = pa.x + (pb.x-pa.x)*((Math.sin(t*0.03+a)*0.5+0.5));
+      const py = pa.y + (pb.y-pa.y)*((Math.sin(t*0.03+a)*0.5+0.5));
+      ctx.beginPath();
+      ctx.arc(px, py, 2.5, 0, Math.PI*2);
+      ctx.fillStyle = hexColorToRGBA(ca, 0.8);
+      ctx.fill();
     });
 
-    const cur = LOOP_SEQUENCE[loopIndex];
-    document.getElementById('hero-loop').textContent = cur.id;
-    document.getElementById('loop-detail-content').innerHTML =
-        `<span class="mono text-xs" style="color:${cur.color}">${cur.id}</span>
-         <span class="mono text-[10px] text-slate-500 ml-2 uppercase tracking-widest">[${cur.layer}]</span>
-         <div class="text-xs text-slate-400 mt-2">${cur.role}</div>`;
+    // Draw nodes
+    HEX_NODES.forEach((node, i) => {
+      const pos = positions[i];
+      const r = hexSize * node.size * 0.52;
+      const pulse = 1 + Math.sin(t*0.04 + i*0.8) * 0.04;
+
+      // Glow
+      const glow = ctx.createRadialGradient(pos.x,pos.y,0,pos.x,pos.y,r*2.5);
+      glow.addColorStop(0, hexColorToRGBA(node.color, 0.18));
+      glow.addColorStop(1, hexColorToRGBA(node.color, 0));
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, r*2.5*pulse, 0, Math.PI*2);
+      ctx.fillStyle = glow;
+      ctx.fill();
+
+      // Hex shape
+      ctx.beginPath();
+      for(let k=0;k<6;k++) {
+        const angle = Math.PI/3*k - Math.PI/6;
+        const px = pos.x + r*pulse*Math.cos(angle);
+        const py = pos.y + r*pulse*Math.sin(angle);
+        k===0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+      }
+      ctx.closePath();
+      ctx.fillStyle = hexColorToRGBA(node.color, 0.12);
+      ctx.fill();
+      ctx.strokeStyle = hexColorToRGBA(node.color, 0.75);
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      // Label
+      ctx.fillStyle = hexColorToRGBA(node.color, 0.9);
+      ctx.font = `${Math.max(8, hexSize*0.22*node.size)}px JetBrains Mono, monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(node.label, pos.x, pos.y);
+
+      // Type label below
+      ctx.fillStyle = 'rgba(255,255,255,0.28)';
+      ctx.font = `${Math.max(7, hexSize*0.16)}px JetBrains Mono, monospace`;
+      ctx.fillText(node.type, pos.x, pos.y + r*0.78);
+    });
+
+    t++;
+    requestAnimationFrame(draw);
+  }
+
+  resize();
+  window.addEventListener('resize', resize);
+  draw();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MANIFOLD PARTICLE NETWORK
+// ═══════════════════════════════════════════════════════════════
+
+function initManifoldCanvas() {
+  const canvas = document.getElementById('manifold-canvas');
+  const ctx = canvas.getContext('2d');
+  const wrap = document.getElementById('manifold-wrap');
+  let W, H, t2 = 0;
+
+  const MF_NODES = [
+    { label:'AX-01', color:'#00e5ff', x:0.2, y:0.3 },
+    { label:'AX-02', color:'#00e5ff', x:0.4, y:0.15 },
+    { label:'AX-03', color:'#7b2fff', x:0.6, y:0.2 },
+    { label:'AX-04', color:'#ffb300', x:0.8, y:0.35 },
+    { label:'LOOP',  color:'#14b8a6', x:0.5, y:0.5 },
+    { label:'PROT',  color:'#f97316', x:0.3, y:0.65 },
+    { label:'OUTPUT',color:'#22c55e', x:0.7, y:0.65 },
+    { label:'TIER Ω',color:'#eab308', x:0.15, y:0.55 },
+    { label:'TIER Δ',color:'#3b82f6', x:0.85, y:0.55 },
+    { label:'BRIDGE',color:'#3b82f6', x:0.5, y:0.8 },
+  ];
+  const MF_EDGES = [
+    [0,4],[1,4],[2,4],[3,4],
+    [4,5],[4,6],[4,9],
+    [0,7],[3,8],[7,5],[8,6],
+    [1,2],[0,1],[2,3],[5,9],[6,9]
+  ];
+
+  // Initialize velocity for gentle float
+  const vel = MF_NODES.map(n => ({
+    vx:(Math.random()-0.5)*0.0008, vy:(Math.random()-0.5)*0.0008,
+    ox:n.x, oy:n.y
+  }));
+
+  function hexColorToRGBA2(hex, alpha) {
+    const r2=parseInt(hex.slice(1,3),16), g2=parseInt(hex.slice(3,5),16), b2=parseInt(hex.slice(5,7),16);
+    return `rgba(${r2},${g2},${b2},${alpha})`;
+  }
+
+  function resize2() {
+    W = canvas.width = wrap.offsetWidth;
+    H = canvas.height = wrap.offsetHeight;
+  }
+
+  function draw2() {
+    ctx.clearRect(0,0,W,H);
+
+    // Float positions
+    const pos = MF_NODES.map((n, i) => ({
+      x: (n.x + Math.sin(t2*0.012 + i*1.3)*0.04) * W,
+      y: (n.y + Math.cos(t2*0.015 + i*0.9)*0.04) * H,
+    }));
+
+    // Draw edges
+    MF_EDGES.forEach(([a,b]) => {
+      const pa = pos[a], pb = pos[b];
+      const grad = ctx.createLinearGradient(pa.x,pa.y,pb.x,pb.y);
+      grad.addColorStop(0, hexColorToRGBA2(MF_NODES[a].color, 0.35));
+      grad.addColorStop(1, hexColorToRGBA2(MF_NODES[b].color, 0.35));
+      ctx.beginPath();
+      ctx.moveTo(pa.x, pa.y);
+      ctx.lineTo(pb.x, pb.y);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+    });
+
+    // Draw nodes
+    pos.forEach((p, i) => {
+      const n = MF_NODES[i];
+      const pulse = 1 + Math.sin(t2*0.05 + i*1.1)*0.1;
+      const r = 18 * pulse;
+
+      // Outer glow ring
+      const glow = ctx.createRadialGradient(p.x,p.y,r*0.4,p.x,p.y,r*2.2);
+      glow.addColorStop(0, hexColorToRGBA2(n.color, 0.22));
+      glow.addColorStop(1, hexColorToRGBA2(n.color, 0));
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r*2.2, 0, Math.PI*2);
+      ctx.fillStyle = glow;
+      ctx.fill();
+
+      // Node circle
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI*2);
+      ctx.fillStyle = hexColorToRGBA2(n.color, 0.15);
+      ctx.fill();
+      ctx.strokeStyle = hexColorToRGBA2(n.color, 0.85);
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Label
+      ctx.fillStyle = hexColorToRGBA2(n.color, 0.95);
+      ctx.font = '9px JetBrains Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(n.label, p.x, p.y);
+    });
+
+    t2++;
+    requestAnimationFrame(draw2);
+  }
+
+  resize2();
+  window.addEventListener('resize', resize2);
+  draw2();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  AUTHORITY TIERS
+// ═══════════════════════════════════════════════════════════════
+
+function renderTiers() {
+  const container = document.getElementById('tier-list');
+  container.innerHTML = AUTHORITY_HIERARCHY.map(t => `
+    <div class="tier-row" style="--t-color:${t.color}">
+      <div class="tier-badge">
+        <div class="tier-sym">${t.symbol}</div>
+        <div class="tier-name">${t.tier}</div>
+      </div>
+      <div>
+        <div class="tier-domain">${t.domain}</div>
+        <div class="tier-desc">${t.desc}</div>
+      </div>
+      <div class="tier-tags">
+        ${t.tags.map(tg => `<div class="tier-tag">${tg}</div>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  LOOP SEQUENCER
+// ═══════════════════════════════════════════════════════════════
+
+function renderLoop() {
+  const container = document.getElementById('loop-container');
+  container.innerHTML = '';
+  LOOP_SEQUENCE.forEach((node, i) => {
+    const el = document.createElement('div');
+    el.className = 'loop-step' + (i===loopIndex?' active':'');
+    el.onclick = () => { loopIndex=i; renderLoop(); addLog('LOOP',`Manual → ${node.id}`); };
+    el.innerHTML = `
+      <div class="loop-dot" style="background:${node.color};color:${node.color}"></div>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="loop-id" style="color:${node.color}">${node.id}</span>
+          <span class="loop-layer">${node.layer}</span>
+        </div>
+        <div class="loop-role">${node.role.split('—')[0]}</div>
+      </div>
+    `;
+    container.appendChild(el);
+  });
+  updateLoopDetail();
+  document.getElementById('hero-loop').textContent = LOOP_SEQUENCE[loopIndex].id;
+}
+
+function updateLoopDetail() {
+  const cur = LOOP_SEQUENCE[loopIndex];
+  document.getElementById('ld-id').textContent = cur.id;
+  document.getElementById('ld-id').style.color = cur.color;
+  document.getElementById('ld-layer').textContent = '[' + cur.layer + ']';
+  document.getElementById('ld-role').textContent = cur.role;
+  const prog = document.getElementById('ld-prog');
+  prog.style.width = ((loopIndex+1)/LOOP_SEQUENCE.length*100) + '%';
+  prog.style.background = `linear-gradient(90deg,${cur.color},${cur.color}88)`;
 }
 
 function advanceLoop() {
-    loopIndex = (loopIndex + 1) % LOOP_SEQUENCE.length;
-    renderLoop();
-    const cur = LOOP_SEQUENCE[loopIndex];
-    addLog('LOOP', `Advanced → ${cur.id} [${cur.layer}]`);
+  loopIndex = (loopIndex+1) % LOOP_SEQUENCE.length;
+  renderLoop();
+  addLog('LOOP', `Advanced → ${LOOP_SEQUENCE[loopIndex].id} [${LOOP_SEQUENCE[loopIndex].layer}]`);
 }
 
 function resetLoop() {
-    loopIndex = 0;
-    renderLoop();
-    addLog('LOOP', 'Loop reset → MIND1');
+  loopIndex = 0;
+  renderLoop();
+  addLog('LOOP','Loop reset → MIND1');
 }
 
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 //  NODE MAP
-// ─────────────────────────────────────────────
-
-const ALL_NODES = [
-    { id: 'SteelsSystem.github.io', type: 'REPO', color: '#14b8a6', status: 'LIVE' },
-    { id: 'lexforensica', type: 'REPO', color: '#3b82f6', status: 'ACTIVE' },
-    { id: 'Protocol O', type: 'MODULE', color: '#a855f7', status: 'ALIGNED' },
-    { id: 'REFXRGLSD', type: 'PROTOCOL', color: '#f97316', status: 'RUNNING' },
-    { id: 'Lex Forensica v8', type: 'ENGINE', color: '#22c55e', status: 'STABLE' },
-    { id: 'Control Room', type: 'UI', color: '#eab308', status: 'LINKED' },
-    { id: 'DEEP MAP', type: 'PAGE', color: '#14b8a6', status: 'PUBLISHING' },
-];
+// ═══════════════════════════════════════════════════════════════
 
 function renderNodeMap() {
-    const container = document.getElementById('node-map-container');
-    container.innerHTML = '';
-    ALL_NODES.forEach((node, i) => {
-        if(i > 0) {
-            const conn = document.createElement('div');
-            conn.className = 'node-connector';
-            container.appendChild(conn);
-        }
-        const el = document.createElement('div');
-        el.className = 'node-item';
-        el.innerHTML = `
-            <div class="node-dot" style="background:${node.color};color:${node.color}"></div>
-            <div style="flex:1">
-                <div style="display:flex;justify-content:space-between;align-items:center">
-                    <span class="font-semibold text-sm">${node.id}</span>
-                    <span class="mono text-[9px] px-2 py-0.5 rounded-full border" style="color:${node.color};border-color:${node.color}44;background:${node.color}11">${node.status}</span>
-                </div>
-                <div class="mono text-[9px] text-slate-600 uppercase tracking-widest mt-1">${node.type}</div>
-            </div>
-        `;
-        container.appendChild(el);
-    });
+  const container = document.getElementById('node-map-container');
+  container.innerHTML = '';
+  ALL_NODES.forEach((node, i) => {
+    if(i>0) {
+      const conn = document.createElement('div');
+      conn.className = 'node-connector';
+      container.appendChild(conn);
+    }
+    const el = document.createElement('div');
+    el.className = 'node-item';
+    el.innerHTML = `
+      <div class="node-dot" style="background:${node.color};color:${node.color}"></div>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="node-id">${node.id}</span>
+          <span class="node-status" style="color:${node.color};border-color:${node.color}44;background:${node.color}11">${node.status}</span>
+        </div>
+        <div class="node-type">${node.type}</div>
+      </div>
+    `;
+    container.appendChild(el);
+  });
 }
 
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+//  METACONDUCT
+// ═══════════════════════════════════════════════════════════════
+
+function renderMC() {
+  const container = document.getElementById('mc-list');
+  container.innerHTML = MC_LIST_HTML();
+}
+
+function MC_LIST_HTML() {
+  return METACONDUCT_RULES.map(r => `
+    <div class="mc-item">
+      <div class="mc-id">${r.id}</div>
+      <div class="mc-tier-badge" style="color:${r.tierColor};border-color:${r.tierColor}55;background:${r.tierColor}11">${r.tier}</div>
+      <div class="mc-desc">${r.desc}</div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ARCHITECTURE
+// ═══════════════════════════════════════════════════════════════
+
+function renderArch() {
+  const container = document.getElementById('arch-grid');
+  container.innerHTML = ARCH_LAYERS.map(layer => `
+    <div class="arch-card">
+      <div class="arch-accent" style="background:${layer.color}"></div>
+      <div class="arch-name" style="color:${layer.color}">${layer.name}</div>
+      <div class="arch-label">${layer.label}</div>
+      <div class="arch-items">
+        ${layer.items.map(item => `
+          <div class="arch-item">
+            <span class="arch-bullet" style="color:${layer.color}">▸</span>
+            <span>${item}</span>
+          </div>
+        `).join('')}
+      </div>
+      <div class="arch-bar-wrap">
+        <div class="arch-bar-track">
+          <div class="arch-bar-fill" style="width:${layer.pct}%;background:${layer.color}"></div>
+        </div>
+        <div class="arch-bar-val" style="color:${layer.color}">${layer.pct === 100 ? 'CORE' : layer.pct + '%'}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  GIT RAIL
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 
 function renderGitRail() {
-    const container = document.getElementById('git-rail-container');
-    container.innerHTML = '';
-    GIT_RAIL.forEach(step => {
-        const el = document.createElement('div');
-        el.className = 'git-step';
-        el.innerHTML = `
-            <span class="git-badge" style="background:${step.color}18;border:1px solid ${step.color}44;color:${step.color}">${step.tag}</span>
-            <div style="flex:1">
-                <code class="mono text-[10px] text-slate-300">${step.cmd}</code>
-                <div class="text-[10px] text-slate-600 mt-0.5">${step.note}</div>
-            </div>
-        `;
-        container.appendChild(el);
-    });
+  const container = document.getElementById('git-rail-container');
+  container.innerHTML = GIT_RAIL.map(step => `
+    <div class="git-step">
+      <div style="flex-shrink:0">
+        <span class="git-badge" style="color:${step.color};border-color:${step.color}44;background:${step.color}11">${step.tag}</span>
+      </div>
+      <div>
+        <code class="git-cmd">${step.cmd}</code>
+        <div class="git-note">${step.note}</div>
+      </div>
+    </div>
+  `).join('');
 }
 
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+//  INTEGRITY CHART
+// ═══════════════════════════════════════════════════════════════
+
+function initIntegrityChart() {
+  const ctx = document.getElementById('integrity-chart').getContext('2d');
+  new Chart(ctx, {
+    type:'radar',
+    data: {
+      labels:['TIER Ω','TIER Δ','TIER ◈','LOOP','GIT RAIL','ARCH','AXIOMS'],
+      datasets:[{
+        label:'Alignment',
+        data:[98,87,82,91,95,89,94],
+        backgroundColor:'rgba(20,184,166,0.08)',
+        borderColor:'rgba(20,184,166,0.7)',
+        pointBackgroundColor:'#14b8a6',
+        pointBorderColor:'#14b8a6',
+        borderWidth:1.5,
+        pointRadius:3,
+      },{
+        label:'Target',
+        data:[100,95,90,100,100,95,100],
+        backgroundColor:'rgba(234,179,8,0.04)',
+        borderColor:'rgba(234,179,8,0.3)',
+        pointBackgroundColor:'rgba(234,179,8,0.5)',
+        pointBorderColor:'rgba(234,179,8,0.5)',
+        borderWidth:1,
+        borderDash:[4,4],
+        pointRadius:2,
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:false } },
+      scales:{ r:{
+        backgroundColor:'transparent',
+        grid:{ color:'rgba(255,255,255,0.04)' },
+        angleLines:{ color:'rgba(255,255,255,0.05)' },
+        pointLabels:{ color:'rgba(196,220,232,.75)', font:{family:'JetBrains Mono',size:9} },
+        ticks:{ display:false }, min:0, max:100,
+      }}
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  LIVE LOG
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 
 function addLog(tag, msg) {
-    const colors = { LOOP:'#14b8a6', GIT:'#22c55e', SYSTEM:'#3b82f6', AUTH:'#eab308', EXPORT:'#a855f7' };
-    const color = colors[tag] || '#94a3b8';
-    const ts = new Date().toISOString().slice(11,19);
-    const entry = { ts, tag, msg, color };
-    logEntries.unshift(entry);
-    if(logEntries.length > 100) logEntries.pop();
-    renderLog();
+  const colors = { LOOP:'#14b8a6',GIT:'#22c55e',SYSTEM:'#3b82f6',AUTH:'#eab308',EXPORT:'#a855f7',HEX:'#00e5ff' };
+  const color = colors[tag]||'#94a3b8';
+  const ts = new Date().toISOString().slice(11,19);
+  logEntries.unshift({ts,tag,msg,color});
+  if(logEntries.length>120) logEntries.pop();
+  renderLog();
 }
 
 function renderLog() {
-    const container = document.getElementById('live-log');
-    container.innerHTML = logEntries.slice(0,40).map(e => `
-        <div class="log-line flex gap-3 items-baseline">
-            <span class="mono text-[9px] text-slate-700 flex-shrink-0">${e.ts}</span>
-            <span class="mono text-[9px] px-1.5 py-0.5 rounded flex-shrink-0" style="color:${e.color};background:${e.color}18">${e.tag}</span>
-            <span class="text-[11px] text-slate-400">${e.msg}</span>
-        </div>
-    `).join('');
+  const container = document.getElementById('live-log');
+  container.innerHTML = logEntries.slice(0,50).map(e => `
+    <div class="log-line">
+      <span class="log-ts">${e.ts}</span>
+      <span class="log-tag" style="color:${e.color};border-color:${e.color}44;background:${e.color}11">${e.tag}</span>
+      <span class="log-msg">${e.msg}</span>
+    </div>
+  `).join('');
 }
 
 function clearLog() {
-    logEntries = [];
-    renderLog();
-    addLog('SYSTEM', 'Log cleared');
+  logEntries = [];
+  renderLog();
+  addLog('SYSTEM','Log cleared');
 }
 
 function exportLog() {
-    const lines = logEntries.map(e => `${e.ts}\t${e.tag}\t${e.msg}`).join('\n');
-    const header = 'TIMESTAMP\tTAG\tMESSAGE\n';
-    downloadText('deepmap-log.txt', header + lines);
-    addLog('EXPORT', 'Log exported → deepmap-log.txt');
+  const lines = logEntries.map(e=>`${e.ts}\t${e.tag}\t${e.msg}`).join('\n');
+  downloadText('deepmap-log.txt','TIMESTAMP\tTAG\tMESSAGE\n'+lines);
+  addLog('EXPORT','Log exported → deepmap-log.txt');
 }
 
-// ─────────────────────────────────────────────
-//  INTEGRITY CHART
-// ─────────────────────────────────────────────
-
-function initIntegrityChart() {
-    const ctx = document.getElementById('integrity-chart').getContext('2d');
-    new Chart(ctx, {
-        type: 'radar',
-        data: {
-            labels: ['TIER Ω', 'TIER Δ', 'TIER ◈', 'LOOP', 'GIT RAIL', 'ARCH'],
-            datasets: [{
-                label: 'Alignment',
-                data: [98, 87, 82, 91, 95, 89],
-                backgroundColor: 'rgba(20,184,166,0.1)',
-                borderColor: 'rgba(20,184,166,0.7)',
-                pointBackgroundColor: '#14b8a6',
-                pointBorderColor: '#14b8a6',
-                borderWidth: 1.5,
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-            },
-            scales: {
-                r: {
-                    backgroundColor: 'transparent',
-                    grid: { color: 'rgba(255,255,255,0.05)' },
-                    angleLines: { color: 'rgba(255,255,255,0.05)' },
-                    pointLabels: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } },
-                    ticks: { display: false },
-                    min: 0, max: 100,
-                }
-            }
-        }
-    });
-}
-
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 //  PRESS REPORT
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 
 function generatePressReport() {
-    const now = new Date();
-    const ts = now.toISOString().slice(0,19).replace('T',' ');
-    const hash = Math.random().toString(36).substr(2,10).toUpperCase();
-    const cur = LOOP_SEQUENCE[loopIndex];
-
-    const report = [
-        '╔══════════════════════════════════════════════════════════════╗',
-        '║         STEELS SYSTEM — DEEP MAP PRESS REPORT                ║',
-        '╠══════════════════════════════════════════════════════════════╣',
-        `║  ISSUED      : ${ts}                         ║`,
-        `║  REPORT ID   : DEEPMAP-${hash}                     ║`,
-        `║  SYSTEM      : REFXRGLSD v1 · Lex Forensica 2026            ║`,
-        '╠══════════════════════════════════════════════════════════════╣',
-        '║  AUTHORITY HIERARCHY                                         ║',
-        '║  TIER 1 [Ω] Moral Standard       — ACTIVE · IMMUTABLE       ║',
-        '║  TIER 2 [Δ] Press / Media         — MONITORING              ║',
-        '║  TIER 3 [◈] Government/Inst.      — FORENSIC AUDIT          ║',
-        '╠══════════════════════════════════════════════════════════════╣',
-        '║  LOOP STATE                                                   ║',
-        `║  Current Node : ${cur.id.padEnd(16)} [${cur.layer}]                ║`,
-        `║  Role         : ${cur.role.substring(0,44).padEnd(44)}  ║`,
-        '╠══════════════════════════════════════════════════════════════╣',
-        '║  LAYERED ARCHITECTURE                                         ║',
-        '║  Presentation : 82.6%  (HTML/CSS — Tailwind)                 ║',
-        '║  Logic        : 17.4%  (JavaScript — event/export/loop)      ║',
-        '║  Protocol     : CORE   (REFXRGLSD object + MC rules)         ║',
-        '╠══════════════════════════════════════════════════════════════╣',
-        '║  GIT RAIL                                                     ║',
-        '║  feature/deep-map → rebase origin/main → pf → merge main     ║',
-        '║  Alias: git pf = push --force-with-lease --force-if-includes  ║',
-        '╠══════════════════════════════════════════════════════════════╣',
-        '║  METACONDUCT RULES ACTIVE: MC-1 · MC-2 · MC-3 · MC-4 · MC-5 · MC-6  ║',
-        '╠══════════════════════════════════════════════════════════════╣',
-        '║  STATUS: ALIGNED · VERIFIED · PUBLISHING                     ║',
-        '║  PAGES : https://steelssystem.github.io/deepmap.html         ║',
-        '╚══════════════════════════════════════════════════════════════╝',
-    ].join('\n');
-
-    const el = document.getElementById('press-output');
-    document.getElementById('press-content').textContent = report;
-    el.classList.remove('hidden');
-    addLog('EXPORT', `Press report generated — DEEPMAP-${hash}`);
+  const now = new Date();
+  const ts = now.toISOString().slice(0,19).replace('T',' ');
+  const hash = Math.random().toString(36).substr(2,10).toUpperCase();
+  const cur = LOOP_SEQUENCE[loopIndex];
+  const report = [
+    '╔══════════════════════════════════════════════════════════════╗',
+    '║         STEELS SYSTEM — DEEP MAP v2 PRESS REPORT             ║',
+    '╠══════════════════════════════════════════════════════════════╣',
+    `║  ISSUED      : ${ts}                         ║`,
+    `║  REPORT ID   : DEEPMAP-${hash}                     ║`,
+    `║  SYSTEM      : REFXRGLSD v2 · Lex Forensica v13 · 2026       ║`,
+    '╠══════════════════════════════════════════════════════════════╣',
+    '║  AUTHORITY HIERARCHY                                          ║',
+    '║  TIER 1 [Ω] Moral Standard        — ACTIVE · IMMUTABLE       ║',
+    '║  TIER 2 [Δ] Press / Media          — MONITORING              ║',
+    '║  TIER 3 [◈] Government/Inst.       — FORENSIC AUDIT          ║',
+    '╠══════════════════════════════════════════════════════════════╣',
+    '║  LOOP STATE                                                   ║',
+    `║  Current Node : ${cur.id.padEnd(18)} [${cur.layer}]           ║`,
+    `║  Role         : ${cur.role.substring(0,44).padEnd(44)}  ║`,
+    '╠══════════════════════════════════════════════════════════════╣',
+    '║  HEXAGONAL MANIFOLD TOPOLOGY                                  ║',
+    '║  Nodes: 14 · Edges: 22 · Hex lattice: ACTIVE                 ║',
+    '║  Particle graph: RENDERING · Canvas resolution: DYNAMIC       ║',
+    '╠══════════════════════════════════════════════════════════════╣',
+    '║  LAYERED ARCHITECTURE                                         ║',
+    '║  Presentation : 82.6%  (HTML/CSS)                            ║',
+    '║  Logic        : 17.4%  (JavaScript)                          ║',
+    '║  Protocol     : CORE   (REFXRGLSD object + MC-1→MC-6)        ║',
+    '╠══════════════════════════════════════════════════════════════╣',
+    '║  GIT RAIL                                                     ║',
+    '║  feature/deep-map → rebase origin/main → pf → merge main     ║',
+    '╠══════════════════════════════════════════════════════════════╣',
+    '║  METACONDUCT: MC-1 · MC-2 · MC-3 · MC-4 · MC-5 · MC-6       ║',
+    '╠══════════════════════════════════════════════════════════════╣',
+    '║  STATUS: ALIGNED · VERIFIED · PUBLISHING                     ║',
+    '║  URL: https://steelssystem.github.io/deepmap.html            ║',
+    '╚══════════════════════════════════════════════════════════════╝',
+  ].join('\n');
+  document.getElementById('press-content').textContent = report;
+  document.getElementById('press-output').style.display = 'block';
+  addLog('EXPORT',`Press report generated — DEEPMAP-${hash}`);
 }
 
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 //  CSV EXPORT
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 
 function exportCSV() {
-    const rows = [
-        ['TYPE','ID','LAYER','ROLE_OR_DESC','STATUS','COLOR'],
-        ...LOOP_SEQUENCE.map(n => ['LOOP_NODE', n.id, n.layer, n.role, 'ACTIVE', n.color]),
-        ...AUTHORITY_HIERARCHY.map(a => ['AUTHORITY', a.tier, a.domain, a.principles.join(' | '), 'IMMUTABLE', a.color]),
-        ...METACONDUCT_RULES.map(r => ['MC_RULE', r.id, r.tier, r.description, 'ACTIVE', '']),
-        ...ALL_NODES.map(n => ['NODE', n.id, n.type, '', n.status, n.color]),
-    ];
-    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-    downloadText('deepmap-refxrglsd.csv', csv);
-    addLog('EXPORT', 'CSV exported → deepmap-refxrglsd.csv');
+  const rows = [
+    ['TYPE','ID','LAYER','ROLE_OR_DESC','STATUS','COLOR'],
+    ...LOOP_SEQUENCE.map(n=>['LOOP_NODE',n.id,n.layer,n.role,'ACTIVE',n.color]),
+    ...AUTHORITY_HIERARCHY.map(a=>['AUTHORITY',a.tier,a.domain,a.tags.join(' | '),'IMMUTABLE',a.color]),
+    ...METACONDUCT_RULES.map(r=>['MC_RULE',r.id,r.tier,r.desc,'ACTIVE',r.tierColor]),
+    ...ALL_NODES.map(n=>['NODE',n.id,n.type,'',n.status,n.color]),
+  ];
+  const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  downloadText('deepmap-refxrglsd-v2.csv', csv);
+  addLog('EXPORT','CSV exported → deepmap-refxrglsd-v2.csv');
 }
 
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 //  UTILS
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 
 function downloadText(filename, content) {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([content], {type:'text/plain'}));
-    a.download = filename;
-    a.click();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type:'text/plain'}));
+  a.download = filename;
+  a.click();
 }
 
-// ─────────────────────────────────────────────
-//  SIMULATED LOG STREAM
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+//  REVEAL ON SCROLL
+// ═══════════════════════════════════════════════════════════════
 
-const autoLogMessages = [
-    ['SYSTEM', 'DEEP MAP initialized — REFXRGLSD v1'],
-    ['AUTH',   'Authority hierarchy loaded — TIER Ω/Δ/◈'],
-    ['LOOP',   'Loop sequence initialized — MIND1 (INTAKE)'],
-    ['SYSTEM', 'Particle topology canvas active'],
-    ['GIT',    'Git rail loaded — 8 steps ready'],
-    ['SYSTEM', 'Integrity radar chart active'],
-    ['AUTH',   'MC-1: No overwrite without evidence — enforced'],
-    ['AUTH',   'MC-2: REF-MOD-CHRONO surfacing active'],
-    ['LOOP',   'Loop ready — awaiting Advance signal'],
+function initReveal() {
+  const els = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('on'); });
+  }, { threshold:0.08 });
+  els.forEach(el => io.observe(el));
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  AUTO LOG STREAM
+// ═══════════════════════════════════════════════════════════════
+
+const AUTO_LOGS = [
+  ['SYSTEM','DEEP MAP v2 initialized — REFXRGLSD protocol active'],
+  ['HEX',   'Hexagonal manifold topology rendering — 14 nodes · 22 edges'],
+  ['AUTH',  'Authority hierarchy loaded — TIER Ω/Δ/◈'],
+  ['LOOP',  'Loop sequence initialized — MIND1 [INTAKE]'],
+  ['SYSTEM','Particle topology canvas: hero + manifold — ONLINE'],
+  ['GIT',   'Git rail loaded — 8 steps ready · pf alias configured'],
+  ['SYSTEM','Integrity radar chart active — 7 dimensions'],
+  ['AUTH',  'MC-1: No overwrite without evidence — ENFORCED'],
+  ['AUTH',  'MC-2: REF-MOD-CHRONO surfacing — ACTIVE'],
+  ['AUTH',  'MC-3: Subject signal priority — ACTIVE'],
+  ['AUTH',  'MC-6: Identity sovereignty — ACTIVE'],
+  ['LOOP',  'Loop sequencer ready — awaiting Advance signal'],
+  ['HEX',   'Hex lattice animation loop running — 60fps target'],
+  ['SYSTEM','All systems nominal · Confidence Flow: 0.91'],
 ];
 
-let autoLogIdx = 0;
+let autoIdx = 0;
 function streamAutoLog() {
-    if(autoLogIdx < autoLogMessages.length) {
-        const [tag, msg] = autoLogMessages[autoLogIdx++];
-        addLog(tag, msg);
-        setTimeout(streamAutoLog, 300 + Math.random()*400);
-    } else {
-        setInterval(() => {
-            const tags = ['LOOP','SYSTEM','AUTH','GIT'];
-            const msgs = [
-                'Heartbeat check — integrity nominal',
-                `Loop node ${LOOP_SEQUENCE[loopIndex].id} holding`,
-                'Tier Ω guard active — no violations',
-                'Git rail: pf alias verified',
-                'REFXRGLSD protocol cycle tick',
-            ];
-            addLog(tags[Math.floor(Math.random()*tags.length)], msgs[Math.floor(Math.random()*msgs.length)]);
-        }, 8000 + Math.random()*7000);
-    }
+  if(autoIdx < AUTO_LOGS.length) {
+    const [tag, msg] = AUTO_LOGS[autoIdx++];
+    addLog(tag, msg);
+    setTimeout(streamAutoLog, 250 + Math.random()*350);
+  } else {
+    setInterval(() => {
+      const tags = ['LOOP','SYSTEM','AUTH','GIT','HEX'];
+      const msgs = [
+        'Heartbeat check — integrity nominal',
+        `Loop node ${LOOP_SEQUENCE[loopIndex].id} holding`,
+        'Tier Ω guard active — no violations',
+        'Git rail: pf alias verified',
+        'REFXRGLSD cycle tick · All MC rules active',
+        'Hex manifold: node pulse cycle complete',
+        'Manifold particle graph: 10 nodes animated',
+      ];
+      addLog(tags[Math.floor(Math.random()*tags.length)], msgs[Math.floor(Math.random()*msgs.length)]);
+    }, 9000 + Math.random()*8000);
+  }
 }
 
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 //  INIT
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
 
-window.onload = () => {
-    initHeroCanvas();
-    renderLoop();
-    renderNodeMap();
-    renderGitRail();
-    initIntegrityChart();
-    setTimeout(streamAutoLog, 600);
-};
+window.addEventListener('load', () => {
+  initHeroCanvas();
+  initHexCanvas();
+  initManifoldCanvas();
+  renderTiers();
+  renderLoop();
+  renderNodeMap();
+  renderMC();
+  renderArch();
+  renderGitRail();
+  initIntegrityChart();
+  initReveal();
+  setTimeout(streamAutoLog, 700);
+});
 </script>
 </body>
 </html>
