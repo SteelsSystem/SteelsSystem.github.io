@@ -785,6 +785,11 @@ html.lf-hc #panelToggle{
 <script>
 const PI = Math.PI;
 const SQRT3 = Math.sqrt(3);
+// Canvas 2D throws on negative or non-finite arc radii. Centralise the
+// clamp so every draw site is safe regardless of how the audio-reactive
+// expression that feeds it evolves. Returns 0 for non-finite / negative
+// values; callers may skip drawing when the result is 0.
+function safeRadius(r){ return (Number.isFinite(r) && r>0) ? r : 0; }
 const NLP12 = [
   {id:0,label:'ASSERT⁺',hue:165},{id:1,label:'ASSERT⁻',hue:180},{id:2,label:'DIRECT⁺',hue:195},
   {id:3,label:'DIRECT⁻',hue:210},{id:4,label:'COMMIT⁺',hue:250},{id:5,label:'COMMIT⁻',hue:275},
@@ -1148,7 +1153,9 @@ function drawInterference(){
   for(const h of hexes){
     if(h.interf<0.52) continue;
     const hue=getHue(170 + h.interf*120);
-    ctx.beginPath(); ctx.arc(h.x,h.y,1.4 + h.interf*4.2,0,PI*2);
+    const r=safeRadius(1.4 + h.interf*4.2);
+    if(r<=0) continue;
+    ctx.beginPath(); ctx.arc(h.x,h.y,r,0,PI*2);
     ctx.fillStyle=`hsla(${hue},100%,72%,${(h.interf-.5)*0.24})`;
     ctx.shadowBlur=12*h.interf; ctx.shadowColor=`hsl(${hue},100%,68%)`; ctx.fill(); ctx.shadowBlur=0;
   }
@@ -1211,14 +1218,27 @@ function updateArks(){
     const ang = Math.atan2(cy-a.y,cx-a.x);
     const fxX = px - Math.sin(ang)*wob;
     const fxY = py + Math.cos(ang)*wob;
-    fx.beginPath(); fx.arc(fxX,fxY,a.size*(1-a.progress*0.25),0,PI*2);
-    fx.fillStyle=`hsla(${a.hue},100%,68%,.88)`; fx.shadowBlur=16; fx.shadowColor=`hsl(${a.hue},100%,68%)`; fx.fill(); fx.shadowBlur=0;
+    const ar=safeRadius(a.size*(1-a.progress*0.25));
+    if(ar>0){
+      fx.beginPath(); fx.arc(fxX,fxY,ar,0,PI*2);
+      fx.fillStyle=`hsla(${a.hue},100%,68%,.88)`; fx.shadowBlur=16; fx.shadowColor=`hsl(${a.hue},100%,68%)`; fx.fill(); fx.shadowBlur=0;
+    }
     fx.beginPath(); fx.moveTo(a.x,a.y); fx.lineTo(fxX,fxY);
     fx.strokeStyle=`hsla(${a.hue},100%,68%,${0.04 + (1-a.progress)*0.16})`; fx.lineWidth=.7; fx.stroke();
   }
   for(let i=sparks.length-1;i>=0;i--){
     const s=sparks[i]; s.x+=s.vx; s.y+=s.vy; s.vx*=0.95; s.vy*=0.95; s.life--;
-    const a=s.life/40; fx.beginPath(); fx.arc(s.x,s.y,s.size*a,0,PI*2); fx.fillStyle=`hsla(${s.hue},100%,76%,${a})`; fx.fill(); if(s.life<=0) sparks.splice(i,1);
+    // s.life is initialised non-integer (24 + rand*20), so it can take a
+    // fractional negative value before the splice below would remove it.
+    // Guard against negative/NaN radius reaching ctx.arc — clamp the
+    // visible-life fraction at 0.
+    if(s.life<=0){ sparks.splice(i,1); continue; }
+    const a=s.life/40;
+    const r=safeRadius(s.size*a);
+    if(r>0){
+      fx.beginPath(); fx.arc(s.x,s.y,r,0,PI*2);
+      fx.fillStyle=`hsla(${s.hue},100%,76%,${a})`; fx.fill();
+    }
   }
 }
 function drawGlyphField(){
