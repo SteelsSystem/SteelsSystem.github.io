@@ -915,9 +915,29 @@ function axialRing(cq,cr,radius){
   }
   return out;
 }
+// Pointy-top hex corner. With rot=0 the six corners sit at 30°,90°,150°,210°,
+// 270°,330° — the canonical pointy-top orientation matched by axialToPixel.
+// Keep rot=0 for tessellating field cells; small rot is only used for accent
+// highlights, never the primary mesh.
 function hexCorner(x,y,size,i,rot=0){
   const a = PI/3*i + PI/6 + rot;
   return [x + Math.cos(a)*size, y + Math.sin(a)*size];
+}
+// Build the 6-vertex polygon for a hex cell as an array of [x,y] pairs.
+// Centralised so every hex-rendering site uses the same canonical geometry.
+function hexPolygon(x,y,size,rot=0){
+  const out=new Array(6);
+  for(let i=0;i<6;i++) out[i]=hexCorner(x,y,size,i,rot);
+  return out;
+}
+// Trace a hex polygon onto ctx without stroking/filling it (caller decides).
+function pathHex(ctx,x,y,size,rot=0){
+  ctx.beginPath();
+  for(let i=0;i<6;i++){
+    const [px,py]=hexCorner(x,y,size,i,rot);
+    i?ctx.lineTo(px,py):ctx.moveTo(px,py);
+  }
+  ctx.closePath();
 }
 function buildHexLattice(){
   hexes=[]; hexMap=new Map(); rings=[];
@@ -1062,35 +1082,44 @@ function computeHexFields(){
   }
 }
 
-function drawHex(x,y,r,rot=0){
-  ctx.beginPath();
-  for(let i=0;i<6;i++){
-    const [px,py]=hexCorner(x,y,r,i,rot);
-    i?ctx.lineTo(px,py):ctx.moveTo(px,py);
-  }
-  ctx.closePath();
-}
+function drawHex(x,y,r,rot=0){ pathHex(ctx,x,y,r,rot); }
 function drawHexField(){
   if(!SHOW.hex) return;
+  // PASS 1 — tessellating honeycomb base: every cell at rot=0, size matched
+  // to axialToPixel so edges meet exactly. This is the visible HEX MESH.
+  const baseSize=safeRadius(VS.hexR-0.6);
+  if(baseSize>0){
+    ctx.save();
+    ctx.lineJoin='round';
+    for(const h of hexes){
+      const hue=getHue(NLP12[h.sector].hue);
+      const lit=30 + h.energy*36 + h.interf*10;
+      // Floor alpha keeps the lattice visible even at idle so the mesh
+      // reads as honeycomb without audio energy.
+      const a=0.10 + h.energy*0.52;
+      pathHex(ctx,h.x,h.y,baseSize,0);
+      ctx.strokeStyle=`hsla(${hue},${VS.sat}%,${lit}%,${a})`;
+      ctx.lineWidth=0.7 + h.energy*2.4;
+      ctx.stroke();
+      if(h.energy>0.5){
+        pathHex(ctx,h.x,h.y,safeRadius(baseSize-1.2),0);
+        ctx.fillStyle=`hsla(${hue},100%,${lit+8}%,${(h.energy-0.45)*0.16})`;
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+  // PASS 2 — inner accent hex on energetic cells, slightly rotated. Decorative
+  // only; lives inside its parent and never breaks the outer tessellation.
   for(const h of hexes){
+    if(h.energy<=0.34) continue;
     const hue=getHue(NLP12[h.sector].hue);
-    const lit=24 + h.energy*38 + h.interf*12;
-    const alpha=0.04 + h.energy*0.44;
+    const innerR=safeRadius((VS.hexR-1.4)*(0.46 + h.interf*0.12));
+    if(innerR<=0) continue;
     const rot=t*0.05 + h.d*0.04;
-    drawHex(h.x,h.y,VS.hexR-1.2,rot);
-    ctx.strokeStyle=`hsla(${hue},${VS.sat}%,${lit}%,${alpha})`;
-    ctx.lineWidth=.55 + h.energy*2.6;
-    ctx.stroke();
-    if(h.energy>.34){
-      drawHex(h.x,h.y,(VS.hexR-1.4)*(0.46 + h.interf*0.12),-rot*1.6);
-      ctx.strokeStyle=`hsla(${hue},100%,78%,${(h.energy-.3)*0.38})`;
-      ctx.lineWidth=.7; ctx.stroke();
-    }
-    if(h.energy>.5){
-      drawHex(h.x,h.y,VS.hexR-1.8,rot);
-      ctx.fillStyle=`hsla(${hue},100%,${lit+8}%,${(h.energy-.45)*0.13})`;
-      ctx.fill();
-    }
+    pathHex(ctx,h.x,h.y,innerR,rot);
+    ctx.strokeStyle=`hsla(${hue},100%,78%,${(h.energy-0.3)*0.42})`;
+    ctx.lineWidth=0.7; ctx.stroke();
   }
 }
 function drawEdgeLinks(){
@@ -1116,16 +1145,26 @@ function drawEdgeLinks(){
 function drawRingWaves(){
   if(!SHOW.rings) return;
   ctx.save();
-  for(let d=0; d<rings.length; d++){
+  // Concentric hexagonal ring outlines centred on the lattice origin. Each
+  // ring is a 6-vertex polygon scaled by SQRT3*d*size for pointy-top spacing,
+  // which keeps the wave shape a true hex — 60° symmetric — rather than the
+  // sector-zig-zag a polar sort of ring members produced before.
+  const size=VS.hexR;
+  for(let d=1; d<rings.length; d++){
     const ring=rings[d]; if(!ring||!ring.length) continue;
     const pulse=(Math.sin(t*2.6 - d*0.9 + beatImpact*8)+1)/2;
     if(pulse<.2 && d!==ringFocus) continue;
     const hue=getHue(160 + d*7);
-    ctx.beginPath();
-    ring.forEach((h,i)=>{ const p=i===0?'moveTo':'lineTo'; ctx[p](h.x,h.y); });
-    ctx.closePath();
-    ctx.strokeStyle=`hsla(${hue},100%,${42 + pulse*24}%,${d===ringFocus?0.16:0.035 + pulse*0.08})`;
-    ctx.lineWidth=d===ringFocus?2.2:0.8;
+    // Pointy-top hex radius matched to the lattice geometry. Corners of the
+    // ring polygon are at the six cube-direction vertices scaled by d*size.
+    const ringR=safeRadius(d * size * SQRT3);
+    if(ringR<=0) continue;
+    // Cardinal ring corners sit at 0°/60°/120°… in canvas space (the +Q axial
+    // direction is horizontal). hexCorner defaults to 30° starts, so rotate
+    // by -PI/6 to land the ring vertices exactly on those cell centres.
+    pathHex(ctx,cx,cy,ringR,-PI/6);
+    ctx.strokeStyle=`hsla(${hue},100%,${42 + pulse*24}%,${d===ringFocus?0.22:0.05 + pulse*0.09})`;
+    ctx.lineWidth=d===ringFocus?2.4:0.9;
     ctx.stroke();
   }
   ctx.restore();
@@ -1163,19 +1202,32 @@ function drawInterference(){
 }
 function drawVoronoiDual(){
   if(!SHOW.voronoi) return;
+  // The geometric dual of a hex tessellation is a triangle lattice connecting
+  // the centres of every three mutually-adjacent hex cells. We trace the two
+  // distinct triangles incident to each cell (upper-right and lower-right)
+  // exactly once by pairing dir 0 with dir 1 and dir 0 with dir 5.
   ctx.save(); ctx.globalCompositeOperation='screen';
+  const TRI_PAIRS=[[0,1],[0,5]];
   for(const h of hexes){
-    if(h.d>10 || h.energy<0.34) continue;
-    const neigh=[];
-    for(const d of HEX_DIRS){ const n=hexMap.get(keyQR(h.q+d[0],h.r+d[1])); if(n) neigh.push(n); }
-    if(neigh.length<2) continue;
-    const hue=getHue(NLP12[h.sector].hue + 45);
-    ctx.beginPath();
-    neigh.forEach((n,i)=>{ const mx=(h.x+n.x)/2, my=(h.y+n.y)/2; i?ctx.lineTo(mx,my):ctx.moveTo(mx,my); });
-    ctx.closePath();
-    ctx.strokeStyle=`hsla(${hue},100%,70%,${0.02 + h.energy*0.12*VS.voronoi})`;
-    ctx.lineWidth=.7 + h.energy*1.1*VS.voronoi;
-    ctx.stroke();
+    if(h.d>10 || h.energy<0.32) continue;
+    for(const [i,j] of TRI_PAIRS){
+      const di=HEX_DIRS[i], dj=HEX_DIRS[j];
+      const n1=hexMap.get(keyQR(h.q+di[0],h.r+di[1]));
+      const n2=hexMap.get(keyQR(h.q+dj[0],h.r+dj[1]));
+      if(!n1||!n2) continue;
+      const mix=(h.energy + n1.energy + n2.energy)/3;
+      if(mix<0.22) continue;
+      const hue=getHue(NLP12[h.sector].hue + 45);
+      ctx.beginPath();
+      ctx.moveTo(h.x,h.y); ctx.lineTo(n1.x,n1.y); ctx.lineTo(n2.x,n2.y); ctx.closePath();
+      ctx.strokeStyle=`hsla(${hue},100%,70%,${0.03 + mix*0.16*VS.voronoi})`;
+      ctx.lineWidth=0.6 + mix*1.2*VS.voronoi;
+      ctx.stroke();
+      if(mix>0.55){
+        ctx.fillStyle=`hsla(${hue},100%,68%,${(mix-0.5)*0.05*VS.voronoi})`;
+        ctx.fill();
+      }
+    }
   }
   ctx.restore();
 }
