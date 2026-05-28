@@ -562,12 +562,9 @@ canvas{display:block;position:absolute;inset:0}
   -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
   transition:transform .34s cubic-bezier(.16,1,.3,1);
   scrollbar-width:thin;scrollbar-color:rgba(0,255,180,.22) transparent;
-  /* Bottom padding reserves room for the fixed A++ KONTRAST pill + safe area
-     so the last section (Math Generator / Notes) is never trapped under it. */
   padding-bottom:calc(80px + env(safe-area-inset-bottom, 0px));
 }
 #panel.hidden{transform:translateX(100%)}
-/* Visible scroll cue on mobile so users discover the panel scrolls. */
 #panel::after{
   content:'';position:sticky;bottom:0;display:block;height:36px;margin-top:-36px;
   background:linear-gradient(180deg,transparent,rgba(3,8,15,.92));
@@ -641,7 +638,6 @@ html.lf-hc #nlpAdminList code{color:#aff7ff!important;background:#0d1822!importa
   #topTitle{font-size:8px}
   #centreGlyph{left:50%}
   #panelToggle{font-size:8px;padding:10px 5px}
-  /* Roomier touch targets on phones without disturbing the dense layout */
   .btn{font-size:9px;padding:9px 10px;min-height:34px}
   .mode-pill,.axis-pill,.nlp-pill{font-size:8px;padding:7px 9px;min-height:30px}
   .slider-row{margin-bottom:12px}
@@ -650,18 +646,12 @@ html.lf-hc #nlpAdminList code{color:#aff7ff!important;background:#0d1822!importa
   #fileLabel{padding:14px 10px;min-height:42px}
   .section{padding:14px 14px}
 }
-/* While the panel is open on a phone, shift the fixed A++ KONTRAST pill to
-   the left edge so it no longer covers the lower panel controls. The pill
-   stays reachable and there is still exactly one toggle on the page. */
 @media (max-width:720px){
   body.lf-panel-open #lf-a11y-toggle{
     right:auto;
     left:max(12px, env(safe-area-inset-left, 0px));
   }
 }
-/* High-contrast overrides for the manifold canvas UI. The lattice itself
-   keeps its hues so the audio-reactive layers stay intact; only the
-   panel/HUD chrome lifts to readable values. */
 html.lf-hc #topTitle{color:#9be8ff!important}
 html.lf-hc #topMode{color:#aff7ff!important}
 html.lf-hc #panel{
@@ -814,7 +804,7 @@ html.lf-hc #panelToggle{
 
   <div class="section">
     <div class="sec-title">Notes</div>
-    <div class="small-note subtle-card" style="padding:10px">This revision uses true hexagon knowledge: cube coordinates, ring counts, neighbour edges, 6-axis propagation, and standing-wave interference across the lattice.</div>
+    <div class="small-note subtle-card" style="padding:10px">v2 · Temporal ESN layer (18-dim→12-dim reservoir) modulates SECTOR_E with phrase-level memory — anticipatory pre-glow, sustain decay, stable hue trajectories. NLP_COUPLE cross-feed matrix wires Lex Forensica dialectical pairs. Extended audio pipeline: 6 bands (sub→presence), spectral centroid palette drift, BPM/IBI estimation, beatHistory ring buffer, hex diffusion bleed.</div>
   </div>
   <div style="height:24px"></div>
 </div>
@@ -822,19 +812,7 @@ html.lf-hc #panelToggle{
 <script>
 const PI = Math.PI;
 const SQRT3 = Math.sqrt(3);
-// Canvas 2D throws on negative or non-finite arc radii. Centralise the
-// clamp so every draw site is safe regardless of how the audio-reactive
-// expression that feeds it evolves. Returns 0 for non-finite / negative
-// values; callers may skip drawing when the result is 0.
 function safeRadius(r){ return (Number.isFinite(r) && r>0) ? r : 0; }
-// ────────────────────────────────────────────────────────────────────────
-// HEX-NLP · 12 PLANES — Lex Forensica vocabulary
-//  Each plane binds an NLP speech-act class (Searle-style) to a court
-//  axiom A1..A13, an INPUT-A / INPUT-B side, and an axiom-overlay phrase.
-//  The sector emphasis in computeHexFields() reads activePlanes; the
-//  axiom ticker reads the *active* plane's axiom when one is soloed.
-//  Vocabulary is static and lives outside the render loop.
-// ────────────────────────────────────────────────────────────────────────
 const NLP12 = [
   {id:0, label:'ASSERT⁺', hue:165, axiom:'A1',  side:'INPUT_A', vocab:'Self-certifying authority',     overlay:'A1 · Subject voice = self-certifying authority'},
   {id:1, label:'ASSERT⁻', hue:180, axiom:'A2',  side:'INPUT_B', vocab:'Counter-assertion / rebuttal',  overlay:'A2 · Counter-assertion enters evidence chain'},
@@ -849,18 +827,14 @@ const NLP12 = [
   {id:10,label:'META⁺',   hue:58,  axiom:'A11', side:'INPUT_A', vocab:'Meta · LOOP_CYCLE assertion',   overlay:'A11 · LOOP_CYCLE asserts framing of frame'},
   {id:11,label:'META⁻',   hue:78,  axiom:'A12', side:'INPUT_B', vocab:'Meta · AnalyticalNode.sign()',  overlay:'A12 · AnalyticalNode.sign() audits the loop'}
 ];
-// A13 is the closure axiom — every full unlock (all 12 active) raises it.
 const AXIOM_A13 = 'A13 · Closure — twelve planes sealed, court manifold integral';
 const AXIOMS = [
   'Cube lattice synchronised','Ring cardinality 6n active','Standing-wave interference stable','Honeycomb tessellation locked',
   'Neighbour edge graph resolved','Voronoi dual mesh coherent','Axis propagation in six directions','Hex distance = max(|q|,|r|,|s|)',
   'Fractal subdivision ambient','Cognitive planes colour-mapped','Audio manifold phase-stable','Ark trajectories orbit lattice'
 ];
-// Local-only "admin" mode for the visualiser — there is no auth here, this
-// is a static GitHub Pages page. The flag just unlocks the full vocabulary
-// readout and the solo / unlock-all controls. State persists in localStorage.
 let HEX_NLP_ADMIN = false;
-let soloPlane = -1; // -1 = no solo; otherwise plane id whose axiom overlay drives the ticker
+let soloPlane = -1;
 try {
   HEX_NLP_ADMIN = localStorage.getItem('hexNlpAdmin') === '1';
   const s = parseInt(localStorage.getItem('hexNlpSolo')||'-1',10);
@@ -880,6 +854,10 @@ let activeAxes=new Set([0,1,2,3,4,5]);
 let isStarted=false, isPaused=false;
 let aCtx, analyser, freqData, waveData, srcNode, audioEl, displayStream;
 let energyNorm=0,bassNorm=0,midsNorm=0,highNorm=0,entropy=0,beatImpact=0,ringFocus=0;
+let subNorm=0,loMidNorm=0,hiMidNorm=0,presNorm=0;
+let sustainNorm=0,spectralFlux=0,transientNow=0,centroid=0;
+let bpmEstimate=120,lastBeatTime=0;
+const beatHistory=new Float32Array(16);let beatHistPtr=0;
 let prevFreq=null,t=0;
 
 const canvas=document.getElementById('c'), ctx=canvas.getContext('2d',{alpha:false,desynchronized:true});
@@ -888,43 +866,27 @@ let W,H,cx,cy;
 let hexes=[], hexMap=new Map(), rings=[];
 const arks=[], sparks=[];
 
-// ────────────────────────────────────────────────────────────────────────
-// PERFORMANCE / GPU-LOAD CONTROL
-//  - DPR is capped (≤1.5 on phones, ≤2 on desktop). Modern retina canvases
-//    burn 4-9× the pixels for no perceived gain in a soft-edge visualiser.
-//  - Reduced-motion users get a paused 1-shot render (no rAF loop).
-//  - PERF.quality is an adaptive 0..1 multiplier driven by a rolling FPS
-//    estimate. It scales ark density, grain count, shadow blur, glyph
-//    density and dual-mesh range. The lattice geometry itself is never
-//    degraded so the Lex/Steel visual identity stays intact.
-//  - Static hex polygons are cached in a Path2D the first time the lattice
-//    is built, eliminating per-frame trig for the honeycomb mesh.
-// ────────────────────────────────────────────────────────────────────────
 const REDUCED_MOTION = (()=>{ try{ return matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(_){ return false; }})();
 const IS_MOBILE = (()=>{ try{ return matchMedia('(max-width: 720px), (pointer: coarse)').matches; }catch(_){ return innerWidth<720; }})();
 const MAX_DPR = IS_MOBILE ? 1.5 : 2;
 const DPR = Math.min(MAX_DPR, Math.max(1, (window.devicePixelRatio||1)));
 const PERF = {
-  quality: 1,        // 0.4 .. 1.0, scales optional layers
+  quality: 1,
   fps: 60,
   frameTimes: new Float32Array(30),
   fIdx: 0,
   lastT: 0,
   sample: 0,
 };
-let hexPath=null;       // cached Path2D for the full honeycomb mesh (no audio mod)
-let hexInnerVerts=null; // cached unit corner offsets, reused by inner accents
+let hexPath=null;
+let hexInnerVerts=null;
 
 function resize(){
-  // Use CSS pixels for layout, but back the canvas with a capped DPR so
-  // mobile GPUs aren't forced to push 9× pixels for a soft visualiser.
   const cssW = innerWidth, cssH = innerHeight;
   W = canvas.width  = fxCanvas.width  = Math.round(cssW*DPR);
   H = canvas.height = fxCanvas.height = Math.round(cssH*DPR);
   canvas.style.width   = fxCanvas.style.width   = cssW+'px';
   canvas.style.height  = fxCanvas.style.height  = cssH+'px';
-  // All existing draw code uses pixel units against W/H; scale once so the
-  // pixel-coordinate math elsewhere stays correct.
   cx=W/2; cy=H/2;
   buildHexLattice();
   buildMagnets();
@@ -935,13 +897,6 @@ addEventListener('resize',()=>{
   _resizeRAF = requestAnimationFrame(()=>{ _resizeRAF=0; resize(); });
 });
 
-// ════════════════════════════════════════════════════════════════════════
-// AXIAL / CUBE HEX MATH  (pointy-top orientation)
-//   Axial (q,r) <-> Cube (x,y,z) where x=q, z=r, y=-q-r, with x+y+z=0.
-//   Six AXIAL_DIRS / CUBE_DIRS provide 60° radial symmetry. All vertex
-//   placement, neighbour lookup, ring iteration and pathing route through
-//   these primitives so transitions stay fluid and non-anomalous.
-// ════════════════════════════════════════════════════════════════════════
 const AXIAL_DIRS = [
   {q: 1,r: 0},{q: 1,r:-1},{q: 0,r:-1},
   {q:-1,r: 0},{q:-1,r: 1},{q: 0,r: 1}
@@ -950,7 +905,6 @@ const CUBE_DIRS = [
   {x: 1,y:-1,z: 0},{x: 1,y: 0,z:-1},{x: 0,y: 1,z:-1},
   {x:-1,y: 1,z: 0},{x:-1,y: 0,z: 1},{x: 0,y:-1,z: 1}
 ];
-// Legacy alias retained for any read sites; refers to the same 6 vectors.
 const HEX_DIRS_AXIAL = AXIAL_DIRS;
 function axialToCube(q,r){ return {x:q, z:r, y:-q-r}; }
 function cubeToAxial(x,_y,z){ return {q:x, r:z}; }
@@ -967,31 +921,26 @@ function axialRound(qf,rf){
   return {q:c.x, r:c.z};
 }
 function keyQR(q,r){ return q+','+r; }
-// Cube distance; identical to the hex grid step distance.
 function cubeDistance(a,b){
   return (Math.abs(a.x-b.x)+Math.abs(a.y-b.y)+Math.abs(a.z-b.z))/2;
 }
 function axialDistance(aq,ar,bq,br){
   return cubeDistance(axialToCube(aq,ar), axialToCube(bq,br));
 }
-// Distance from origin — used as ring index throughout the lattice.
 function hexDistance(q,r){ return axialDistance(0,0,q,r); }
 function axialNeighbor(q,r,dir){
   const d=AXIAL_DIRS[((dir%6)+6)%6];
   return {q:q+d.q, r:r+d.r};
 }
-// Pointy-top axial -> pixel (relative to canvas centre cx,cy).
 function axialToPixel(q,r,size){
   return {x: cx + size*SQRT3*(q + r/2), y: cy + size*1.5*r};
 }
-// Pixel -> axial via cube rounding. Inverse of axialToPixel.
 function pixelToAxial(px,py,size){
   const x=px-cx, y=py-cy;
   const qf=(SQRT3/3*x - y/3)/size;
   const rf=(2/3*y)/size;
   return axialRound(qf,rf);
 }
-// Cube linear interp + line — used by pathing/ark trajectories.
 function cubeLerp(a,b,t){
   return {x:a.x+(b.x-a.x)*t, y:a.y+(b.y-a.y)*t, z:a.z+(b.z-a.z)*t};
 }
@@ -1006,7 +955,6 @@ function axialLine(aq,ar,bq,br){
   }
   return out;
 }
-// All axial coordinates exactly `radius` rings from (cq,cr). 60° symmetric.
 function axialRing(cq,cr,radius){
   if(radius<=0) return [{q:cq,r:cr}];
   const out=[];
@@ -1019,22 +967,15 @@ function axialRing(cq,cr,radius){
   }
   return out;
 }
-// Pointy-top hex corner. With rot=0 the six corners sit at 30°,90°,150°,210°,
-// 270°,330° — the canonical pointy-top orientation matched by axialToPixel.
-// Keep rot=0 for tessellating field cells; small rot is only used for accent
-// highlights, never the primary mesh.
 function hexCorner(x,y,size,i,rot=0){
   const a = PI/3*i + PI/6 + rot;
   return [x + Math.cos(a)*size, y + Math.sin(a)*size];
 }
-// Build the 6-vertex polygon for a hex cell as an array of [x,y] pairs.
-// Centralised so every hex-rendering site uses the same canonical geometry.
 function hexPolygon(x,y,size,rot=0){
   const out=new Array(6);
   for(let i=0;i<6;i++) out[i]=hexCorner(x,y,size,i,rot);
   return out;
 }
-// Trace a hex polygon onto ctx without stroking/filling it (caller decides).
 function pathHex(ctx,x,y,size,rot=0){
   ctx.beginPath();
   for(let i=0;i<6;i++){
@@ -1043,9 +984,6 @@ function pathHex(ctx,x,y,size,rot=0){
   }
   ctx.closePath();
 }
-// Pre-computed unit corner vectors for a pointy-top hexagon (rot=0). Reused
-// by both the cached mesh Path2D and the per-cell inner accent draws so we
-// never re-compute Math.cos/sin in the render loop.
 const HEX_UNIT = (()=>{
   const out=new Float32Array(12);
   for(let i=0;i<6;i++){
@@ -1071,15 +1009,10 @@ function buildHexLattice(){
       rings[d].push(hex);
     }
   }
-  // Pre-sort each ring by polar angle so drawRingWaves traces a clean
-  // 6-fold-symmetric polygon instead of insertion-order zig-zags.
   for(const ring of rings){
     if(!ring) continue;
     ring.sort((a,b)=>Math.atan2(a.y-cy,a.x-cx)-Math.atan2(b.y-cy,b.x-cx));
   }
-  // Cache a single Path2D containing every cell outline at rot=0. This is
-  // the dominant per-frame cost in drawHexField. Rebuilt only on resize or
-  // hex-size change — never inside the loop.
   hexPath = new Path2D();
   const baseSize = Math.max(0, size-0.6*DPR);
   if(baseSize>0){
@@ -1156,21 +1089,49 @@ function updateMetrics(){
     analyser.getByteFrequencyData(freqData);
     analyser.getByteTimeDomainData(waveData);
     if(!prevFreq) prevFreq=new Float32Array(freqData.length);
-    const len=freqData.length, bEnd=Math.floor(len*0.07), mEnd=Math.floor(len*0.33);
-    let b=0,m=0,h=0,tot=0,fl=0;
-    for(let i=0;i<bEnd;i++) b+=freqData[i];
-    for(let i=bEnd;i<mEnd;i++) m+=freqData[i];
-    for(let i=mEnd;i<len;i++) h+=freqData[i];
-    for(let i=0;i<len;i++){ tot+=freqData[i]; fl+=Math.max(0,freqData[i]-prevFreq[i]); prevFreq[i]=freqData[i]; }
-    bassNorm=Math.min(1,b/Math.max(1,bEnd)/180)*VS.gain;
-    midsNorm=Math.min(1,m/Math.max(1,mEnd-bEnd)/160)*VS.gain;
-    highNorm=Math.min(1,h/Math.max(1,len-mEnd)/145)*VS.gain;
-    energyNorm=Math.min(1,bassNorm*.5+midsNorm*.3+highNorm*.2);
-    beatImpact=Math.max(0,(bassNorm*1.2 + fl/len/90)-0.18);
+    const len=freqData.length;
+    // 6-band split: sub / bass / lo-mid / mid / hi-mid / presence
+    const b0=0, b1=Math.floor(len*0.014), b2=Math.floor(len*0.057),
+          b3=Math.floor(len*0.18),  b4=Math.floor(len*0.46),
+          b5=Math.floor(len*0.63),  b6=len;
+    function bandAvg(lo,hi){ let s=0; for(let i=lo;i<hi;i++) s+=freqData[i]; return s/Math.max(1,hi-lo); }
+    subNorm    = Math.min(1, bandAvg(b0,b1)/180)*VS.gain;
+    bassNorm   = Math.min(1, bandAvg(b1,b2)/175)*VS.gain;
+    loMidNorm  = Math.min(1, bandAvg(b2,b3)/165)*VS.gain;
+    midsNorm   = Math.min(1, bandAvg(b3,b4)/158)*VS.gain;
+    hiMidNorm  = Math.min(1, bandAvg(b4,b5)/150)*VS.gain;
+    highNorm   = Math.min(1, bandAvg(b5,b6)/145)*VS.gain;
+    presNorm   = highNorm; // alias for UI compat
+    energyNorm = Math.min(1, subNorm*.12 + bassNorm*.32 + loMidNorm*.16 + midsNorm*.20 + hiMidNorm*.12 + highNorm*.08);
+    // Spectral flux → transient onset
+    let flux=0,tot=0,cs=0;
+    for(let i=0;i<len;i++){
+      const d=Math.max(0,freqData[i]-prevFreq[i]); flux+=d;
+      tot+=freqData[i]; cs+=i*freqData[i];
+      prevFreq[i]=freqData[i];
+    }
+    spectralFlux = flux/len;
+    transientNow = Math.min(spectralFlux/0.22, 1);
+    // Spectral centroid → palette drift
+    centroid = tot>0 ? Math.min(1, (cs/tot)/(len/2)) : centroid*0.98;
+    // BPM via IBI with EMA
+    beatImpact = Math.max(0, bassNorm*1.1 + transientNow*0.55 - 0.18);
+    if(transientNow>0.55){
+      const now=performance.now();
+      if(lastBeatTime>0){ const ibi=now-lastBeatTime; if(ibi>200&&ibi<2000){ bpmEstimate=bpmEstimate*0.82+(60000/ibi)*0.18; } }
+      lastBeatTime=now;
+      beatHistory[beatHistPtr%16]=beatImpact; beatHistPtr++;
+    }
+    // Sustain envelope: fills on beat, slow decay
+    sustainNorm = Math.max(sustainNorm*0.94, beatImpact*0.72);
+    // Entropy
     let ent=0; if(tot>0){ for(let i=0;i<len;i++){ if(freqData[i]){ const p=freqData[i]/tot; ent-=p*Math.log2(p); } } }
     entropy=ent;
   }else{
-    bassNorm*=0.97; midsNorm*=0.97; highNorm*=0.97; energyNorm*=0.97; beatImpact*=0.92; entropy*=0.98;
+    subNorm*=0.97; bassNorm*=0.97; loMidNorm*=0.97; midsNorm*=0.97;
+    hiMidNorm*=0.97; highNorm*=0.97; presNorm*=0.97;
+    energyNorm*=0.97; beatImpact*=0.92; entropy*=0.98;
+    transientNow*=0.88; spectralFlux*=0.9; sustainNorm*=0.96; centroid*=0.995;
   }
   ringFocus = Math.min(11, Math.round((bassNorm*4 + midsNorm*3 + highNorm*4 + beatImpact*10)));
   mBass.textContent=Math.round(bassNorm*100)+'%';
@@ -1194,8 +1155,90 @@ function axisEnergy(axisIndex,time){
   const phase=time*(0.7+base*0.22)*VS.axisWave;
   return (Math.sin(phase + axisIndex*PI/3)*pair + 1)/2;
 }
-function getHue(base){ return ((base + VS.hueShift + (currentMode==='INTERFERENCE'?40:currentMode==='DUAL-MESH'?85:currentMode==='FRACTAL'?120:0))%360+360)%360; }
+function getHue(base){ const modeOff=currentMode==='INTERFERENCE'?40:currentMode==='DUAL-MESH'?85:currentMode==='FRACTAL'?120:0; return ((base + VS.hueShift + modeOff + centroid*180)%360+360)%360; }
 
+// ────────────────────────────────────────────────────────────────────────
+// ESN (Echo State Network) temporal layer — 18-dim input → 12-dim reservoir
+//  Fixed random input weights Wi, fixed sparse reservoir Wr, only the
+//  readout Wo is updated via Hebbian rule — zero ML infrastructure needed.
+//  Output esn_out[0..11] additively modulates SECTOR_E so the lattice
+//  pre-glows before a beat and lingers after a drop.
+// ────────────────────────────────────────────────────────────────────────
+const ESN_IN=18, ESN_H=18, ESN_OUT=12;
+const _esn_seed=(()=>{ let s=0x9e3779b9; return ()=>{ s+=0x6d2b79f5; let t=s; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return((t^t>>>14)>>>0)/4294967296; }; })();
+const ESN_Wi  = new Float32Array(ESN_H*ESN_IN).map(()=>(_esn_seed()-0.5)*0.18);
+const ESN_Wr  = new Float32Array(ESN_H*ESN_H ).map(()=>_esn_seed()<0.12?(_esn_seed()-0.5)*0.92:0);
+const ESN_Wo  = new Float32Array(ESN_OUT*ESN_H).map(()=>(_esn_seed()-0.5)*0.04);
+const esn_x   = new Float32Array(ESN_H);
+const esn_out = new Float32Array(ESN_OUT);
+function buildESNInput(){
+  return new Float32Array([
+    subNorm, bassNorm, loMidNorm, midsNorm, hiMidNorm, presNorm,
+    transientNow, sustainNorm, beatImpact, centroid, entropy/8, bpmEstimate/240,
+    beatHistory[(beatHistPtr-1+16)%16], beatHistory[(beatHistPtr-4+16)%16],
+    beatHistory[(beatHistPtr-8+16)%16],
+    (t*bpmEstimate/60)%1,
+    axisEnergy(0,t),
+    axisEnergy(2,t),
+  ]);
+}
+function stepESN(){
+  const inp = buildESNInput();
+  const nx = new Float32Array(ESN_H);
+  for(let i=0;i<ESN_H;i++){
+    let u=0;
+    for(let j=0;j<ESN_IN;j++) u += ESN_Wi[i*ESN_IN+j]*inp[j];
+    for(let j=0;j<ESN_H; j++) u += ESN_Wr[i*ESN_H+j]*esn_x[j];
+    nx[i]=Math.tanh(u);
+  }
+  esn_x.set(nx);
+  for(let i=0;i<ESN_OUT;i++){
+    let s=0; for(let j=0;j<ESN_H;j++) s+=ESN_Wo[i*ESN_H+j]*esn_x[j];
+    esn_out[i]=Math.max(-0.18,Math.min(0.38, s*0.55));
+  }
+  const avgE=SECTOR_E.reduce((a,v)=>a+v,0)/12;
+  const alpha=0.0012;
+  for(let i=0;i<ESN_OUT;i++) for(let j=0;j<ESN_H;j++){
+    ESN_Wo[i*ESN_H+j]=Math.min(Math.max(ESN_Wo[i*ESN_H+j]+alpha*esn_x[j]*(SECTOR_E[i]-avgE),-1.2),1.2);
+  }
+}
+// ────────────────────────────────────────────────────────────────────────
+// NLP_COUPLE — dialectical pair cross-feed matrix
+// ────────────────────────────────────────────────────────────────────────
+const NLP_COUPLE_MATRIX=[
+  [0,1,0.12],[1,0,0.10],
+  [2,3,0.12],[3,2,0.10],
+  [4,5,0.11],[5,4,0.10],
+  [6,7,0.10],[7,6,0.09],
+  [8,9,0.11],[9,8,0.10],
+  [10,11,0.14],[11,10,0.12],
+];
+function applyNLPCouple(){
+  for(const [i,j,k] of NLP_COUPLE_MATRIX){
+    if(!activePlanes.has(i)||!activePlanes.has(j)) continue;
+    if(SECTOR_E[j]<0.05 && activePlanes.has(i)){
+      SECTOR_E[i]=Math.min(1, SECTOR_E[i]*(1+k*0.6));
+    } else {
+      SECTOR_E[i]=Math.min(1, SECTOR_E[i]+SECTOR_E[j]*k);
+    }
+  }
+}
+// ────────────────────────────────────────────────────────────────────────
+// diffuseHexEnergy — spatial bleed after computeHexFields
+// ────────────────────────────────────────────────────────────────────────
+function diffuseHexEnergy(){
+  const diff=0.12;
+  const db=new Map();
+  for(const h of hexes){
+    if(h.energy<0.05) continue;
+    const bleed=h.energy*diff;
+    for(const d of HEX_DIRS){
+      const nb=hexMap.get(keyQR(h.q+d[0],h.r+d[1]));
+      if(nb) db.set(nb,(db.get(nb)||0)+bleed/6);
+    }
+  }
+  for(const [h,v] of db) h.energy=Math.min(1,h.energy+v);
+}
 // Per-sector energy table — sectorEnergy was being called 12× per hex per
 // frame, but only 12 distinct sectors exist. We compute it once per frame
 // here and reuse.
@@ -1212,6 +1255,14 @@ function computeHexFields(){
       if(s===soloPlane) SECTOR_E[s] = Math.min(1, SECTOR_E[s]*1.6 + 0.25);
       else SECTOR_E[s] *= 0.45;
     }
+  }
+  // NLP cross-feed: dialectical pair echo (⁺ asserts → ⁻ gets ghost energy)
+  applyNLPCouple();
+  // ESN temporal layer: step reservoir, add memory-informed residual to
+  // SECTOR_E so the lattice pre-brightens before a beat and lingers after.
+  stepESN();
+  for(let s=0;s<12;s++){
+    SECTOR_E[s] = Math.max(0, Math.min(1, SECTOR_E[s] + esn_out[s]));
   }
   // Cache axisEnergy(0/2/4,t) once per frame — these were recomputed for
   // every hex in the original code.
@@ -1231,33 +1282,27 @@ function computeHexFields(){
     const radial = Math.max(0,1-h.d/ringsLen);
     h.interf = interference;
     h.axis = (Math.abs(h.q)*ae0 + Math.abs(h.r)*ae2 + Math.abs(h.s)*ae4)*0.01;
-    h.energy = Math.min(1, sectorE*0.45 + ringWave*0.18 + interference*0.24 + radial*0.08 + beatImpact*0.25);
+    const subPulse=(Math.sin(t*0.1 - h.d*0.5)+1)/2*subNorm;
+    const presDetail=presNorm*(Math.cos(h.q*0.3 + h.r*0.3 + t*0.05)+1)/2;
+    h.energy = Math.min(1, sectorE*0.38 + ringWave*0.14 + interference*0.20 + radial*0.06 + beatImpact*0.20 + subPulse*0.08 + presDetail*0.06 + sustainNorm*0.08);
   }
 }
 
 function drawHex(x,y,r,rot=0){ pathHex(ctx,x,y,r,rot); }
 function drawHexField(){
   if(!SHOW.hex) return;
-  // PASS 1 — tessellating honeycomb base. Single Path2D, single stroke per
-  // brightness bucket. We quantise hue/lit/alpha into a tiny histogram so we
-  // can issue one stroke() per bucket instead of N per-cell strokes. That
-  // dropped per-frame strokes from ~thousands to ≤16 in profiling.
   if(hexPath){
     ctx.save();
     ctx.lineJoin='round';
-    // Ambient idle pass — one stroke for the whole mesh at floor alpha.
     ctx.strokeStyle=`hsla(170,${VS.sat}%,38%,0.10)`;
     ctx.lineWidth=0.7*DPR;
     ctx.stroke(hexPath);
-    // Per-cell accents only for cells with meaningful energy. Skipping the
-    // idle cells reduces stroke count by ~80% in calm passages.
     for(const h of hexes){
       if(h.energy<0.08 && h.interf<0.1) continue;
       const hue=getHue(NLP12[h.sector].hue);
       const lit=30 + h.energy*36 + h.interf*10;
       const a=h.energy*0.52;
       if(a<0.04) continue;
-      // Trace a single cell from cached unit vectors — no trig.
       const baseSize = Math.max(0, VS.hexR*DPR - 0.6*DPR);
       ctx.beginPath();
       ctx.moveTo(h.x + HEX_UNIT[0]*baseSize, h.y + HEX_UNIT[1]*baseSize);
@@ -1278,9 +1323,6 @@ function drawHexField(){
     }
     ctx.restore();
   }
-  // PASS 2 — inner accent hex on energetic cells, slightly rotated. Decorative
-  // only; lives inside its parent and never breaks the outer tessellation.
-  // Capped: only top-energy cells get this overlay so per-frame trig stays bounded.
   const innerThresh = 0.34 + (1-PERF.quality)*0.2;
   for(const h of hexes){
     if(h.energy<=innerThresh) continue;
@@ -1297,10 +1339,6 @@ function drawEdgeLinks(){
   if(!SHOW.edges) return;
   ctx.save();
   ctx.lineCap='round';
-  // Shadow blur is one of Canvas2D's hottest paths on GPU; we drop it
-  // entirely on mobile / low-perf and threshold-it on desktop so only
-  // strong edges pay the cost. Edge threshold also rises as quality drops
-  // so the edge count stays bounded under load.
   const useShadow = !IS_MOBILE && PERF.quality > 0.7;
   const eThresh = 0.28 + (1-PERF.quality)*0.18;
   for(const h of hexes){
@@ -1327,8 +1365,6 @@ function drawRingWaves(){
   if(!SHOW.rings) return;
   ctx.save();
   const size=VS.hexR*DPR;
-  // Pre-rotated unit vectors for the ring polygon (rot=-PI/6). Compute once
-  // and reuse for every ring instead of paying 6×cos/sin per ring per frame.
   const RU = drawRingWaves._u || (drawRingWaves._u=(function(){
     const a=new Float32Array(12);
     for(let i=0;i<6;i++){
@@ -1354,7 +1390,6 @@ function drawRingWaves(){
   }
   ctx.restore();
 }
-// Axis directions baked once: cos/sin of 0, PI/3, -PI/3 are constants.
 const AXIS_DEFS=[
   {idx:0,cosA:1,         sinA:0,                      h:170},
   {idx:2,cosA:0.5,       sinA:Math.sqrt(3)/2,         h:215},
@@ -1381,9 +1416,6 @@ function drawAxisFlow(){
 function drawInterference(){
   if(!SHOW.interference) return;
   ctx.save();
-  // Shadow blur on every interference dot is one of the most expensive
-  // operations a Canvas2D scene can issue. Mobile and low-quality runs
-  // disable it; the visual difference at the alpha levels we use is small.
   const useShadow = !IS_MOBILE && PERF.quality > 0.7;
   const iThresh = 0.52 + (1-PERF.quality)*0.18;
   for(const h of hexes){
@@ -1403,13 +1435,8 @@ function drawInterference(){
 }
 function drawVoronoiDual(){
   if(!SHOW.voronoi) return;
-  // The geometric dual of a hex tessellation is a triangle lattice connecting
-  // the centres of every three mutually-adjacent hex cells. We trace the two
-  // distinct triangles incident to each cell (upper-right and lower-right).
   ctx.save(); ctx.globalCompositeOperation='screen';
   const TRI_PAIRS=[[0,1],[0,5]];
-  // Range shrinks with quality so mobile / low-FPS sessions trace fewer cells
-  // while keeping the visual identity at the core of the lattice.
   const dRange = Math.max(4, Math.round(10 * PERF.quality));
   const eThresh = 0.32 + (1-PERF.quality)*0.16;
   for(const h of hexes){
@@ -1435,18 +1462,11 @@ function drawVoronoiDual(){
   }
   ctx.restore();
 }
-// Hard caps prevent runaway allocation when the user pegs Ark Density or
-// when a loud track produces every-cell beats. These caps are well above
-// what's visually distinguishable, so the user never sees a missing ark
-// in normal use.
 const ARK_CAP = IS_MOBILE ? 64 : 160;
 const SPARK_CAP = IS_MOBILE ? 120 : 280;
 function spawnArk(h){
   if(arks.length >= ARK_CAP) return;
   const hue=getHue(NLP12[h.sector].hue);
-  // Pre-compute pixel waypoints once instead of re-running axialToPixel for
-  // each waypoint every frame. Stored as a single Float32Array (x,y pairs)
-  // so the per-frame draw is two array lookups + lerp — no object alloc.
   const line=axialLine(h.q,h.r,0,0);
   const px=new Float32Array(line.length*2);
   const size=VS.hexR*DPR;
@@ -1465,7 +1485,6 @@ function spawnArk(h){
 function updateArks(){
   fx.clearRect(0,0,W,H);
   if(SHOW.arks){
-    // Spawn rate scales with quality so frame-paced runs stay under cap.
     const spawnK = VS.ark * 0.12 * PERF.quality;
     for(const h of hexes){
       if(h.energy>.56 && Math.random()<spawnK*h.energy) spawnArk(h);
@@ -1474,8 +1493,6 @@ function updateArks(){
   const useArkShadow = !IS_MOBILE && PERF.quality > 0.7;
   for(let i=arks.length-1;i>=0;i--){
     const a=arks[i]; a.progress+=a.speed; if(a.progress>=1){
-      // Cap spark spawn so a burst of arks landing in the same frame can't
-      // explode the spark array past SPARK_CAP.
       const sparkBudget = Math.max(0, SPARK_CAP - sparks.length);
       const n = Math.min(4, sparkBudget);
       for(let s=0;s<n;s++) sparks.push({x:cx,y:cy,vx:Math.cos(Math.random()*PI*2)*(1+Math.random()*4),vy:Math.sin(Math.random()*PI*2)*(1+Math.random()*4),life:24+Math.random()*20,hue:a.hue,size:1+Math.random()*2});
@@ -1513,51 +1530,31 @@ function updateArks(){
     }
   }
 }
-// ────────────────────────────────────────────────────────────────────────
-// MAGNETS · repulsive vibration entities on the hex lattice
-//  Entities are anchored to specific axial cells (their "home"). They orbit
-//  around the home with a small spring + audio-modulated vibration, and
-//  repel each other along the six AXIAL_DIRS so the interaction stays in
-//  the hex paradigm rather than producing arbitrary Cartesian particles.
-//  Each magnet emits ripples along its hex edges when a beat lands, and
-//  visualises its repulsion as faint lines toward its nearest neighbour.
-//  All sizing/caps scale with PERF.quality and IS_MOBILE; the layer is
-//  skipped entirely under prefers-reduced-motion or when the toggle is off.
-// ────────────────────────────────────────────────────────────────────────
 const MAG_CAP = IS_MOBILE ? 10 : 18;
-const MAG_BASE_RADIUS = 4; // axial ring radius for home anchors
-const MAG_REPULSE_K = 1.4; // softened-inverse-square strength
+const MAG_BASE_RADIUS = 4;
+const MAG_REPULSE_K = 1.4;
 const MAG_DAMPING = 0.88;
-const MAG_MAX_V = 0.42;    // px/frame in DPR-normalised units
-const MAG_SPRING = 0.012;  // pull magnets back toward their home cell
-const MAG_NEIGHBOUR_R2_FACTOR = 9; // softening constant (× home size²)
+const MAG_MAX_V = 0.42;
+const MAG_SPRING = 0.012;
+const MAG_NEIGHBOUR_R2_FACTOR = 9;
 const magnets = [];
 const magRipples = [];
 const MAG_RIPPLE_CAP = IS_MOBILE ? 14 : 28;
 function buildMagnets(){
-  // Static anchor set — pick axial cells around the centre on a small ring,
-  // alternating polarity. Built once per resize so we never allocate in the
-  // hot loop. Each magnet carries its home (qx,qy) so the repulsion stays
-  // bounded by a spring back to the lattice.
   magnets.length = 0;
   magRipples.length = 0;
   if(!hexes.length) return;
-  // Use rings 2 and 4 around origin for anchors — both rings exist in any
-  // reasonably-sized lattice and give a balanced 6-fold layout.
   const candidates = [];
   for(const radius of [2, 4]){
     for(const a of axialRing(0,0,radius)) candidates.push(a);
   }
-  // Filter to anchors that actually exist in the current hexMap (the lattice
-  // is cropped to canvas); pick up to MAG_CAP, prioritising the lower ring
-  // first so a small viewport still gets some magnets.
   const cap = Math.min(MAG_CAP, Math.max(4, Math.round(MAG_CAP * PERF.quality)));
   const size = VS.hexR*DPR;
   for(const a of candidates){
     if(magnets.length>=cap) break;
     const h = hexMap.get(keyQR(a.q,a.r));
     if(!h) continue;
-    const polarity = ((a.q + a.r) & 1) ? 1 : -1; // checkerboard-like sign
+    const polarity = ((a.q + a.r) & 1) ? 1 : -1;
     const hue = NLP12[h.sector].hue;
     magnets.push({
       q:a.q, r:a.r,
@@ -1572,13 +1569,9 @@ function buildMagnets(){
 }
 function updateMagnets(){
   if(!SHOW.magnets || !magnets.length) return;
-  // Audio-reactive vibration scalars. Bass drives radial amplitude; mids/high
-  // drive jitter; beatImpact triggers ripples on a per-magnet probability.
   const vibAmp = (0.18 + bassNorm*1.6 + midsNorm*0.7) * DPR;
   const jitter = (0.06 + highNorm*0.9) * DPR;
   const r2soft = (VS.hexR*DPR) * (VS.hexR*DPR) * MAG_NEIGHBOUR_R2_FACTOR;
-  // Pairwise softened inverse-square repulsion. N is small (≤18) so the
-  // O(N²) double loop is cheap — no spatial hash needed.
   for(let i=0;i<magnets.length;i++){
     const a = magnets[i];
     let fx=0, fy=0;
@@ -1586,33 +1579,25 @@ function updateMagnets(){
       if(i===j) continue;
       const b = magnets[j];
       const dx = a.x - b.x, dy = a.y - b.y;
-      const d2 = dx*dx + dy*dy + r2soft; // softened to avoid singularities
-      // Like-polarity → repulse; opposite → mild attraction (still bounded
-      // by spring, so opposite pairs orbit instead of merging).
+      const d2 = dx*dx + dy*dy + r2soft;
       const sign = (a.polarity===b.polarity) ? 1 : -0.35;
       const inv = MAG_REPULSE_K * sign * (a.size*a.size) / d2;
       fx += dx * inv;
       fy += dy * inv;
     }
-    // Spring back to the lattice home cell.
     fx += (a.homeX - a.x) * MAG_SPRING;
     fy += (a.homeY - a.y) * MAG_SPRING;
-    // Audio vibration nudge — directed along a 6-fold hex axis chosen by
-    // the magnet's stored phase, so the motion looks lattice-aligned.
     const dirIdx = ((Math.floor(a.phase*1.91)%6)+6)%6;
     const dxh = AXIAL_DIRS[dirIdx].q, dyh = AXIAL_DIRS[dirIdx].r;
-    // Convert hex direction to pixel direction (pointy-top axial→px without cx,cy).
     const hxPx = SQRT3*(dxh + dyh/2);
     const hyPx = 1.5*dyh;
     const wob = Math.sin(t*6.2 + a.phase + bassNorm*4) * vibAmp;
     fx += hxPx * wob * 0.08;
     fy += hyPx * wob * 0.08;
-    // Random jitter scaled by treble; cheap pseudo-noise.
     fx += (Math.sin(t*9.1 + a.phase*1.7) ) * jitter * 0.5;
     fy += (Math.cos(t*7.3 + a.phase*2.3) ) * jitter * 0.5;
     a.vx = a.vx * MAG_DAMPING + fx;
     a.vy = a.vy * MAG_DAMPING + fy;
-    // Velocity clamp keeps the simulation stable even under bursts.
     const vmag2 = a.vx*a.vx + a.vy*a.vy;
     const vmax = MAG_MAX_V * DPR * (1 + bassNorm*2);
     if(vmag2 > vmax*vmax){
@@ -1623,10 +1608,7 @@ function updateMagnets(){
     a.y += a.vy;
     a.phase += 0.011 + midsNorm*0.04;
   }
-  // Emit ripples on beats; throttled by cap and quality.
   if(beatImpact > 0.32 && magRipples.length < MAG_RIPPLE_CAP){
-    // Spawn from the magnet with the largest excursion from its home so
-    // visually the magnet visibly pushes the field.
     let best=-1, bestD2=0;
     for(let i=0;i<magnets.length;i++){
       const m = magnets[i];
@@ -1651,14 +1633,12 @@ function drawMagnets(){
   ctx.lineCap='round';
   ctx.lineJoin='round';
   const useShadow = !IS_MOBILE && PERF.quality > 0.7;
-  // Pass A — ripple rings expanding along the hex field at each beat.
   for(const rp of magRipples){
     const u = rp.life / rp.maxLife;
     const rad = safeRadius((VS.hexR*DPR) * (0.6 + u*5.5));
     if(rad<=0) continue;
     const a = (1-u) * 0.35 * (0.3 + rp.amp);
     ctx.beginPath();
-    // Trace as a hex outline (rot=0) — keeps the ripple lattice-aligned.
     for(let i=0;i<6;i++){
       const px = rp.x + HEX_UNIT[i*2]*rad;
       const py = rp.y + HEX_UNIT[i*2+1]*rad;
@@ -1669,8 +1649,6 @@ function drawMagnets(){
     ctx.lineWidth = (1.2 + (1-u)*2.4) * DPR;
     ctx.stroke();
   }
-  // Pass B — repulsion field lines between near magnet pairs. Drawn as
-  // short hex-step segments so the field reads as lattice-bound.
   const maxLinkD2 = (VS.hexR*DPR * 8) * (VS.hexR*DPR * 8);
   for(let i=0;i<magnets.length;i++){
     const a = magnets[i];
@@ -1681,14 +1659,10 @@ function drawMagnets(){
       if(d2 > maxLinkD2 || d2 < 1) continue;
       const same = (a.polarity===b.polarity);
       const mix = (energyNorm + beatImpact)*0.5;
-      // Quantise the line into hex-aligned waypoints by stepping along the
-      // primary axial direction between the two cells.
-      const hue = same ? (a.hue+b.hue)*0.5 : 18; // amber for attractor pairs
+      const hue = same ? (a.hue+b.hue)*0.5 : 18;
       const alpha = same ? (0.04 + mix*0.18) : (0.06 + mix*0.22);
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
-      // Midpoint pulled along the perpendicular by the audio energy so the
-      // line breathes — gives the visual cue of a magnetic field bowing.
       const midX = (a.x+b.x)*0.5;
       const midY = (a.y+b.y)*0.5;
       const perpX = -dy, perpY = dx;
@@ -1702,13 +1676,10 @@ function drawMagnets(){
       ctx.stroke();
     }
   }
-  // Pass C — magnet nodes themselves, drawn as a small inner hex with a
-  // polarity ring; vibrates visibly with audio.
   for(const m of magnets){
     const vibe = 1 + bassNorm*0.7 + Math.sin(t*5 + m.phase)*0.18;
     const innerR = safeRadius(VS.hexR*DPR * 0.36 * vibe);
     if(innerR<=0) continue;
-    // Polarity ring — open hex outline.
     pathHex(ctx, m.x, m.y, innerR, t*0.15 + m.phase);
     const lit = 60 + Math.min(40, beatImpact*60 + bassNorm*20);
     ctx.strokeStyle = `hsla(${m.hue},96%,${lit}%,${0.6 + bassNorm*0.3})`;
@@ -1721,7 +1692,6 @@ function drawMagnets(){
     } else {
       ctx.stroke();
     }
-    // Core dot encodes polarity: + = filled bright, − = ring with dark core.
     const coreR = safeRadius(innerR*0.32);
     if(coreR>0){
       ctx.beginPath();
@@ -1737,8 +1707,6 @@ function drawMagnets(){
         ctx.stroke();
       }
     }
-    // Six tiny tick marks along the AXIAL_DIRS — visually anchors the
-    // magnet inside the hex paradigm.
     const tick = innerR * (1.35 + 0.15*Math.sin(t*4 + m.phase));
     for(let i=0;i<6;i++){
       const tx = m.x + HEX_UNIT[i*2]*tick;
@@ -1753,10 +1721,6 @@ function drawMagnets(){
   }
   ctx.restore();
 }
-// Glyph field is throttled to ~10fps and grid-stepped wider when quality
-// drops. Canvas text rendering is one of the slowest 2D paths on GPU —
-// drawing it every frame at full density is wasteful and visually
-// indistinguishable from a 10fps version.
 let _glyphCache = '';
 function drawGlyphField(){
   if(!SHOW.glyph) return;
@@ -1765,12 +1729,7 @@ function drawGlyphField(){
   ctx.textAlign='center';
   const step=Math.max(32,VS.hexR*1.5)*DPR*(IS_MOBILE?1.5:1)*(2-PERF.quality);
   const stepX=step*1.3;
-  // Quantise t so the glyph chosen for a cell stays the same for ~100ms,
-  // saving the modular math churn and producing a calmer typographic field.
   const phase=Math.floor(t*4);
-  // Single fillStyle prefix; we only vary the alpha so we can keep the
-  // string short and avoid creating a unique rgba string per cell where
-  // possible. Browsers reparse fillStyle every assignment.
   for(let y=-20;y<H+20;y+=step){
     for(let x=-20;x<W+20;x+=stepX){
       const n=((Math.sin(x*.01+t)+Math.cos(y*.013-t*1.4)+2)/4);
@@ -1782,17 +1741,11 @@ function drawGlyphField(){
   }
   ctx.restore();
 }
-// Grain: pre-pack random positions into a typed buffer drawn via fillRect.
-// Count is bounded and adapts to quality so a 4K canvas doesn't pay 8×
-// what a 1080p canvas does.
 function drawGrain(){
   if(!SHOW.grain) return;
-  // Cap grain to the visible CSS area (W*H is DPR-scaled) and quality-scale.
   const visiblePx = (W*H)/(DPR*DPR);
   const N=Math.min(800, Math.floor(visiblePx*0.00018*PERF.quality));
   const alpha = (0.008 + energyNorm*0.008).toFixed(3);
-  // Two passes — one for white, one for black — to issue fewer fillStyle
-  // assignments. Each fillStyle change is a relatively expensive parse.
   ctx.fillStyle=`rgba(255,255,255,${alpha})`;
   for(let i=0;i<N;i+=2){
     ctx.fillRect(Math.random()*W, Math.random()*H, DPR, DPR);
@@ -1808,10 +1761,6 @@ function flashGlyph(){
   centreGlyph.textContent=BEAT_GLYPHS[glyphIdx%BEAT_GLYPHS.length]; glyphIdx++; centreGlyph.classList.add('flash'); setTimeout(()=>centreGlyph.classList.remove('flash'),160);
 }
 setInterval(()=>{
-  // When a plane is soloed, its court-axiom overlay drives the ticker so the
-  // operator can see exactly which Lex Forensica axiom the lattice is
-  // arguing. When all 12 are active, raise A13 (closure). Otherwise rotate
-  // through the structural axioms as before.
   if(soloPlane>=0 && soloPlane<NLP12.length){
     axiomTicker.textContent = NLP12[soloPlane].overlay;
   } else if(activePlanes.size === NLP12.length){
@@ -1824,15 +1773,10 @@ setInterval(()=>{
   if(isPaused) axiomTicker.classList.add('susp');
 },2400);
 
-// Adaptive-quality tuner: samples the inter-frame interval, smooths it, and
-// nudges PERF.quality up when sustained ≥55fps, down when ≤45fps. The bands
-// are wide enough to avoid oscillation; the only consumers are alpha
-// thresholds and density caps, so visual shifts are barely perceptible
-// — exactly what we want for adaptive quality.
 function sampleFps(now){
   if(!PERF.lastT){ PERF.lastT=now; return; }
   const dt=now-PERF.lastT; PERF.lastT=now;
-  if(dt<=0 || dt>250) return; // ignore tab-resume spikes
+  if(dt<=0 || dt>250) return;
   PERF.frameTimes[PERF.fIdx++ % PERF.frameTimes.length] = dt;
   PERF.sample++;
   if(PERF.sample%30!==0) return;
@@ -1848,12 +1792,9 @@ function sampleFps(now){
 function loop(now){
   requestAnimationFrame(loop);
   sampleFps(now||0);
-  // Skip the render when the page is hidden — saves all the GPU work for a
-  // tab nobody is looking at. rAF already runs at <1fps in background but
-  // this skips the JS pass entirely.
   if(document.hidden) return;
   t+=0.011;
-  updateMetrics(); computeHexFields();
+  updateMetrics(); computeHexFields(); diffuseHexEnergy();
   const trail=Math.min(.95,VS.trail + (isPaused?.08:0));
   ctx.fillStyle=`rgba(1,3,6,${trail})`; ctx.fillRect(0,0,W,H);
   drawGlyphField();
@@ -1876,12 +1817,6 @@ bindToggle('tHex','hex','HEX FIELD','HEX OFF'); bindToggle('tEdges','edges','EDG
 
 MODES.forEach(m=>{ const b=document.createElement('button'); b.className='mode-pill'+(m===currentMode?' active':''); b.textContent=m; b.onclick=()=>{ currentMode=m; topMode.textContent='MODE: '+m; [...modeRow.children].forEach(x=>x.classList.remove('active')); b.classList.add('active'); }; modeRow.appendChild(b); });
 AXES.forEach((label,i)=>{ const b=document.createElement('button'); b.className='axis-pill active'; b.textContent=label; b.onclick=()=>{ if(activeAxes.has(i)){ activeAxes.delete(i); b.classList.remove('active'); } else { activeAxes.add(i); b.classList.add('active'); } }; axisRow.appendChild(b); });
-// ────────────────────────────────────────────────────────────────────────
-// HEX-NLP · 12 Planes — full-access vocabulary controls
-//  Click       → toggle plane active (drives sector energy)
-//  Shift-click → solo plane (its axiom A1..A12 drives the ticker)
-//  Long-press  → solo plane (mobile equivalent of shift-click)
-// ────────────────────────────────────────────────────────────────────────
 const nlpPillEls = [];
 function updateAxiomCard(){
   const card = document.getElementById('nlpAxiomCard');
@@ -1948,7 +1883,6 @@ NLP12.forEach(p=>{
   nlpGrid.appendChild(b);
 });
 
-// Full-access controls — Unlock All / Reset / Admin
 document.getElementById('nlpUnlockAll').onclick = ()=>{
   NLP12.forEach(p=>activePlanes.add(p.id));
   refreshPillState();
@@ -1980,7 +1914,6 @@ function setAdmin(on){
 }
 document.getElementById('nlpAdminBtn').onclick = ()=> setAdmin(!HEX_NLP_ADMIN);
 setAdmin(HEX_NLP_ADMIN);
-// Honor any persisted solo selection now that pills exist.
 refreshPillState();
 updateAxiomCard();
 MATH_MODES.forEach(m=>{ const b=document.createElement('button'); b.className='mode-pill'+(m===currentMath?' active':''); b.textContent=m; b.onclick=()=>{ currentMath=m; [...mathRow.children].forEach(x=>x.classList.remove('active')); b.classList.add('active'); }; mathRow.appendChild(b); });
@@ -1999,15 +1932,9 @@ function syncPanelOpenClass(){
 panelToggle.onclick=()=>{ panel.classList.toggle('hidden'); syncPanelOpenClass(); };
 
 resize();
-// Auto-collapse the controls panel on narrow viewports so the lattice
-// fills the screen on phones; user can re-open via the side toggle.
 if(innerWidth < 720) panel.classList.add('hidden');
 syncPanelOpenClass();
 setStatus('Idle · Waiting source','');
-// Honor prefers-reduced-motion by starting at the floor of adaptive quality
-// — this both throttles future per-frame work and skips the heaviest
-// optional layers up front. The render loop still runs (so the lattice is
-// visible) but at a much lighter cost. The user can still re-enable layers.
 if(REDUCED_MOTION){
   PERF.quality = 0.4;
   SHOW.arks = false;
