@@ -773,6 +773,8 @@ html.lf-hc #panelToggle{
     <div class="slider-row"><span class="slider-label">Ark Density</span><input type="range" id="sArk" min="0.002" max="0.1" step="0.002" value="0.026"><span class="slider-val" id="vArk">0.026</span></div>
     <div class="slider-row"><span class="slider-label">Math Freq</span><input type="range" id="sMathFreq" min="0.1" max="8.0" step="0.1" value="1.2"><span class="slider-val" id="vMathFreq">1.2</span></div>
     <div class="slider-row"><span class="slider-label">Math Amp</span><input type="range" id="sMathAmp" min="0.1" max="2.0" step="0.05" value="1.0"><span class="slider-val" id="vMathAmp">1.0</span></div>
+    <div class="slider-row"><span class="slider-label">LSTM Blend</span><input type="range" id="sLSTM" min="0.0" max="1.0" step="0.05" value="0.55"><span class="slider-val" id="vLSTM">0.55</span></div>
+    <div class="slider-row"><span class="slider-label">Diffuse</span><input type="range" id="sDiffuse" min="0.0" max="0.4" step="0.01" value="0.12"><span class="slider-val" id="vDiffuse">0.12</span></div>
   </div>
 
   <div class="section">
@@ -804,7 +806,7 @@ html.lf-hc #panelToggle{
 
   <div class="section">
     <div class="sec-title">Notes</div>
-    <div class="small-note subtle-card" style="padding:10px">v2 · Temporal ESN layer (18-dim→12-dim reservoir) modulates SECTOR_E with phrase-level memory — anticipatory pre-glow, sustain decay, stable hue trajectories. NLP_COUPLE cross-feed matrix wires Lex Forensica dialectical pairs. Extended audio pipeline: 6 bands (sub→presence), spectral centroid palette drift, BPM/IBI estimation, beatHistory ring buffer, hex diffusion bleed.</div>
+    <div class="small-note subtle-card" style="padding:10px">v3 · Full LSTM temporal layer (18-dim input × 12-dim gated hidden state) replaces ESN reservoir — forget/input/cell/output gates, Glorot init, online Hebbian Wo update. LSTM Blend slider tunes memory depth. Diffuse slider exposes spatial bleed live. NLP_COUPLE cross-feed matrix wires Lex Forensica dialectical pairs. Extended audio pipeline: 6 bands (sub→presence), spectral centroid palette drift, BPM/IBI estimation, beatHistory ring buffer, LSTM temporal echo glow layer.</div>
   </div>
   <div style="height:24px"></div>
 </div>
@@ -846,7 +848,7 @@ const MATH_MODES = ['SINE','FOURIER','LATTICE','INTERF','SPIRAL','NOISE'];
 const BEAT_GLYPHS = ['HEX','RING','AXIS','MESH','NODE','SYNC','LATTICE','FLOW'];
 const HEX_DIRS = [[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]];
 
-const VS = {gain:1.2,hexR:30,trail:0.18,hueShift:0,sat:92,edgeGlow:0.95,axisWave:1.0,voronoi:0.55,ark:0.026,mathFreq:1.2,mathAmp:1.0};
+const VS = {gain:1.2,hexR:30,trail:0.18,hueShift:0,sat:92,edgeGlow:0.95,axisWave:1.0,voronoi:0.55,ark:0.026,mathFreq:1.2,mathAmp:1.0,lstmBlend:0.55,diffuse:0.12};
 const SHOW = {hex:true,edges:true,rings:true,axes:true,interference:true,voronoi:true,arks:true,grain:true,glyph:true,magnets:true};
 let currentMode='HONEYCOMB', currentMath='SINE';
 let activePlanes=new Set(NLP12.map(x=>x.id));
@@ -1123,7 +1125,7 @@ function updateMetrics(){
       beatHistory[beatHistPtr%16]=beatImpact; beatHistPtr++;
     }
     // Sustain envelope: fills on beat, slow decay
-    sustainNorm = Math.max(sustainNorm*0.94, beatImpact*0.72);
+    sustainNorm = Math.max(sustainNorm*0.94, beatImpact*0.80);
     // Entropy
     let ent=0; if(tot>0){ for(let i=0;i<len;i++){ if(freqData[i]){ const p=freqData[i]/tot; ent-=p*Math.log2(p); } } }
     entropy=ent;
@@ -1158,20 +1160,30 @@ function axisEnergy(axisIndex,time){
 function getHue(base){ const modeOff=currentMode==='INTERFERENCE'?40:currentMode==='DUAL-MESH'?85:currentMode==='FRACTAL'?120:0; return ((base + VS.hueShift + modeOff + centroid*180)%360+360)%360; }
 
 // ────────────────────────────────────────────────────────────────────────
-// ESN (Echo State Network) temporal layer — 18-dim input → 12-dim reservoir
-//  Fixed random input weights Wi, fixed sparse reservoir Wr, only the
-//  readout Wo is updated via Hebbian rule — zero ML infrastructure needed.
-//  Output esn_out[0..11] additively modulates SECTOR_E so the lattice
-//  pre-glows before a beat and lingers after a drop.
+// LSTM temporal layer — 18-dim input × 12-dim hidden state
+//  Full gating: forget (Wf), input (Wi), cell candidate (Wc), output (Wo).
+//  Glorot init for Wi/Wf/Wc; Wo starts near-zero, updated online via
+//  Hebbian rule — zero ML infrastructure, <3ms/frame at 60fps.
+//  ht[0..11] additively modulates SECTOR_E: pre-glows before beat, lingers
+//  after a drop — the lattice now has phrase-level temporal memory.
 // ────────────────────────────────────────────────────────────────────────
-const ESN_IN=18, ESN_H=18, ESN_OUT=12;
-const _esn_seed=(()=>{ let s=0x9e3779b9; return ()=>{ s+=0x6d2b79f5; let t=s; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return((t^t>>>14)>>>0)/4294967296; }; })();
-const ESN_Wi  = new Float32Array(ESN_H*ESN_IN).map(()=>(_esn_seed()-0.5)*0.18);
-const ESN_Wr  = new Float32Array(ESN_H*ESN_H ).map(()=>_esn_seed()<0.12?(_esn_seed()-0.5)*0.92:0);
-const ESN_Wo  = new Float32Array(ESN_OUT*ESN_H).map(()=>(_esn_seed()-0.5)*0.04);
-const esn_x   = new Float32Array(ESN_H);
-const esn_out = new Float32Array(ESN_OUT);
-function buildESNInput(){
+const LSTM_DI=18, LSTM_DH=12;
+const _lstm_rnd=(n,s)=>Array.from({length:n},()=>(Math.random()*2-1)*s);
+const _glorot=(r,c)=>{ const s=Math.sqrt(2/(r+c)); return _lstm_rnd(r*c,s); };
+const LSTM_DXH=LSTM_DI+LSTM_DH;
+const LSTM_Wf = new Float32Array(_lstm_rnd(LSTM_DXH*LSTM_DH, 0.06));
+const LSTM_bf = new Float32Array(LSTM_DH);
+const LSTM_Wi = new Float32Array(_lstm_rnd(LSTM_DXH*LSTM_DH, 0.06));
+const LSTM_bi = new Float32Array(LSTM_DH).fill(0.8);
+const LSTM_Wc = new Float32Array(_lstm_rnd(LSTM_DXH*LSTM_DH, 0.06));
+const LSTM_bc = new Float32Array(LSTM_DH);
+const LSTM_Wo = new Float32Array(_glorot(LSTM_DH, LSTM_DH));
+const lstm_ct = new Float32Array(LSTM_DH);
+const lstm_ht = new Float32Array(LSTM_DH);
+function _sig(x){ return 1/(1+Math.exp(-Math.min(Math.max(x,-10),10))); }
+function _tanh(x){ return Math.tanh(Math.min(Math.max(x,-10),10)); }
+function _vmul(W,x,rows,cols){ const out=new Float32Array(rows); for(let i=0;i<rows;i++){ let s=0; for(let j=0;j<cols;j++) s+=W[i*cols+j]*x[j]; out[i]=s; } return out; }
+function buildLSTMInput(){
   return new Float32Array([
     subNorm, bassNorm, loMidNorm, midsNorm, hiMidNorm, presNorm,
     transientNow, sustainNorm, beatImpact, centroid, entropy/8, bpmEstimate/240,
@@ -1182,24 +1194,24 @@ function buildESNInput(){
     axisEnergy(2,t),
   ]);
 }
-function stepESN(){
-  const inp = buildESNInput();
-  const nx = new Float32Array(ESN_H);
-  for(let i=0;i<ESN_H;i++){
-    let u=0;
-    for(let j=0;j<ESN_IN;j++) u += ESN_Wi[i*ESN_IN+j]*inp[j];
-    for(let j=0;j<ESN_H; j++) u += ESN_Wr[i*ESN_H+j]*esn_x[j];
-    nx[i]=Math.tanh(u);
+function stepLSTM(){
+  const x = buildLSTMInput();
+  const xh = new Float32Array(LSTM_DXH);
+  xh.set(x); xh.set(lstm_ht, LSTM_DI);
+  const fv=_vmul(LSTM_Wf,xh,LSTM_DH,LSTM_DXH), iv=_vmul(LSTM_Wi,xh,LSTM_DH,LSTM_DXH);
+  const cv=_vmul(LSTM_Wc,xh,LSTM_DH,LSTM_DXH), ov=_vmul(LSTM_Wo,lstm_ht,LSTM_DH,LSTM_DH);
+  const newHt=new Float32Array(LSTM_DH);
+  for(let i=0;i<LSTM_DH;i++){
+    const ft=_sig(fv[i]+LSTM_bf[i]), it=_sig(iv[i]+LSTM_bi[i]);
+    const cct=_tanh(cv[i]+LSTM_bc[i]), ot=_sig(ov[i]+0.5);
+    lstm_ct[i]=ft*lstm_ct[i]+it*cct;
+    newHt[i]=ot*_tanh(lstm_ct[i]);
   }
-  esn_x.set(nx);
-  for(let i=0;i<ESN_OUT;i++){
-    let s=0; for(let j=0;j<ESN_H;j++) s+=ESN_Wo[i*ESN_H+j]*esn_x[j];
-    esn_out[i]=Math.max(-0.18,Math.min(0.38, s*0.55));
-  }
-  const avgE=SECTOR_E.reduce((a,v)=>a+v,0)/12;
-  const alpha=0.0012;
-  for(let i=0;i<ESN_OUT;i++) for(let j=0;j<ESN_H;j++){
-    ESN_Wo[i*ESN_H+j]=Math.min(Math.max(ESN_Wo[i*ESN_H+j]+alpha*esn_x[j]*(SECTOR_E[i]-avgE),-1.2),1.2);
+  lstm_ht.set(newHt);
+  const avgE=SECTOR_E.reduce((a,v)=>a+v,0)/LSTM_DH;
+  const alpha=0.0015;
+  for(let i=0;i<LSTM_DH;i++) for(let j=0;j<LSTM_DH;j++){
+    LSTM_Wo[i*LSTM_DH+j]=Math.min(Math.max(LSTM_Wo[i*LSTM_DH+j]+alpha*lstm_ht[j]*(SECTOR_E[i]-avgE),-1.2),1.2);
   }
 }
 // ────────────────────────────────────────────────────────────────────────
@@ -1227,7 +1239,7 @@ function applyNLPCouple(){
 // diffuseHexEnergy — spatial bleed after computeHexFields
 // ────────────────────────────────────────────────────────────────────────
 function diffuseHexEnergy(){
-  const diff=0.12;
+  const diff=VS.diffuse;
   const db=new Map();
   for(const h of hexes){
     if(h.energy<0.05) continue;
@@ -1258,11 +1270,12 @@ function computeHexFields(){
   }
   // NLP cross-feed: dialectical pair echo (⁺ asserts → ⁻ gets ghost energy)
   applyNLPCouple();
-  // ESN temporal layer: step reservoir, add memory-informed residual to
+  // LSTM temporal layer: step gated cell, add memory-informed residual to
   // SECTOR_E so the lattice pre-brightens before a beat and lingers after.
-  stepESN();
-  for(let s=0;s<12;s++){
-    SECTOR_E[s] = Math.max(0, Math.min(1, SECTOR_E[s] + esn_out[s]));
+  stepLSTM();
+  const lstmBlend = parseFloat(document.getElementById('sLSTM')?.value ?? '0.55');
+  for(let s=0;s<LSTM_DH;s++){
+    SECTOR_E[s] = Math.max(0, Math.min(1, SECTOR_E[s] + Math.max(lstm_ht[s],0)*lstmBlend));
   }
   // Cache axisEnergy(0/2/4,t) once per frame — these were recomputed for
   // every hex in the original code.
@@ -1288,6 +1301,43 @@ function computeHexFields(){
   }
 }
 
+function drawLSTMEcho(){
+  // LSTM temporal echo: ring-sector glow overlay driven by hidden state residual
+  // Sectors with strong lstm_ht get a soft ring-radial wash on their ring-1..3 hexes
+  ctx.save();
+  for(let s=0;s<LSTM_DH;s++){
+    const lv = Math.max(lstm_ht[s], 0);
+    if(lv < 0.04) continue;
+    const hue = ((NLP12[s].hue + VS.hueShift + centroid*180) % 360 + 360) % 360;
+    for(let d=1; d<=3; d++){
+      if(!rings[d]) continue;
+      for(const h of rings[d]){
+        if(h.sector !== s) continue;
+        const baseSize = Math.max(0, VS.hexR*DPR + 1.5*DPR);
+        ctx.beginPath();
+        ctx.moveTo(h.x + HEX_UNIT[0]*baseSize, h.y + HEX_UNIT[1]*baseSize);
+        for(let i=1;i<6;i++) ctx.lineTo(h.x + HEX_UNIT[i*2]*baseSize, h.y + HEX_UNIT[i*2+1]*baseSize);
+        ctx.closePath();
+        ctx.fillStyle = `hsla(${hue},90%,70%,${lv * 0.07 * (4-d)})`;
+        ctx.fill();
+      }
+    }
+  }
+  // Centre radial pulse on strong beats
+  if(beatImpact > 0.15){
+    const gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, VS.hexR*DPR*3);
+    const pHue = ((centroid*160 + t*0.4*360) % 360 + 360) % 360;
+    gr.addColorStop(0, `hsla(${pHue},85%,78%,${beatImpact*0.28})`);
+    gr.addColorStop(1, 'transparent');
+    ctx.globalCompositeOperation = 'screen';
+    ctx.fillStyle = gr;
+    ctx.beginPath();
+    ctx.arc(cx, cy, VS.hexR*DPR*3, 0, PI*2);
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  ctx.restore();
+}
 function drawHex(x,y,r,rot=0){ pathHex(ctx,x,y,r,rot); }
 function drawHexField(){
   if(!SHOW.hex) return;
@@ -1802,6 +1852,7 @@ function loop(now){
   drawRingWaves();
   drawVoronoiDual();
   drawHexField();
+  drawLSTMEcho();
   drawEdgeLinks();
   drawInterference();
   updateMagnets();
@@ -1812,6 +1863,7 @@ function loop(now){
 
 function bindSlider(id,key,valId,parse=parseFloat){ const el=document.getElementById(id); el.oninput=()=>{VS[key]=parse(el.value); document.getElementById(valId).textContent=el.value; if(key==='hexR'){ buildHexLattice(); buildMagnets(); }}; }
 bindSlider('sGain','gain','vGain'); bindSlider('sHexR','hexR','vHexR',parseInt); bindSlider('sTrail','trail','vTrail'); bindSlider('sHue','hueShift','vHue',parseInt); bindSlider('sSat','sat','vSat',parseInt); bindSlider('sEdge','edgeGlow','vEdge'); bindSlider('sAxis','axisWave','vAxis'); bindSlider('sVoronoi','voronoi','vVoronoi'); bindSlider('sArk','ark','vArk'); bindSlider('sMathFreq','mathFreq','vMathFreq'); bindSlider('sMathAmp','mathAmp','vMathAmp');
+bindSlider('sLSTM','lstmBlend','vLSTM'); bindSlider('sDiffuse','diffuse','vDiffuse');
 function bindToggle(id,key,on,off){ document.getElementById(id).onclick=function(){ SHOW[key]=!SHOW[key]; this.classList.toggle('active',SHOW[key]); this.textContent=SHOW[key]?on:off; }; }
 bindToggle('tHex','hex','HEX FIELD','HEX OFF'); bindToggle('tEdges','edges','EDGE LINKS','EDGES OFF'); bindToggle('tRings','rings','RING WAVE','RINGS OFF'); bindToggle('tAxes','axes','AXIS FLOW','AXES OFF'); bindToggle('tInterference','interference','INTERFERENCE','INTERF OFF'); bindToggle('tVoronoi','voronoi','DUAL MESH','MESH OFF'); bindToggle('tArks','arks','ARKS','ARKS OFF'); bindToggle('tGrain','grain','GRAIN','GRAIN OFF'); bindToggle('tGlyph','glyph','GLYPHS','GLYPHS OFF'); bindToggle('tMagnets','magnets','MAGNETS','MAGNETS OFF');
 
