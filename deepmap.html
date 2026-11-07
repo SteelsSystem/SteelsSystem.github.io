@@ -406,6 +406,21 @@ footer a:hover { color:var(--cyan); }
   .section-block { padding:22px 16px; }
   main { padding:0 12px 80px; }
 }
+
+/* ═══ SCENARIO CONVERGENCE MAP ═══ */
+.scenario-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}
+.scenario-card{border:1px solid rgba(255,255,255,.09);background:rgba(0,0,0,.24);padding:16px;min-width:0}
+.scenario-card h3{font-size:11px;letter-spacing:.12em;color:var(--s-color,#14b8a6);margin-bottom:8px}
+.scenario-card p{font-size:11px;line-height:1.75;color:var(--muted)}
+.scenario-card .scenario-state{display:inline-block;font-size:8px;letter-spacing:.14em;text-transform:uppercase;border:1px solid var(--s-color,#14b8a6);color:var(--s-color,#14b8a6);padding:3px 7px;margin-bottom:10px}
+.scenario-flow{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:18px 0;padding:14px;border:1px solid rgba(0,229,255,.13);background:rgba(0,0,0,.25)}
+.scenario-flow span{font-size:9px;line-height:1.5;color:#d6eaf4;border:1px solid rgba(255,255,255,.12);padding:7px 9px}
+.scenario-flow b{font-size:10px;color:var(--cyan)}
+.scenario-contract{padding:16px;border-left:2px solid var(--amber);background:rgba(255,179,0,.045);font-size:11px;line-height:1.8;color:var(--muted)}
+.scenario-contract strong{color:#f6d68c}
+.scenario-foot{font-size:9px;line-height:1.7;color:rgba(255,255,255,.48);margin-top:12px}
+@media(max-width:700px){.scenario-grid{grid-template-columns:1fr}.scenario-flow{align-items:stretch}.scenario-flow span{flex:1 1 42%}}
+
 </style>
 </head>
 <body>
@@ -557,6 +572,55 @@ footer a:hover { color:var(--cyan); }
     <div class="mc-list" id="mc-list"></div>
   </div>
 
+  <!-- ── 06B SCENARIO CONVERGENCE ── -->
+  <div class="div-line reveal"><hr><span>06B · Scenario Convergence</span><hr></div>
+  <section class="section-block reveal" style="--accent-color:#00e5ff" aria-labelledby="scenario-convergence-title">
+    <div class="section-header">
+      <span class="sec-num">06B</span>
+      <span class="sec-title" id="scenario-convergence-title">Scenario Convergence — Evidence Before Application</span>
+    </div>
+    <p class="sec-sub">Cross-repository integration model · Four outcomes · Fail-closed application gate</p>
+
+    <div class="scenario-flow" aria-label="Convergence pipeline">
+      <span>INPUT CONTRACT</span><b>→</b><span>MIND1</span><b>→</b><span>CLAIM LEDGER</span><b>→</b><span>PROVENANCE GRAPH</span><b>→</b><span>DEEP INFERENCE</span><b>→</b><span>PC2 VALIDATION</span><b>→</b><span>LOOPCYCLE</span><b>→</b><span>PROVISIONAL OUTPUT</span>
+    </div>
+
+    <div class="scenario-grid">
+      <article class="scenario-card" style="--s-color:#22c55e">
+        <span class="scenario-state">SC-01 · CONVERGENT</span>
+        <h3>Independent agreement</h3>
+        <p>Distinct sources support the same bounded claim; provenance is available; structural checks pass; LOOPCYCLE explicitly returns PASS. Synthesis remains provisional unless factual verification is separately established.</p>
+      </article>
+      <article class="scenario-card" style="--s-color:#eab308">
+        <span class="scenario-state">SC-02 · INCOMPLETE</span>
+        <h3>Missing or unobservable evidence</h3>
+        <p>Required source, authorship, schema, or corroboration is absent. Preserve UNKNOWN, identify the missing dependency, and hold application. A hash alone does not authenticate a source.</p>
+      </article>
+      <article class="scenario-card" style="--s-color:#a855f7">
+        <span class="scenario-state">SC-03 · CONFLICTED</span>
+        <h3>Contradictory accounts</h3>
+        <p>Keep INPUT_A and INPUT_B claims separately attributable. Preserve chronology, provenance, and the subject's first-person testimony without automatically declaring either channel true. Require independent corroboration or retain the conflict.</p>
+      </article>
+      <article class="scenario-card" style="--s-color:#ff6b6b">
+        <span class="scenario-state">SC-04 · BLOCKED</span>
+        <h3>Integrity or validation failure</h3>
+        <p>Missing contract, invalid structure, empty required axiom set, failed verifier, authorship mismatch, or provenance break prevents STRUCT APPLY. Record the reason; do not repair it by inference.</p>
+      </article>
+    </div>
+
+    <div class="scenario-contract">
+      <strong>Convergence invariant</strong><br>
+      STRUCT APPLY ⇒ G1 ∧ G2 ∧ R12 ∧ authorship_verified ∧ verification_PASS<br>
+      Any missing or unverified term ⇒ UNKNOWN / HOLD / NO APPLY.
+    </div>
+
+    <div class="scenario-contract" style="margin-top:12px;border-left-color:#a855f7;background:rgba(123,47,255,.045)">
+      <strong>Repository boundaries — integration is not yet certified</strong><br>
+      PC2 Absolute Logic supplies formal operator semantics and structural reasoning. Forensica AI Sandbox supplies the MIND1 → DEEP1 → LOOPCYCLE → DEFENSE pipeline and an epistemic fail-closed branch. Lex Forensica supplies forensic semantics and interface concepts. This DEEP MAP is the visual reference layer. A shared versioned INPUT CONTRACT, CLAIM LEDGER, and PROVENANCE GRAPH are proposed convergence interfaces; their cross-repository runtime wiring is NOT VERIFIED.
+    </div>
+    <p class="scenario-foot">Status discipline: this map describes intended gates and verified repository artifacts, not a claim that every service is deployed, connected, authenticated, or passing CI. SHA-256 binds observed bytes; it does not prove authorship, authenticity, completeness, or factual truth.</p>
+  </section>
+
   <!-- ── 07 LAYERED ARCHITECTURE ── -->
   <div class="div-line reveal"><hr><span>07 · Architecture</span><hr></div>
   <div class="section-block reveal" style="--accent-color:#a855f7">
@@ -676,14 +740,14 @@ const LOOP_SEQUENCE = [
   { id:'MIND1',             layer:'INTAKE',    role:'Subject-perceived state intake — raw signal from the source. The unfiltered first contact.', color:'#14b8a6' },
   { id:'BRIDGE',            layer:'ALIGN',     role:'Mapping subject ↔ system — establishing semantic bridges between lived experience and protocol language.', color:'#3b82f6' },
   { id:'DEEP_1',            layer:'ANALYSIS',  role:'Forensic engine analysis — chronological sequencing, chain-of-custody verification, axiom validation.', color:'#a855f7' },
-  { id:'LOOP_CYCLE',        layer:'FEEDBACK',  role:'Iterative correction loop — each cycle refines the model. Truth converges over iterations.', color:'#f97316' },
+  { id:'LOOP_CYCLE',        layer:'FEEDBACK',  role:'Iterative verification loop — refine hypotheses against independent evidence. Agreement may converge; unresolved claims remain UNKNOWN.', color:'#f97316' },
   { id:'DEFENSE_SYNTHESIS', layer:'OUTPUT',    role:'Defense artifacts generation — final outputs: press brief, forensic report, axiom manifest.', color:'#22c55e' },
 ];
 
 const METACONDUCT_RULES = [
   { id:'MC-1', tier:'Ω', tierColor:'#eab308', desc:'No layer may overwrite subject baseline without independently verifiable evidence.' },
   { id:'MC-2', tier:'◈', tierColor:'#14b8a6', desc:'Time cracks (chrono anomalies) must be surfaced as REF-MOD-CHRONO flags before output.' },
-  { id:'MC-3', tier:'Ω', tierColor:'#eab308', desc:'Subject emotional signal takes precedence over institutional record when in conflict.' },
+  { id:'MC-3', tier:'Ω', tierColor:'#eab308', desc:'Preserve subject testimony as first-person evidence; do not automatically rank it or institutional records as true. Record conflicts and seek independent corroboration.' },
   { id:'MC-4', tier:'Δ', tierColor:'#3b82f6', desc:'Media framing cannot override direct subject testimony — narrative tier is always secondary.' },
   { id:'MC-5', tier:'◈', tierColor:'#14b8a6', desc:'Chain-of-custody integrity must be preserved across all forensic outputs and exports.' },
   { id:'MC-6', tier:'Ω', tierColor:'#eab308', desc:'Identity sovereignty is non-negotiable at all tiers — no depersonalization in any output.' },
@@ -701,13 +765,13 @@ const GIT_RAIL = [
 ];
 
 const ALL_NODES = [
-  { id:'SteelsSystem.github.io', type:'REPO',     color:'#14b8a6', status:'LIVE' },
-  { id:'Lex Forensica v13',      type:'ENGINE',   color:'#3b82f6', status:'ACTIVE' },
-  { id:'Protocol O',             type:'MODULE',   color:'#a855f7', status:'ALIGNED' },
-  { id:'REFXRGLSD Core',         type:'PROTOCOL', color:'#f97316', status:'RUNNING' },
-  { id:'Control Room',           type:'UI',       color:'#eab308', status:'LINKED' },
-  { id:'Manifold Visualiser',    type:'RENDER',   color:'#00e5ff', status:'ONLINE' },
-  { id:'DEEP MAP v2',            type:'PAGE',     color:'#22c55e', status:'PUBLISHING' },
+  { id:'SteelsSystem.github.io', type:'REPO',     color:'#14b8a6', status:'TRACKED' },
+  { id:'Lex Forensica',          type:'ENGINE',   color:'#3b82f6', status:'DOCUMENTED' },
+  { id:'Protocol O',             type:'MODULE',   color:'#a855f7', status:'NOT VERIFIED' },
+  { id:'REFXRGLSD Core',         type:'PROTOCOL', color:'#f97316', status:'DECLARED' },
+  { id:'Control Room',           type:'UI',       color:'#eab308', status:'PAGE' },
+  { id:'Manifold Visualiser',    type:'RENDER',   color:'#00e5ff', status:'PAGE' },
+  { id:'DEEP MAP v2',            type:'PAGE',     color:'#22c55e', status:'TRACKED' },
 ];
 
 const ARCH_LAYERS = [
